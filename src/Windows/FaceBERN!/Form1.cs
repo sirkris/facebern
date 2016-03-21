@@ -10,11 +10,17 @@ using System.Windows.Forms;
 
 namespace FaceBERN_
 {
-    public partial class Main : Form
+    public partial class Form1 : Form
     {
-        public Main()
+        public Form1()
         {
             InitializeComponent();
+            labelVersion.Text = Globals.__VERSION__;
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
