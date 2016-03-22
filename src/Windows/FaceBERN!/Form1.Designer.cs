@@ -147,6 +147,7 @@
             this.donateToBernieToolStripMenuItem.Name = "donateToBernieToolStripMenuItem";
             this.donateToBernieToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
             this.donateToBernieToolStripMenuItem.Text = "Donate to Bernie!";
+            this.donateToBernieToolStripMenuItem.Click += new System.EventHandler(this.donateToBernieToolStripMenuItem_Click);
             // 
             // outBox
             // 
@@ -211,7 +212,7 @@
             this.pauseToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(185, 114);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(185, 92);
             // 
             // openControlCenterToolStripMenuItem
             // 
