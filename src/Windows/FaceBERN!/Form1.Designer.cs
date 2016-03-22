@@ -158,6 +158,7 @@
             this.outBox.ReadOnly = true;
             this.outBox.Size = new System.Drawing.Size(496, 128);
             this.outBox.TabIndex = 26;
+            this.outBox.TabStop = false;
             this.outBox.Text = "";
             // 
             // buttonStart
@@ -168,7 +169,7 @@
             this.buttonStart.Location = new System.Drawing.Point(263, 490);
             this.buttonStart.Name = "buttonStart";
             this.buttonStart.Size = new System.Drawing.Size(150, 50);
-            this.buttonStart.TabIndex = 27;
+            this.buttonStart.TabIndex = 0;
             this.buttonStart.Text = "START";
             this.buttonStart.UseVisualStyleBackColor = true;
             // 
