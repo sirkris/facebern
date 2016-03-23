@@ -34,6 +34,7 @@ namespace FaceBERN_
 
         /* Global singletons.  --Kris */
         public static INI sINI;
+        public static Log MainLog;
 
         /* Execution states.  --Kris */
         public const int STATE_INITIALIZING = -2;
