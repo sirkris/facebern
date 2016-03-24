@@ -6,6 +6,8 @@ using OpenQA.Selenium.Interactions.Internal;
 using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
 using Selenium;
+using SimpleBrowser;
+using SimpleBrowser.WebDriver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +22,7 @@ namespace FaceBERN_
         private IWebDriver _driverFirefox;
         private FirefoxProfile _profileFirefox;
         private ISelenium selenium;
+        private SimpleBrowserDriver _driverSimple;
 
         [TestFixtureSetUp]
         public void FixtureSetup(int browser)
@@ -29,6 +32,10 @@ namespace FaceBERN_
                 case Globals.FIREFOX:
                     _driverFirefox = new FirefoxDriver();
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                    break;
+                case Globals.SIMPLE:
+                    _driverSimple = new SimpleBrowser.WebDriver.SimpleBrowserDriver();
+                    _driverSimple.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
                     break;
             }
         }
@@ -42,7 +49,7 @@ namespace FaceBERN_
                     _driverFirefox.Navigate().GoToUrl(URL);
                     break;
                 case Globals.SIMPLE:
-                    // TODO
+                    _driverSimple.Navigate().GoToUrl(URL);
                     break;
             }
         }
