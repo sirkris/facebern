@@ -163,6 +163,7 @@
             // 
             // buttonStart
             // 
+            this.buttonStart.BackColor = System.Drawing.Color.Black;
             this.buttonStart.BackgroundImage = global::FaceBERN_.Properties.Resources.flames_button_bg;
             this.buttonStart.Font = new System.Drawing.Font("Algerian", 26.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonStart.ForeColor = System.Drawing.Color.Yellow;
@@ -171,7 +172,8 @@
             this.buttonStart.Size = new System.Drawing.Size(150, 50);
             this.buttonStart.TabIndex = 0;
             this.buttonStart.Text = "START";
-            this.buttonStart.UseVisualStyleBackColor = true;
+            this.buttonStart.UseVisualStyleBackColor = false;
+            this.buttonStart.Click += new System.EventHandler(this.buttonStart_Click);
             // 
             // label2
             // 

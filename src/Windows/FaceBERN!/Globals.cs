@@ -38,14 +38,16 @@ namespace FaceBERN_
         /* Global singletons.  --Kris */
         public static INI sINI;
         public static Log MainLog;
+        public static Log WorkflowLog;
 
-        /* Execution states.  --Kris */
-        public const int STATE_INITIALIZING = -2;
-        public const int STATE_BROKEN = -1;
-        public const int STATE_READY = 0;
-        public const int STATE_VALIDATING = 1;
-        public const int STATE_WAITING = 2;
-        public const int STATE_EXECUTING = 3;
+        /* Execution states (any state > 0 means that the Workflow thread is running).  --Kris */
+        public const int STATE_INITIALIZING = -2;  // Default state.
+        public const int STATE_BROKEN = -1;  // An unrecoverable error occurred.
+        public const int STATE_READY = 0;  // Application is running but execution is either paused or not started yet (essentially the same thing).
+        public const int STATE_VALIDATING = 1;  // Running sanity checks prior to a state change.
+        public const int STATE_WAITING = 2;  // Sitting idle until some action needs to be taken (then switches to executing state).
+        public const int STATE_SLEEPING = 3;  // Sitting idle because the end-user restricted execution to another timeframe (then switches to waiting state).
+        public const int STATE_EXECUTING = 4;  // Doing the actual work.
 
         /* Bitwise constants for browser usage.  --Kris */
         public const int FIREFOX = 2;
@@ -55,6 +57,31 @@ namespace FaceBERN_
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
+
+        /* Map log names to their respective objects.  --Kris */
+        public static Log getLogObj(string logName)
+        {
+            Log log;
+            switch (logName)
+            {
+                default:
+                    return null;
+                case "FaceBERN!":
+                    log = MainLog;
+                    break;
+                case "Workflow":
+                    log = WorkflowLog;
+                    break;
+            }
+
+            /*if (log == null)
+            {
+                log = new Log();
+                log.Init(logName);
+            }*/
+
+            return log;
+        }
 
         /* List browser names indexed by constant.  --Kris */
         public static string[] BrowserNames()

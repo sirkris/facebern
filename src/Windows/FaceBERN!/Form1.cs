@@ -75,8 +75,18 @@ namespace FaceBERN_
             HideCaret(outBox.Handle);
         }
 
-        public void SetExecState(int state)
+        public void SetExecState(int state, string logName = null, Log logObj = null)
         {
+            if (logName == null)
+            {
+                logName = Form1.logName;
+            }
+
+            if (logObj == null)
+            {
+                logObj = Globals.MainLog;
+            }
+
             string logState = null;
             switch (state)
             {
@@ -99,6 +109,9 @@ namespace FaceBERN_
                 case Globals.STATE_WAITING:
                     logState = "WAITING";
                     break;
+                case Globals.STATE_SLEEPING:
+                    logState = "SLEEPING";
+                    break;
                 case Globals.STATE_EXECUTING:
                     logState = "EXECUTING";
                     break;
@@ -107,8 +120,57 @@ namespace FaceBERN_
             if (state != Globals.executionState)
             {
                 Globals.executionState = state;
-                LogW("Execution state changed to:  " + logState, false);
+                LogW("Execution state changed to:  " + logState, false, true, true, true, logName, logObj);
             }
+        }
+
+        private void buttonStart_Click(object sender, EventArgs e)
+        {
+            if (buttonStart.Enabled == false 
+                || Globals.executionState < Globals.STATE_READY)
+            {
+                buttonStart.Click -= buttonStart_Click;
+                return;
+            }
+
+            if (Globals.executionState == Globals.STATE_READY)
+            {
+                SetExecState(Globals.STATE_VALIDATING);
+
+                buttonStart_ToStop();
+
+                Workflow workflow = new Workflow(this);
+                Globals.thread = workflow.ExecuteThread();
+
+                LogW("Workflow thread detached from form thread successfully.");
+            }
+            else
+            {
+                LogW("Stopping....");
+
+                Globals.thread.Abort();
+                Globals.thread.Join(60000);
+
+                LogW("Execution terminated by user.");
+
+                buttonStart_ToStart();
+
+                Ready();
+            }
+        }
+
+        public void buttonStart_ToStart()
+        {
+            buttonStart.BackgroundImage = FaceBERN_.Properties.Resources.flames_button_bg;
+            buttonStart.ForeColor = Color.Yellow;
+            buttonStart.Text = "START";
+        }
+
+        public void buttonStart_ToStop()
+        {
+            buttonStart.BackgroundImage = null;
+            buttonStart.ForeColor = Color.Red;
+            buttonStart.Text = "STOP";
         }
 
         /* Prevents form flickering.  Taken from MSDN.  --Kris */
@@ -173,9 +235,14 @@ namespace FaceBERN_
             notifyIcon1.Visible = false;
         }
 
-        public void Ready()
+        public void Ready(string logName = null)
         {
-            SetExecState(Globals.STATE_READY);
+            if (logName == null)
+            {
+                logName = Form1.logName;
+            }
+
+            SetExecState(Globals.STATE_READY, logName);
             LogW("Ready.");
         }
 
@@ -185,41 +252,56 @@ namespace FaceBERN_
         }
 
         /* Interact with the log handler.  --Kris */
-        internal void Log(string text = null, string action = "append", bool newline = true)
+        internal void Log(string text = null, string action = "append", bool newline = true, string logName = null, Log logObj = null)
         {
+            if (logName == null)
+            {
+                logName = Form1.logName;
+            }
+
+            if (logObj == null)
+            {
+                logObj = Globals.getLogObj(logName);
+            }
+
             if (csLogEnabled == true)
             {
                 switch (action.ToLower())
                 {
                     default:
                     case "append":
-                        Globals.MainLog.Append(logName, text, newline);
+                        logObj.Append(logName, text, newline);
                         break;
                     case "increment":
-                        Globals.MainLog.Increment(logName, Int32.Parse(text));
+                        logObj.Increment(logName, Int32.Parse(text));
                         break;
                     case "decrement":
-                        Globals.MainLog.Decrement(logName, Int32.Parse(text));
+                        logObj.Decrement(logName, Int32.Parse(text));
                         break;
                     case "save":
-                        Globals.MainLog.Save(logName);
+                        logObj.Save(logName);
                         break;
                 }
             }
         }
 
         /* Save the log buffer to file.  --Kris */
-        internal void saveLog()
+        internal void saveLog(string logName = null, Log logObj = null)
         {
-            Log(null, "save");
+            Log(null, "save", false, logName, logObj);
         }
 
         /* Append to log and optionally display in log window (should only include log entries that are relevant/useful to the end-user).  --Kris */
-        internal void LogW(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true)
+        internal void LogW(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, string logName = null, Log logObj = null)
         {
             string logText = (timestamp ? "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " : "") + text;
 
-            Log(logText, "append", newline);
+            if (logName == null)
+            {
+                logName = Form1.logName;
+            }
+
+            Log(logText, "append", newline, logName, logObj);
 
             if (show == true)
             {
@@ -230,7 +312,7 @@ namespace FaceBERN_
                 HideCaret(outBox.Handle);
             }
 
-            saveLog();
+            saveLog(logName, logObj);
         }
 
         private void Form1_Resize(object sender, EventArgs e)
