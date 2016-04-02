@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using Awesomium;
+using Awesomium.Core;
+using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Interactions;
@@ -6,8 +8,6 @@ using OpenQA.Selenium.Interactions.Internal;
 using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
 using Selenium;
-using SimpleBrowser;
-using SimpleBrowser.WebDriver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +22,7 @@ namespace FaceBERN_
         private IWebDriver _driverFirefox;
         private FirefoxProfile _profileFirefox;
         private ISelenium selenium;
-        private SimpleBrowserDriver _driverSimple;
+        private WebView awesomium;
 
         [TestFixtureSetUp]
         public void FixtureSetup(int browser)
@@ -33,9 +33,8 @@ namespace FaceBERN_
                     _driverFirefox = new FirefoxDriver();
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
                     break;
-                case Globals.SIMPLE:
-                    _driverSimple = new SimpleBrowser.WebDriver.SimpleBrowserDriver();
-                    _driverSimple.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                case Globals.AWESOMIUM:
+                    awesomium = WebCore.CreateWebView(800, 600);
                     break;
             }
         }
@@ -48,8 +47,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX:
                     _driverFirefox.Navigate().GoToUrl(URL);
                     break;
-                case Globals.SIMPLE:
-                    _driverSimple.Navigate().GoToUrl(URL);
+                case Globals.AWESOMIUM:
+                    awesomium.Source = new Uri(URL);
                     break;
             }
         }

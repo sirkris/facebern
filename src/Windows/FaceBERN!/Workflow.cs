@@ -46,6 +46,11 @@ namespace FaceBERN_
 
             Main.Refresh();
 
+            WebDriver webDriver = new WebDriver();
+
+            webDriver.FixtureSetup(Globals.FIREFOX);
+            webDriver.TestSetUp(Globals.FIREFOX, "http://www.reddit.com/r/SandersForPresident");
+
             /* Loop until terminated by the user.  --Kris */
             while (true)
             {

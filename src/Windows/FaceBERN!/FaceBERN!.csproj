@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -35,17 +35,15 @@
     <ApplicationIcon>bernie.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Awesomium.Core, Version=1.7.5.1, Culture=neutral, PublicKeyToken=e1a0d7c8071a5214, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Resources\Awesomium.Core.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>Resources\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Selenium.WebDriverBackedSelenium">
       <HintPath>Resources\Selenium.WebDriverBackedSelenium.dll</HintPath>
-    </Reference>
-    <Reference Include="SimpleBrowser">
-      <HintPath>Resources\SimpleBrowser.dll</HintPath>
-    </Reference>
-    <Reference Include="SimpleBrowser.WebDriver">
-      <HintPath>Resources\SimpleBrowser.WebDriver.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

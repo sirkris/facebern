@@ -191,11 +191,11 @@
             this.browserModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
-            "Run in background (SimpleBrowser)",
-            "View mode (Firefox)"});
+            "Awesomium (runs invisibly in background)",
+            "Firefox (runs in a visible window)"});
             this.browserModeComboBox.Location = new System.Drawing.Point(340, 310);
             this.browserModeComboBox.Name = "browserModeComboBox";
-            this.browserModeComboBox.Size = new System.Drawing.Size(213, 21);
+            this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
             this.browserModeComboBox.TabIndex = 29;
             // 
             // notifyIcon1

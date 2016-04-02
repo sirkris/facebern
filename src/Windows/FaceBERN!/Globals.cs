@@ -53,7 +53,7 @@ namespace FaceBERN_
         public const int FIREFOX = 2;
         public const int IE = 4;
         public const int CHROME = 8;
-        public const int SIMPLE = 16;
+        public const int AWESOMIUM = 16;
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
@@ -91,7 +91,7 @@ namespace FaceBERN_
             names[FIREFOX] = "Firefox";
             names[IE] = "Internet Explorer";
             names[CHROME] = "Chrome";
-            names[SIMPLE] = "SimpleBrowser";
+            names[AWESOMIUM] = "Awesomium";
 
             return names;
         }
@@ -114,7 +114,7 @@ namespace FaceBERN_
             names[FIREFOX] = "Mozilla Firefox";
             names[IE] = "Windows Internet Explorer";
             names[CHROME] = "Google Chrome";
-            names[SIMPLE] = "SimpleBrowser";
+            names[AWESOMIUM] = "Awesomium";
 
             return names;
         }
@@ -138,7 +138,7 @@ namespace FaceBERN_
             consts["ie"] = IE;
             consts["internet explorer"] = IE;
             consts["chrome"] = CHROME;
-            consts["simplebrowser"] = SIMPLE;
+            consts["awesomium"] = AWESOMIUM;
 
             return consts;
         }
