@@ -1,14 +1,157 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FaceBERN_
 {
     public static class Globals
     {
+        /*
+         * -- BEGIN GLOBAL SETTINGS --
+         */
+
         /* The version.  Please adhere to Git versioning procedures.  --Kris */
-        public static string __VERSION__ = "1.0.0.a";
+        public static string __VERSION__        = @"1.0.0.a";
+
+        /* File paths.  --Kris */
+        public static string ConfigDir          = @"config";
+        public static string MainINI            = @"FaceBERN!.ini";
+        public static string StatesINIDir       = @"states";
+
+        /* How long to wait for an action element to appear before dying.  --Kris */
+        public static int __TIMEOUT__ = 3;  // Seconds
+
+        /*
+         * -- END GLOBAL SETTINGS --
+         */
+
+        /* Global containers.  --Kris */
+        public static Dictionary<string, string> Config;
+        public static Process process = null;
+        public static Thread thread = null;
+        public static int executionState = -2;
+
+        /* Global singletons.  --Kris */
+        public static INI sINI;
+        public static Log MainLog;
+        public static Log WorkflowLog;
+
+        /* Execution states (any state > 0 means that the Workflow thread is running).  --Kris */
+        public const int STATE_INITIALIZING = -2;  // Default state.
+        public const int STATE_BROKEN = -1;  // An unrecoverable error occurred.
+        public const int STATE_READY = 0;  // Application is running but execution is either paused or not started yet (essentially the same thing).
+        public const int STATE_VALIDATING = 1;  // Running sanity checks prior to a state change.
+        public const int STATE_WAITING = 2;  // Sitting idle until some action needs to be taken (then switches to executing state).
+        public const int STATE_SLEEPING = 3;  // Sitting idle because the end-user restricted execution to another timeframe (then switches to waiting state).
+        public const int STATE_EXECUTING = 4;  // Doing the actual work.
+
+        /* Bitwise constants for browser usage.  --Kris */
+        public const int FIREFOX = 2;
+        public const int IE = 4;
+        public const int CHROME = 8;
+        public const int AWESOMIUM = 16;
+
+        /* Nothing says "nonsequitur" quite like "salt".  --Kris */
+        public static Random rand = new Random();
+
+        /* Map log names to their respective objects.  --Kris */
+        public static Log getLogObj(string logName)
+        {
+            Log log;
+            switch (logName)
+            {
+                default:
+                    return null;
+                case "FaceBERN!":
+                    log = MainLog;
+                    break;
+                case "Workflow":
+                    log = WorkflowLog;
+                    break;
+            }
+
+            /*if (log == null)
+            {
+                log = new Log();
+                log.Init(logName);
+            }*/
+
+            return log;
+        }
+
+        /* List browser names indexed by constant.  --Kris */
+        public static string[] BrowserNames()
+        {
+            string[] names = new string[99];
+
+            names[FIREFOX] = "Firefox";
+            names[IE] = "Internet Explorer";
+            names[CHROME] = "Chrome";
+            names[AWESOMIUM] = "Awesomium";
+
+            return names;
+        }
+
+        /* Get the string browser name for a given constant.  --Kris */
+        public static string BrowserName(int browser)
+        {
+            string[] names = new string[99];
+
+            names = BrowserNames();
+
+            return names[browser];
+        }
+
+        /* List browser names as they appear in Windows.  --Kris */
+        public static string[] BrowserPIDNames()
+        {
+            string[] names = new string[99];
+
+            names[FIREFOX] = "Mozilla Firefox";
+            names[IE] = "Windows Internet Explorer";
+            names[CHROME] = "Google Chrome";
+            names[AWESOMIUM] = "Awesomium";
+
+            return names;
+        }
+
+        /* Get the string browser name (window title).  --Kris */
+        public static string BrowserPIDName(int browser)
+        {
+            string[] names = new string[99];
+
+            names = BrowserPIDNames();
+
+            return names[browser];
+        }
+
+        /* List browser constants indexed by string.  --Kris */
+        public static Dictionary<string, Int32> BrowserConsts()
+        {
+            Dictionary<string, Int32> consts = new Dictionary<string, Int32>();
+
+            consts["firefox"] = FIREFOX;
+            consts["ie"] = IE;
+            consts["internet explorer"] = IE;
+            consts["chrome"] = CHROME;
+            consts["awesomium"] = AWESOMIUM;
+
+            return consts;
+        }
+
+        /* Get the integer browser constant for a given string.  --Kris */
+        public static int BrowserConst(string browsername)
+        {
+            Dictionary<string, Int32> consts = new Dictionary<string, Int32>();
+
+            consts = BrowserConsts();
+
+            return consts[browsername.ToLower()];
+        }
+
     }
 }

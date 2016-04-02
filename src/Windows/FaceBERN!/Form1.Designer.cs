@@ -158,19 +158,22 @@
             this.outBox.ReadOnly = true;
             this.outBox.Size = new System.Drawing.Size(496, 128);
             this.outBox.TabIndex = 26;
+            this.outBox.TabStop = false;
             this.outBox.Text = "";
             // 
             // buttonStart
             // 
+            this.buttonStart.BackColor = System.Drawing.Color.Black;
             this.buttonStart.BackgroundImage = global::FaceBERN_.Properties.Resources.flames_button_bg;
             this.buttonStart.Font = new System.Drawing.Font("Algerian", 26.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonStart.ForeColor = System.Drawing.Color.Yellow;
             this.buttonStart.Location = new System.Drawing.Point(263, 490);
             this.buttonStart.Name = "buttonStart";
             this.buttonStart.Size = new System.Drawing.Size(150, 50);
-            this.buttonStart.TabIndex = 27;
+            this.buttonStart.TabIndex = 0;
             this.buttonStart.Text = "START";
-            this.buttonStart.UseVisualStyleBackColor = true;
+            this.buttonStart.UseVisualStyleBackColor = false;
+            this.buttonStart.Click += new System.EventHandler(this.buttonStart_Click);
             // 
             // label2
             // 
@@ -188,11 +191,11 @@
             this.browserModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
-            "Run in background (SimpleBrowser)",
-            "View mode (Firefox)"});
+            "Awesomium (runs invisibly in background)",
+            "Firefox (runs in a visible window)"});
             this.browserModeComboBox.Location = new System.Drawing.Point(340, 310);
             this.browserModeComboBox.Name = "browserModeComboBox";
-            this.browserModeComboBox.Size = new System.Drawing.Size(213, 21);
+            this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
             this.browserModeComboBox.TabIndex = 29;
             // 
             // notifyIcon1
