@@ -23,7 +23,7 @@ namespace FaceBERN_
 
         private byte[] facebookEntropy;
 
-        internal bool Credentials()
+        internal Credentials()
         {
             try
             {
@@ -39,12 +39,10 @@ namespace FaceBERN_
             {
                 // TODO - Log the exception.  --Kris
 
-                return false;
+                return;
             }
 
             LoadFacebook();
-
-            return true;
         }
 
         internal bool SetFacebook(SecureString username, SecureString password)
