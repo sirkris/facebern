@@ -14,6 +14,7 @@ namespace FaceBERN_
         private string logName = "Workflow";
         protected Log WorkflowLog;
         private Form1 Main;
+        private int browser = 0;
 
         public Workflow(Form1 Main)
         {
@@ -22,7 +23,7 @@ namespace FaceBERN_
 
         public Thread ExecuteThread()
         {
-            Thread thread = new Thread(() => Execute());
+            Thread thread = new Thread(() => Execute(Main.browserModeComboBox.SelectedIndex));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
 
             Main.LogW("Attempting to start Workflow thread....", false);
 
@@ -36,9 +37,11 @@ namespace FaceBERN_
             return thread;
         }
 
-        public void Execute()
+        public void Execute(int browser)
         {
             InitLog();
+
+            this.browser = browser;
 
             Log("Thread execution initialized.");
 
@@ -48,8 +51,8 @@ namespace FaceBERN_
 
             WebDriver webDriver = new WebDriver();
 
-            webDriver.FixtureSetup(Globals.FIREFOX);
-            webDriver.TestSetUp(Globals.FIREFOX, "http://www.reddit.com/r/SandersForPresident");
+            webDriver.FixtureSetup(browser);
+            webDriver.TestSetUp(browser, "http://www.reddit.com/r/SandersForPresident");
 
             /* Loop until terminated by the user.  --Kris */
             while (true)

@@ -25,6 +25,9 @@ namespace FaceBERN_
         /* How long to wait for an action element to appear before dying.  --Kris */
         public static int __TIMEOUT__ = 3;  // Seconds
 
+        /* Seconds to wait between each browser iteration.  --Kris */
+        public static int __BROWSE_DELAY__ = 1;
+
         /*
          * -- END GLOBAL SETTINGS --
          */
@@ -49,11 +52,11 @@ namespace FaceBERN_
         public const int STATE_SLEEPING = 3;  // Sitting idle because the end-user restricted execution to another timeframe (then switches to waiting state).
         public const int STATE_EXECUTING = 4;  // Doing the actual work.
 
-        /* Bitwise constants for browser usage.  --Kris */
-        public const int FIREFOX = 2;
-        public const int IE = 4;
-        public const int CHROME = 8;
-        public const int AWESOMIUM = 16;
+        /* Browser constants.  --Kris */
+        public const int AWESOMIUM = 0;
+        public const int FIREFOX = 1;
+        public const int CHROME = 2;
+        public const int IE = 3;
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();

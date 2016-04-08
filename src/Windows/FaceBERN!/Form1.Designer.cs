@@ -289,13 +289,13 @@
         internal System.Windows.Forms.RichTextBox outBox;
         private System.Windows.Forms.Button buttonStart;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.ComboBox browserModeComboBox;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem openControlCenterToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem startToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem pauseToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+        internal System.Windows.Forms.ComboBox browserModeComboBox;
     }
 }
 
