@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,7 +53,40 @@ namespace FaceBERN_
             WebDriver webDriver = new WebDriver();
 
             webDriver.FixtureSetup(browser);
-            webDriver.TestSetUp(browser, "http://www.reddit.com/r/SandersForPresident");
+            webDriver.TestSetUp(browser, "http://www.facebook.com");
+
+            if (webDriver.GetElementById(browser, "loginbutton") != null)
+            {
+                Credentials credentials = new Credentials();
+
+                SecureString u = null;
+                SecureString p = null;
+
+                LoginPrompt loginPrompt = new LoginPrompt("Facebook");
+                Main.Invoke((MethodInvoker)delegate()
+                {
+                    DialogResult res = loginPrompt.ShowDialog();
+                    if (res == DialogResult.OK)
+                    {
+                        u = credentials.ToSecureString(loginPrompt.u);
+                        p = credentials.ToSecureString(loginPrompt.p);
+                    }
+                });
+
+                if (u != null && p != null && u.Length > 0 && p.Length > 0)
+                {
+                    webDriver.TypeInId(browser, "email", credentials.ToString(u));
+
+                    webDriver.TypeInId(browser, "pass", credentials.ToString(p));
+
+                    dynamic element = webDriver.GetElementById(browser, "u_0_y");
+                    webDriver.ClickElement(browser, element);
+                }
+                else
+                {
+                    // TODO - Abort if no credentials given.  --Kris
+                }
+            }
 
             /* Loop until terminated by the user.  --Kris */
             while (true)

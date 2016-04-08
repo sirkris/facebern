@@ -144,7 +144,7 @@ namespace FaceBERN_
         }
 
         // Use this sparingly and don't store the return in a variable if you can avoid it.  Should only be used for on-the-fly conversion when absolutely needed.  --Kris
-        private string ToString(SecureString sStr)
+        internal string ToString(SecureString sStr)
         {
             IntPtr output = IntPtr.Zero;
 

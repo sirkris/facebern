@@ -24,6 +24,7 @@ namespace FaceBERN_
         private FirefoxProfile _profileFirefox;
         private ISelenium selenium;
         private WebView awesomium;
+        private bool documentReady;
 
         [TestFixtureSetUp]
         public void FixtureSetup(int browser)
@@ -50,12 +51,28 @@ namespace FaceBERN_
                     break;
                 case Globals.AWESOMIUM:
                     awesomium.Source = new Uri(URL);
+                    documentReady = false;
+                    awesomium.DocumentReady += OnDocumentReadyHandler;
+                    WebCore.Run();
                     break;
             }
         }
 
+        // Used by Awesomium only.  --Kris
+        private void OnDocumentReadyHandler(Object sender, DocumentReadyEventArgs e)
+        {
+            if (e != null && e.ReadyState == DocumentReadyState.Loaded)
+            {
+                documentReady = true;
+            }
+            else
+            {
+                documentReady = false;
+            }
+        }
+
         [Test]
-        public string GetPageSource(int browser, int retry = 5)
+        public string GetPageSource(int browser, int retry = 5, int aRetry = 30)
         {
             dynamic driver;
 
@@ -83,8 +100,23 @@ namespace FaceBERN_
                         }
                     }
                 case Globals.AWESOMIUM:
-                    // TODO
-                    break;
+                    if (documentReady)
+                    {
+                        return awesomium.HTML;
+                    }
+                    else
+                    {
+                        aRetry--;
+                        if (aRetry == 0)
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__);
+                            return GetPageSource(browser, retry, aRetry);
+                        }
+                    }
             }
         }
 
@@ -127,8 +159,8 @@ namespace FaceBERN_
 
                     return driver.FindElement(By.Id(elementid));
                 case Globals.AWESOMIUM:
-                    // TODO
-                    break;
+                    dynamic document = (Awesomium.Core.JSObject) awesomium.ExecuteJavascriptWithResult("document");
+                    return document.getElementById(elementid);
             }
         }
 
@@ -158,7 +190,8 @@ namespace FaceBERN_
 
                     return driver.FindElement(By.Name(elementname));
                 case Globals.AWESOMIUM:
-                    // TODO
+                    dynamic document = (Awesomium.Core.JSObject) awesomium.ExecuteJavascriptWithResult("document");
+                    return document.getElementByName(elementname);
                     break;
             }
         }
@@ -182,7 +215,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return null;
             }
         }
 
@@ -197,7 +230,7 @@ namespace FaceBERN_
                     return driver.FindElement(By.XPath(xpath));
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return null;
             }
         }
 
@@ -297,7 +330,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -328,7 +361,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -359,7 +392,7 @@ namespace FaceBERN_
                     return true;
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -390,7 +423,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -421,7 +454,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -452,28 +485,36 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
         [Test]
         public bool ClearText(int browser, IWebElement element)
         {
-            IWebDriver driver = GetDriver(browser);
+            dynamic driver = GetDriver(browser);
 
-            try
+            switch (browser)
             {
-                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                Assert.IsTrue(element.Displayed);
-            }
-            catch
-            {
-                return false;
-            }
+                default:
+                case Globals.FIREFOX:
+                    try
+                    {
+                        System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                        Assert.IsTrue(element.Displayed);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
 
-            element.Clear();
+                    element.Clear();
 
-            return true;
+                    return true;
+                case Globals.AWESOMIUM:
+                    // TODO
+                    return false;
+            }
         }
 
         [Test]
@@ -503,7 +544,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -534,7 +575,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -565,7 +606,7 @@ namespace FaceBERN_
                     }
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -739,7 +780,7 @@ namespace FaceBERN_
                     return (!(element.Size.IsEmpty));
                 case Globals.AWESOMIUM:
                     // TODO
-                    break;
+                    return false;
             }
         }
 
@@ -755,7 +796,8 @@ namespace FaceBERN_
                     }
                     break;
                 case Globals.AWESOMIUM:
-                    // TODO
+                    awesomium.DocumentReady -= OnDocumentReadyHandler;
+                    WebCore.Shutdown();
                     break;
             }
         }
