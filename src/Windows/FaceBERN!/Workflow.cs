@@ -24,7 +24,17 @@ namespace FaceBERN_
 
         public Thread ExecuteThread()
         {
-            Thread thread = new Thread(() => Execute(Main.browserModeComboBox.SelectedIndex));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
+            int browser = -1;
+            if (Main.InvokeRequired)
+            {
+                Main.Invoke(new MethodInvoker(delegate() { browser = Main.browserModeComboBox.SelectedIndex; }));
+            }
+            else
+            {
+                browser = Main.browserModeComboBox.SelectedIndex;
+            }
+
+            Thread thread = new Thread(() => Execute(browser));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
 
             Main.LogW("Attempting to start Workflow thread....", false);
 
@@ -48,7 +58,7 @@ namespace FaceBERN_
 
             SetExecState(Globals.STATE_WAITING);
 
-            Main.Refresh();
+            Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
             WebDriver webDriver = new WebDriver();
 

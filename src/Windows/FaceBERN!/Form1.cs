@@ -73,6 +73,10 @@ namespace FaceBERN_
             labelVersion.Text = Globals.__VERSION__;
 
             HideCaret(outBox.Handle);
+
+            /* Disable Awesomium option until we can get it working.  New York is coming up and I don't have time to figure that shit out, sorry.  --Kris */
+            browserModeComboBox.SelectedIndex = 1;
+            browserModeComboBox.Enabled = false;
         }
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
@@ -141,6 +145,7 @@ namespace FaceBERN_
 
                 Workflow workflow = new Workflow(this);
                 Globals.thread = workflow.ExecuteThread();
+                //workflow.Execute(browserModeComboBox.SelectedIndex);  // Use this if you want to debug on a single thread (be sure to comment the ExecuteThread() call).  --Kris
 
                 LogW("Workflow thread detached from form thread successfully.");
             }
@@ -231,7 +236,7 @@ namespace FaceBERN_
         {
             notifyIcon1.MouseDoubleClick += notifyIcon1_DoubleClick;
             trayIcon = notifyIcon1.Icon;
-            browserModeComboBox.SelectedIndex = 0;
+            //browserModeComboBox.SelectedIndex = 0;  // Uncomment when Awesomium is finally working.  --Kris
             notifyIcon1.Visible = false;
         }
 

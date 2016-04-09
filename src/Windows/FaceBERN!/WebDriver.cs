@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FaceBERN_
@@ -26,6 +27,8 @@ namespace FaceBERN_
         private WebView awesomium;
         private bool documentReady;
 
+        SynchronizationContext awesomiumContext;
+
         [TestFixtureSetUp]
         public void FixtureSetup(int browser)
         {
@@ -36,7 +39,20 @@ namespace FaceBERN_
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
                     break;
                 case Globals.AWESOMIUM:
-                    awesomium = WebCore.CreateWebView(800, 600);
+                    Thread awesomiumThread = new System.Threading.Thread(new System.Threading.ThreadStart(() =>
+                    {
+                        WebCore.Started += (s, e) =>
+                        {
+                            awesomiumContext = SynchronizationContext.Current;
+                        };
+
+                        WebCore.Run();
+                    }));
+
+                    awesomiumThread.Start();
+                    WebCore.Initialize(new WebConfig() { });
+                    //WebCore.Initialize(new WebConfig(), true);
+                    awesomium = WebCore.CreateWebView(1024, 768, WebViewType.Window);
                     break;
             }
         }
@@ -50,10 +66,19 @@ namespace FaceBERN_
                     _driverFirefox.Navigate().GoToUrl(URL);
                     break;
                 case Globals.AWESOMIUM:
-                    awesomium.Source = new Uri(URL);
+                    awesomiumContext.Post(state =>
+                    {
+                        awesomium.Source = new Uri(URL);
+                    }, null);
+                    //awesomium.Source = new Uri(URL);
                     documentReady = false;
-                    awesomium.DocumentReady += OnDocumentReadyHandler;
-                    WebCore.Run();
+                    /*Task t = new Task(() =>
+                    {
+                        awesomium.DocumentReady += OnDocumentReadyHandler;
+                        awesomium.Source = new Uri(URL);
+                        WebCore.Run();
+                    });
+                    t.Start();*/
                     break;
             }
         }
