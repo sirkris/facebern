@@ -26,6 +26,12 @@ namespace FaceBERN_
             private set;
         }
 
+        internal bool remember
+        {
+            get;
+            private set;
+        }
+
         public LoginPrompt(string site)
         {
             this.site = site;
@@ -42,6 +48,7 @@ namespace FaceBERN_
             /* This is just the basic form.  Data is handled by the caller.  --Kris */
             this.u = usernameTextBox.Text;
             this.p = passwordTextBox.Text;
+            this.remember = rememberCheckBox.Checked;
             this.DialogResult = DialogResult.OK;
             this.Close();
         }

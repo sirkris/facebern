@@ -60,43 +60,8 @@ namespace FaceBERN_
 
             Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
-            WebDriver webDriver = new WebDriver();
+            GOTV();
 
-            webDriver.FixtureSetup(browser);
-            webDriver.TestSetUp(browser, "http://www.facebook.com");
-
-            if (webDriver.GetElementById(browser, "loginbutton") != null)
-            {
-                Credentials credentials = new Credentials();
-
-                SecureString u = null;
-                SecureString p = null;
-
-                LoginPrompt loginPrompt = new LoginPrompt("Facebook");
-                Main.Invoke((MethodInvoker)delegate()
-                {
-                    DialogResult res = loginPrompt.ShowDialog();
-                    if (res == DialogResult.OK)
-                    {
-                        u = credentials.ToSecureString(loginPrompt.u);
-                        p = credentials.ToSecureString(loginPrompt.p);
-                    }
-                });
-
-                if (u != null && p != null && u.Length > 0 && p.Length > 0)
-                {
-                    webDriver.TypeInId(browser, "email", credentials.ToString(u));
-
-                    webDriver.TypeInId(browser, "pass", credentials.ToString(p));
-
-                    dynamic element = webDriver.GetElementById(browser, "u_0_y");
-                    webDriver.ClickElement(browser, element);
-                }
-                else
-                {
-                    // TODO - Abort if no credentials given.  --Kris
-                }
-            }
 
             /* Loop until terminated by the user.  --Kris */
             while (true)
@@ -105,6 +70,81 @@ namespace FaceBERN_
             }
 
             Ready();
+        }
+
+        private void GOTV()
+        {
+            /* Initialize the Selenium WebDriver.  --Kris */
+            WebDriver webDriver = new WebDriver();
+
+            /* Initialize the browser and navigate to Facebook.  --Kris */
+            webDriver.FixtureSetup(browser);
+            webDriver.TestSetUp(browser, "http://www.facebook.com");
+
+            /* If needed, prompt the user for username/password or use the encrypted copy in the system registry.  --Kris */
+            if (webDriver.GetElementById(browser, "loginbutton") != null)
+            {
+                Credentials credentials = new Credentials();
+
+                SecureString u = credentials.GetUsername();  // Load encrypted username if stored in registry.  --Kris
+                SecureString p = credentials.GetPassword();  // Load encrypted password if stored in registry.  --Kris
+                bool remember = false;
+
+                if (u == null || p == null)
+                {
+                    Log("No stored credentials found.  Prompting for user input....");
+                    LoginPrompt loginPrompt = new LoginPrompt("Facebook");  // Display the login prompt window.  --Kris
+                    Main.Invoke((MethodInvoker)delegate()
+                    {
+                        DialogResult res = loginPrompt.ShowDialog();
+                        if (res == DialogResult.OK)
+                        {
+                            u = credentials.ToSecureString(loginPrompt.u);
+                            p = credentials.ToSecureString(loginPrompt.p);
+                            remember = loginPrompt.remember;
+                        }
+                    });
+                }
+                else
+                {
+                    Log("Facebook credentials loaded successfully.");
+                }
+
+                if (u != null && p != null && u.Length > 0 && p.Length > 0)
+                {
+                    /* Encrypt and store the credentials in the system registry if the option is checked.  --Kris */
+                    if (remember)
+                    {
+                        if (credentials.SetFacebook(u, p))
+                        {
+                            Log("Facebook credentials saved successfully.");
+                        }
+                        else
+                        {
+                            Log("Error saving Facebook credentials!");
+                        }
+                    }
+
+                    /* Enter the username and password into the login form on Facebook.  --Kris */
+                    webDriver.TypeInId(browser, "email", credentials.ToString(u));
+                    webDriver.TypeInId(browser, "pass", credentials.ToString(p));
+
+                    /* Get this sensitive data out of active memory.  --Kris */
+                    credentials.Destroy();
+                    credentials = null;
+
+                    /* Click the login button on Facebook.  --Kris */
+                    dynamic element = webDriver.GetElementById(browser, "u_0_y");
+                    webDriver.ClickElement(browser, element);
+
+                    // TODO - Check for successful login and log accordingly, then do the magic Bernie friends search.  --Kris
+                }
+                else
+                {
+                    Log("Unable to login to Facebook due to lack of credentials.  GOTV aborted.");
+                    return;
+                }
+            }
         }
 
         private void Ready()

@@ -11,6 +11,7 @@ using Selenium;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading;
@@ -37,6 +38,7 @@ namespace FaceBERN_
                 case Globals.FIREFOX:
                     _driverFirefox = new FirefoxDriver();
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                    Maximize(browser);
                     break;
                 case Globals.AWESOMIUM:
                     Thread awesomiumThread = new System.Threading.Thread(new System.Threading.ThreadStart(() =>
@@ -157,6 +159,40 @@ namespace FaceBERN_
                     return awesomium;
             }
         }
+
+        [Test]
+        public void Maximize(int browser)
+        {
+            IWebDriver driver = GetDriver(browser);
+
+            string script;
+            string name;
+
+            /* Just in case the black magic below doesn't work....  --Kris */
+            script = "window.moveTo( 0, 1 ); ";
+            script += "window.resizeTo( screen.width, screen.height );";
+
+            ((IJavaScriptExecutor)driver).ExecuteScript(script);
+
+            name = "ed47cd2a4fcb5534a49f6eeb3bfcc564";
+
+            script = "document.title='" + name + "';";
+
+            ((IJavaScriptExecutor)driver).ExecuteScript(script);
+
+            /* This is some real voodoo magic here!  Muaa ha ha ha!!  --Kris */
+            IntPtr hWnd = FindWindow(null, name + " - " + Globals.BrowserPIDName(browser));
+            if (!hWnd.Equals(IntPtr.Zero))
+            {
+                ShowWindowAsync(hWnd, 3);  // 3 = Maximize!  --Kris
+            }
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr FindWindow(string sClassName, string sAppName);
 
         [Test]
         public dynamic GetElementById(int browser, string elementid, bool iefix = false)

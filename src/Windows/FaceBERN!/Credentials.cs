@@ -62,8 +62,8 @@ namespace FaceBERN_
                     }
                 }
 
-                byte[] cU = ProtectedData.Protect(ToByteArray(username), facebookEntropy, DataProtectionScope.CurrentUser);
-                byte[] cP = ProtectedData.Protect(ToByteArray(password), facebookEntropy, DataProtectionScope.CurrentUser);
+                byte[] cU = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(username)), facebookEntropy, DataProtectionScope.CurrentUser);
+                byte[] cP = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(password)), facebookEntropy, DataProtectionScope.CurrentUser);
 
                 facebookKey.SetValue("entropy", facebookEntropy, RegistryValueKind.Binary);
                 facebookKey.SetValue("cU", cU, RegistryValueKind.Binary);
@@ -92,8 +92,8 @@ namespace FaceBERN_
                 byte[] cU = (byte[]) facebookKey.GetValue("cU", null);
                 byte[] cP = (byte[]) facebookKey.GetValue("cP", null);
 
-                facebookUsername = (cU != null ? FromByteArray(ProtectedData.Unprotect(cU, facebookEntropy, DataProtectionScope.CurrentUser)) : null);
-                facebookPassword = (cP != null ? FromByteArray(ProtectedData.Unprotect(cP, facebookEntropy, DataProtectionScope.CurrentUser)) : null);
+                facebookUsername = (cU != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(cU, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
+                facebookPassword = (cP != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(cP, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
             }
             catch (IOException e)
             {
@@ -146,6 +146,11 @@ namespace FaceBERN_
         // Use this sparingly and don't store the return in a variable if you can avoid it.  Should only be used for on-the-fly conversion when absolutely needed.  --Kris
         internal string ToString(SecureString sStr)
         {
+            if (sStr == null)
+            {
+                return null;
+            }
+            
             IntPtr output = IntPtr.Zero;
 
             try
