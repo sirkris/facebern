@@ -160,7 +160,13 @@ namespace FaceBERN_
                         return;
                     }
 
-                    // TODO - Pick a state (e.g. New York, California, etc). using some kind of logic.  I like to be specific on these matters.  --Kris
+                    /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
+                    foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
+                    {
+                        // TODO - Logic for when to perform GOTV.  --Kris
+                        // TODO - GOTV.  --Kris
+                    }
+
                     // TODO - Either find an existing GOTV event for that state or create a new one.  --Kris
                     // TODO - Do the magic Bernie friends search.  --Kris
                     // TODO - Quit signing my name on every fucking comment.  --Kris
