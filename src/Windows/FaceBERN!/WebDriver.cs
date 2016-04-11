@@ -197,101 +197,128 @@ namespace FaceBERN_
         [Test]
         public dynamic GetElementById(int browser, string elementid, bool iefix = false)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX:
-                    IWebDriver driver = GetDriver(browser);
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX:
+                        IWebDriver driver = GetDriver(browser);
 
-                    /*
-                     * This is necessary to fix a bug in the IE WebDriver.
-                     * Basically, what this does is "click" on a parent element in 
-                     * order to force IE to give focus to the element we're really 
-                     * clicking on.  Otherwise, the field will sometimes fail to gain 
-                     * focus without actually throwing an exception, which in turn will 
-                     * likely cause another part of the test to fail.
-                     * 
-                     * --Kris
-                     */
-                    if (iefix == true && browser == Globals.IE)
-                    {
-                        driver.FindElement(By.Id(elementid)).FindElement(By.XPath("..")).Click();
-                    }
+                        /*
+                         * This is necessary to fix a bug in the IE WebDriver.
+                         * Basically, what this does is "click" on a parent element in 
+                         * order to force IE to give focus to the element we're really 
+                         * clicking on.  Otherwise, the field will sometimes fail to gain 
+                         * focus without actually throwing an exception, which in turn will 
+                         * likely cause another part of the test to fail.
+                         * 
+                         * --Kris
+                         */
+                        if (iefix == true && browser == Globals.IE)
+                        {
+                            driver.FindElement(By.Id(elementid)).FindElement(By.XPath("..")).Click();
+                        }
 
-                    return driver.FindElement(By.Id(elementid));
-                case Globals.AWESOMIUM:
-                    dynamic document = (Awesomium.Core.JSObject) awesomium.ExecuteJavascriptWithResult("document");
-                    return document.getElementById(elementid);
+                        return driver.FindElement(By.Id(elementid));
+                    case Globals.AWESOMIUM:
+                        dynamic document = (Awesomium.Core.JSObject)awesomium.ExecuteJavascriptWithResult("document");
+                        return document.getElementById(elementid);
+                }
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
             }
         }
 
         [Test]
         public dynamic GetElementByName(int browser, string elementname, bool iefix = false)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX:
-                    IWebDriver driver = GetDriver(browser);
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX:
+                        IWebDriver driver = GetDriver(browser);
 
-                    /*
-                     * This is necessary to fix a bug in the IE WebDriver.
-                     * Basically, what this does is "click" on a parent element in 
-                     * order to force IE to give focus to the element we're really 
-                     * clicking on.  Otherwise, the field will sometimes fail to gain 
-                     * focus without actually throwing an exception, which in turn will 
-                     * likely cause another part of the test to fail.
-                     * 
-                     * --Kris
-                     */
-                    if (iefix == true && browser == Globals.IE)
-                    {
-                        driver.FindElement(By.Name(elementname)).FindElement(By.XPath("..")).Click();
-                    }
+                        /*
+                         * This is necessary to fix a bug in the IE WebDriver.
+                         * Basically, what this does is "click" on a parent element in 
+                         * order to force IE to give focus to the element we're really 
+                         * clicking on.  Otherwise, the field will sometimes fail to gain 
+                         * focus without actually throwing an exception, which in turn will 
+                         * likely cause another part of the test to fail.
+                         * 
+                         * --Kris
+                         */
+                        if (iefix == true && browser == Globals.IE)
+                        {
+                            driver.FindElement(By.Name(elementname)).FindElement(By.XPath("..")).Click();
+                        }
 
-                    return driver.FindElement(By.Name(elementname));
-                case Globals.AWESOMIUM:
-                    dynamic document = (Awesomium.Core.JSObject) awesomium.ExecuteJavascriptWithResult("document");
-                    return document.getElementByName(elementname);
-                    break;
+                        return driver.FindElement(By.Name(elementname));
+                    case Globals.AWESOMIUM:
+                        dynamic document = (Awesomium.Core.JSObject)awesomium.ExecuteJavascriptWithResult("document");
+                        return document.getElementByName(elementname);
+                }
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
             }
         }
 
         [Test]
         public dynamic GetElementByLinkText(int browser, string linktext, bool partial = false)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX:
-                    IWebDriver driver = GetDriver(browser);
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX:
+                        IWebDriver driver = GetDriver(browser);
 
-                    if (partial == true)
-                    {
-                        return driver.FindElement(By.PartialLinkText(linktext));
-                    }
-                    else
-                    {
-                        return driver.FindElement(By.LinkText(linktext));
-                    }
-                case Globals.AWESOMIUM:
-                    // TODO
-                    return null;
+                        if (partial == true)
+                        {
+                            return driver.FindElement(By.PartialLinkText(linktext));
+                        }
+                        else
+                        {
+                            return driver.FindElement(By.LinkText(linktext));
+                        }
+                    case Globals.AWESOMIUM:
+                        // TODO
+                        return null;
+                }
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
             }
         }
 
         [Test]
         public dynamic GetElementByXPath(int browser, string xpath)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX:
-                    IWebDriver driver = GetDriver(browser);
-                    return driver.FindElement(By.XPath(xpath));
-                case Globals.AWESOMIUM:
-                    // TODO
-                    return null;
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX:
+                        IWebDriver driver = GetDriver(browser);
+                        return driver.FindElement(By.XPath(xpath));
+                    case Globals.AWESOMIUM:
+                        // TODO
+                        return null;
+                }
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
             }
         }
 
@@ -341,6 +368,61 @@ namespace FaceBERN_
             }
 
             return true;
+        }
+
+        [Test]
+        // Modified from:  http://stackoverflow.com/questions/13244225/selenium-how-to-make-the-web-driver-to-wait-for-page-to-refresh-before-executin
+        public void WaitForPageLoad(int browser, int maxWaitTimeInSeconds = 60)
+        {
+            string state = string.Empty;
+            dynamic _driver = GetDriver(browser);
+            try
+            {
+                WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
+
+                //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
+                wait.Until(d =>
+                {
+                    try
+                    {
+                        state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        //Ignore
+                    }
+                    catch (NoSuchWindowException)
+                    {
+                        //when popup is closed, switch to last windows
+                        _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+                    }
+                    //In IE7 there are chances we may get state as loaded instead of complete
+                    return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+
+                });
+            }
+            catch (TimeoutException)
+            {
+                //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                    throw;
+            }
+            catch (NullReferenceException)
+            {
+                //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                    throw;
+            }
+            catch (WebDriverException)
+            {
+                if (_driver.WindowHandles.Count == 1)
+                {
+                    _driver.SwitchTo().Window(_driver.WindowHandles[0]);
+                }
+                state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
+                    throw;
+            }
         }
 
         [Test]

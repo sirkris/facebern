@@ -137,7 +137,36 @@ namespace FaceBERN_
                     dynamic element = webDriver.GetElementById(browser, "u_0_y");
                     webDriver.ClickElement(browser, element);
 
+                    Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
+                    webDriver.WaitForPageLoad(browser);
+
                     // TODO - Check for successful login and log accordingly, then do the magic Bernie friends search.  --Kris
+                    /* Check for successful login.  --Kris */
+                    if (webDriver.GetElementById(browser, "loginbutton") == null)
+                    {
+                        if (webDriver.GetElementById(browser, "u_0_1") != null)
+                        {
+                            Log("Login to Facebook successful.");
+                        }
+                        else
+                        {
+                            Log("Unexpected post-login page data for Facebook!  GOTV aborted.");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        Log("Login to Facebook FAILED!  GOTV aborted.");
+                        return;
+                    }
+
+                    // TODO - Pick a state (e.g. New York, California, etc). using some kind of logic.  I like to be specific on these matters.  --Kris
+                    // TODO - Either find an existing GOTV event for that state or create a new one.  --Kris
+                    // TODO - Do the magic Bernie friends search.  --Kris
+                    // TODO - Quit signing my name on every fucking comment.  --Kris
+                    // TODO - Change my mind and decide to keep doing it just to piss people off.  --Kris
+                    // TODO - Send the invites.  --Kris
+                    // TODO - Persist invited users in the registry as an encrypted string; used for stats and avoiding duplicate invites.  --Kris
                 }
                 else
                 {
