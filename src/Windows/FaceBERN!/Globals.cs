@@ -38,6 +38,9 @@ namespace FaceBERN_
         public static Thread thread = null;
         public static int executionState = -2;
 
+        /* Global state configs container.  Individual states setup in Form1.SetStateDefaults.  --Kris */
+        public static Dictionary<string, States> StateConfigs;
+
         /* Global singletons.  --Kris */
         public static INI sINI;
         public static Log MainLog;

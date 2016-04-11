@@ -144,7 +144,7 @@ namespace FaceBERN_
                     /* Check for successful login.  --Kris */
                     if (webDriver.GetElementById(browser, "loginbutton") == null)
                     {
-                        if (webDriver.GetElementById(browser, "u_0_1") != null)
+                        if (webDriver.GetElementById(browser, "u_0_1") != null)  // Checks to see if the "Home" link is present.  --Kris
                         {
                             Log("Login to Facebook successful.");
                         }

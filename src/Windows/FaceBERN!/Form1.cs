@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
@@ -70,6 +71,8 @@ namespace FaceBERN_
                 + (Globals.MainINI != null ? Globals.MainINI : @"FaceBERN!.ini");
             Directory.CreateDirectory(Globals.ConfigDir);
 
+            SetStateDefaults();
+
             labelVersion.Text = Globals.__VERSION__;
 
             HideCaret(outBox.Handle);
@@ -77,6 +80,77 @@ namespace FaceBERN_
             /* Disable Awesomium option until we can get it working.  New York is coming up and I don't have time to figure that shit out, sorry.  --Kris */
             browserModeComboBox.SelectedIndex = 1;
             browserModeComboBox.Enabled = false;
+        }
+
+        public void SetStateDefaults()
+        {
+            Dictionary<string, States> states = new Dictionary<string, States>();
+
+            /* Add the state entries.  --Kris */
+            states.Add("AK", new States("", "Alaska", "2016-03-26", "Caucus", "Closed"));
+            states.Add("AL", new States("", "Alabama", "2016-03-01", "Primary", "Open"));
+            states.Add("AR", new States("", "Arkansas", "2016-03-01", "Primary", "Open"));
+            states.Add("AZ", new States("", "Arizona", "2016-03-22", "Primary", "Closed"));
+            states.Add("CA", new States("", "California", "2016-06-07", "Primary", "Semi-Closed"));
+            states.Add("CO", new States("", "Colorado", "2016-03-01", "Caucus", "Closed"));
+            states.Add("CT", new States("", "Connecticut", "2016-04-26", "Primary", "Closed"));
+            states.Add("DE", new States("", "Delaware", "2016-04-26", "Primary", "Closed"));
+            states.Add("FL", new States("", "Florida", "2016-03-15", "Primary", "Closed"));
+            states.Add("GA", new States("", "Georgia", "2016-03-01", "Primary", "Open"));
+            states.Add("HI", new States("", "Hawaii", "2016-03-26", "Caucus", "Semi-Closed"));
+            states.Add("IA", new States("", "Iowa", "2016-02-01", "Caucus", "Semi-Open"));
+            states.Add("ID", new States("", "Idaho", "2016-03-22", "Caucus", "Open"));
+            states.Add("IL", new States("", "Illinois", "2016-03-15", "Primary", "Open"));
+            states.Add("IN", new States("", "Indiana", "2016-05-03", "Primary", "Open"));
+            states.Add("KS", new States("", "Kansas", "2016-03-05", "Caucus", "Closed"));
+            states.Add("KY", new States("", "Kentucky", "2016-05-17", "Primary", "Closed"));
+            states.Add("LA", new States("", "Louisiana", "2016-03-05", "Primary", "Closed"));
+            states.Add("MA", new States("", "Massachusetts", "2016-03-01", "Primary", "Semi-Closed"));
+            states.Add("MD", new States("", "Maryland", "2016-04-26", "Primary", "Closed"));
+            states.Add("ME", new States("", "Maine", "2016-03-06", "Caucus", "Closed"));
+            states.Add("MI", new States("", "Michigan", "2016-03-08", "Primary", "Open"));
+            states.Add("MN", new States("", "Minnesota", "2016-03-01", "Caucus", "Open"));
+            states.Add("MO", new States("", "Missouri", "2016-03-15", "Primary", "Open"));
+            states.Add("MS", new States("", "Mississippi", "2016-03-08", "Primary", "Open"));
+            states.Add("MT", new States("", "Montana", "2016-06-07", "Primary", "Open"));
+            states.Add("NC", new States("", "North Carolina", "2016-03-15", "Primary", "Semi-Closed"));
+            states.Add("ND", new States("", "North Dakota", "2016-06-07", "Caucus", "Closed"));
+            states.Add("NE", new States("", "Nebraska", "2016-03-05", "Caucus", "Closed"));
+            states.Add("NH", new States("", "New Hampshire", "2016-02-09", "Primary", "Semi-Closed"));
+            states.Add("NJ", new States("", "New Jersey", "2016-06-07", "Primary", "Semi-Closed"));
+            states.Add("NM", new States("", "New Mexico", "2016-06-07", "Primary", "Closed"));
+            states.Add("NV", new States("", "Nevada", "2016-02-20", "Caucus", "Closed"));
+            states.Add("NY", new States("", "New York", "2016-04-19", "Primary", "Closed"));
+            states.Add("OH", new States("", "Ohio", "2016-03-15", "Primary", "Semi-Open"));
+            states.Add("OK", new States("", "Oklahoma", "2016-03-01", "Primary", "Semi-Closed"));
+            states.Add("OR", new States("", "Oregon", "2016-05-17", "Primary", "Closed"));
+            states.Add("PA", new States("", "Pennsylvania", "2016-04-26", "Primary", "Closed"));
+            states.Add("RI", new States("", "Rhode Island", "2016-04-26", "Primary", "Semi-Closed"));
+            states.Add("SC", new States("", "South Carolina", "2016-02-27", "Primary", "Open"));
+            states.Add("SD", new States("", "South Dakota", "2016-06-07", "Primary", "Semi-Closed"));
+            states.Add("TN", new States("", "Tennessee", "2016-03-01", "Primary", "Open"));
+            states.Add("TX", new States("", "Texas", "2016-03-01", "Primary", "Open"));
+            states.Add("UT", new States("", "Utah", "2016-03-22", "Caucus", "Semi-Open"));
+            states.Add("VA", new States("", "Virginia", "2016-03-01", "Primary", "Open"));
+            states.Add("VT", new States("", "Vermont", "2016-03-01", "Primary", "Open"));
+            states.Add("WA", new States("", "Washington", "2016-03-26", "Caucus", "Open"));
+            states.Add("WI", new States("", "Wisconsin", "2016-04-05", "Primary", "Open"));
+            states.Add("WV", new States("", "West Virginia", "2016-05-10", "Primary", "Semi-Closed"));
+            states.Add("WY", new States("", "Wyoming", "2016-04-09", "Caucus", "Closed"));
+            states.Add("DC", new States("", "District of Columbia", "2016-06-14", "Primary", "Closed"));
+            states.Add("AS", new States("", "American Samoa", "2016-03-01", "Caucus", "Closed"));
+            states.Add("GU", new States("", "Guam", "2016-05-07", "Caucus", "Closed"));
+            states.Add("MP", new States("", "Northern Mariana Islands", "2016-03-12", "Caucus", "Closed"));
+            states.Add("PR", new States("", "Puerto Rico", "2016-06-05", "Caucus", "Open"));
+            states.Add("VI", new States("", "U.S. Virgin Islands", "2016-06-04", "Caucus", "Open"));
+            states.Add("DA", new States("", "Democrats Abroad", "2016-03-08", "Primary", "Closed"));
+
+            foreach (KeyValuePair<string, States> state in states)
+            {
+                states[state.Key].abbr = state.Key;
+            }
+
+            Globals.StateConfigs = states;
         }
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
@@ -218,6 +292,42 @@ namespace FaceBERN_
             }
 
             LogConfig();
+
+            LoadStateINIs();
+        }
+
+        public void LoadStateINIs(string sectionName = "Settings")
+        {
+            string configDir = (Globals.ConfigDir != null ? Globals.ConfigDir : "");
+            foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
+            {
+                string configPath = configDir + Path.DirectorySeparatorChar + state.Key + ".ini";
+                if (File.Exists(configPath) == false)
+                {
+                    LogW("State config file '" + configPath + "' does not exist.  Creating....", false);
+
+                    Dictionary<string, Dictionary<string, string>> config = new Dictionary<string, Dictionary<string, string>>();
+
+                    config[sectionName] = new Dictionary<string, string>();
+                    config[sectionName].Add("abbr", state.Value.abbr);
+                    config[sectionName].Add("name", state.Value.name);
+                    config[sectionName].Add("primaryDate", state.Value.primaryDate.ToString("yyyy-MM-dd"));
+                    config[sectionName].Add("primaryType", state.Value.primaryType);
+                    config[sectionName].Add("primaryAccess", state.Value.primaryAccess);
+
+                    Globals.sINI.Create(configPath, "FaceBERN! State Configuration File for " + state.Value.name, "Generated by Version " + Globals.__VERSION__, config);
+                }
+
+                Dictionary<string, string> conf = Globals.sINI.Load(configPath);
+
+                Globals.StateConfigs[state.Key].abbr = conf["abbr"];
+                Globals.StateConfigs[state.Key].name = conf["name"];
+                Globals.StateConfigs[state.Key].primaryAccess = conf["primaryAccess"];
+                Globals.StateConfigs[state.Key].primaryDate = DateTime.ParseExact(conf["primaryDate"], "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                Globals.StateConfigs[state.Key].primaryType = conf["primaryType"];
+
+                LogW("Loaded state configuration for " + state.Value.name, false);
+            }
         }
 
         internal void LogConfig()
