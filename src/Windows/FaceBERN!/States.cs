@@ -15,14 +15,16 @@ namespace FaceBERN_
         public DateTime primaryDate;
         public string primaryType;
         public string primaryAccess;
+        public string facebookId;
 
-        public States(string abbr, string name, string primaryDateStr, string primaryType, string primaryAccess)
+        public States(string abbr, string name, string primaryDateStr, string primaryType, string primaryAccess, string facebookId)
         {
             this.abbr = abbr;
             this.name = name;
             this.primaryDate = DateTime.ParseExact(primaryDateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture);
             this.primaryType = primaryType;
             this.primaryAccess = primaryAccess;
+            this.facebookId = facebookId;
         }
 
         public States()
