@@ -85,6 +85,12 @@ namespace FaceBERN_
             }
         }
 
+        /* Alias for TestSetUp.  --Kris */
+        public void GoToUrl(int browser, string URL)
+        {
+            TestSetUp(browser, URL);
+        }
+
         // Used by Awesomium only.  --Kris
         private void OnDocumentReadyHandler(Object sender, DocumentReadyEventArgs e)
         {

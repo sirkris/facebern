@@ -160,6 +160,9 @@ namespace FaceBERN_
                         return;
                     }
 
+                    // TEST
+                    getFacebookFriendsOfFriends(ref webDriver, "NY");
+
                     /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
                     foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
                     {
@@ -180,6 +183,46 @@ namespace FaceBERN_
                     return;
                 }
             }
+        }
+
+        private List<Person> getFacebookFriendsOfFriends(ref WebDriver webDriver, string stateAbbr = null, bool bernieSupportersOnly = true)
+        {
+            List<Person> res = new List<Person>();
+
+            string logBaseMsg = "Searching Facebook for friends of friends";
+            string logMsg = "";
+
+            /* Build the search URL string.  Graph search syntax is deprecated and too unreliable so we'll just do it this way.  --Kris */
+            string URL = "https://www.facebook.com/search";
+
+            if (bernieSupportersOnly)
+            {
+                foreach (string facebookID in Globals.bernieFacebookIDs)
+                {
+                    URL += "/" + facebookID + "/likers";
+                }
+
+                URL += "/union";
+                logMsg += " " + (logMsg == "" ? "who" : "and") + " like Bernie Sanders";
+            }
+
+            if (stateAbbr != null)
+            {
+                URL += "/" + Globals.StateConfigs[stateAbbr].facebookId + "/residents";
+                logMsg += " " + (logMsg == "" ? "who" : "and") + " live in " + Globals.StateConfigs[stateAbbr].name;
+            }
+
+            URL += "/present/me/friends/friends/intersect";
+
+            Log(logBaseMsg + logMsg + "....");
+
+            /* Navigate to the search page.  --Kris */
+            webDriver.GoToUrl(browser, URL);
+
+            // TODO - Keep scrolling to bottom until all friends are loaded.  --Kris
+            // TODO - Parse all friendsinto the res list.  --Kris
+
+            return res;
         }
 
         private void Ready()

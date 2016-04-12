@@ -71,6 +71,10 @@ namespace FaceBERN_
                 + (Globals.MainINI != null ? Globals.MainINI : @"FaceBERN!.ini");
             Directory.CreateDirectory(Globals.ConfigDir);
 
+            Globals.bernieFacebookIDs = new List<string>();
+            Globals.bernieFacebookIDs.Add("9124187907");
+            Globals.bernieFacebookIDs.Add("124955570892789");
+
             SetStateDefaults();
 
             labelVersion.Text = Globals.__VERSION__;

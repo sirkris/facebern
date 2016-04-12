@@ -37,6 +37,7 @@ namespace FaceBERN_
         public static Process process = null;
         public static Thread thread = null;
         public static int executionState = -2;
+        public static List<string> bernieFacebookIDs;
 
         /* Global state configs container.  Individual states setup in Form1.SetStateDefaults.  --Kris */
         public static Dictionary<string, States> StateConfigs;
