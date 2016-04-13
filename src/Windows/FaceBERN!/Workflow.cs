@@ -140,7 +140,6 @@ namespace FaceBERN_
                     Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
                     webDriver.WaitForPageLoad(browser);
 
-                    // TODO - Check for successful login and log accordingly, then do the magic Bernie friends search.  --Kris
                     /* Check for successful login.  --Kris */
                     if (webDriver.GetElementById(browser, "loginbutton") == null)
                     {
@@ -161,7 +160,7 @@ namespace FaceBERN_
                     }
 
                     // TEST
-                    getFacebookFriendsOfFriends(ref webDriver, "NY");
+                    getFacebookFriendsOfFriends(ref webDriver, "WA");
 
                     /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
                     foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
@@ -219,8 +218,61 @@ namespace FaceBERN_
             /* Navigate to the search page.  --Kris */
             webDriver.GoToUrl(browser, URL);
 
-            // TODO - Keep scrolling to bottom until all friends are loaded.  --Kris
-            // TODO - Parse all friendsinto the res list.  --Kris
+            /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
+            OpenQA.Selenium.IWebDriver iWebDriver = webDriver.GetDriver(browser);
+            webDriver.ScrollToBottom(ref iWebDriver);
+
+            /* Scrape the results from the page source.  --Kris */
+            string[] resRaw = new string[32767];
+            resRaw = webDriver.GetPageSource(browser).Split(new string[] { "<div class=\"_gll\">" }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 1; i < resRaw.Length; i++)
+            {
+                if (resRaw[i] == null || resRaw[i].Length < 40 || resRaw[i].Substring(0, 34) != "<a href=\"https://www.facebook.com/")
+                {
+                    continue;
+                }
+
+                /* Thought about using regex, then decided to stab myself in the forehead with an icepick, instead.  I'm happy with my choice.  --Kris */
+                string start = "<a href=\"https://www.facebook.com/";
+                string end = "\">";
+                // NOTE - We're not going to be using these IDs in any graph searches so we don't need to worry about retrieving the actual numeric ID; the username is sufficient.  --Kris
+                string userId = resRaw[i].Substring(resRaw[i].IndexOf(start) + start.Length, resRaw[i].IndexOf(end) - (resRaw[i].IndexOf(start) + start.Length));
+                if (userId.IndexOf("?") != -1)
+                {
+                    userId = userId.Substring(0, userId.IndexOf("?"));  // Strips any URL parameters that Facebook might have tagged-on.  --Kris
+                }
+
+                start = "<div class=\"_5d-5\">";
+                end = "</div>";  // It's the first one so that makes it easy.  --Kris
+
+                string name = resRaw[i].Substring(resRaw[i].IndexOf(start) + start.Length, resRaw[i].IndexOf(end) - (resRaw[i].IndexOf(start) + start.Length));
+
+                Person per = new Person();
+
+                if (bernieSupportersOnly == true)
+                {
+                    per.setBernieSupporter(true);
+                }
+                else
+                {
+                    // TODO - Figure out if this user likes Bernie.  Don't need this for v1.0 since the priority for now is GOTV.  Will revisit when there's more time.  --Kris
+                }
+
+                if (stateAbbr != null)
+                {
+                    per.setStateAbbr(stateAbbr);
+                }
+                else
+                {
+                    // TODO - Will be needed if we do any inter-state searches.  Low priority for now since we can just search state-by-state.  --Kris
+                }
+
+                per.setFacebookID(userId);
+                per.setName(name);
+
+                res.Add(per);
+            }
 
             return res;
         }

@@ -52,10 +52,11 @@ namespace FaceBERN_
                 facebookUsername = username;
                 facebookPassword = password;
 
-                facebookEntropy = (byte[]) facebookKey.GetValue("entropy", new byte[20]);
+                facebookEntropy = (byte[]) facebookKey.GetValue("entropy", null);
                 
                 if (facebookEntropy == null)
                 {
+                    facebookEntropy = new byte[20];
                     using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
                     {
                         rng.GetBytes(facebookEntropy);

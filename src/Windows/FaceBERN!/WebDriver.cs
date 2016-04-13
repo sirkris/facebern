@@ -377,6 +377,36 @@ namespace FaceBERN_
         }
 
         [Test]
+        public void ScrollToBottom(ref IWebDriver driver, int scrollLimit = 100)
+        {
+            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+            
+            IJavaScriptExecutor jse = (IJavaScriptExecutor) driver;
+            //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
+            const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
+            const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
+
+            if (scrollLimit > 0)
+            {
+                bool done = false;
+                int i = scrollLimit;
+                do
+                {
+                    jse.ExecuteScript(scrollScript);
+                    System.Threading.Thread.Sleep(3000);
+                    done = (bool)jse.ExecuteScript(checkScript);
+                    i--;
+                } while (done == false && i > 0);
+            }
+            else
+            {
+                jse.ExecuteScript(scrollScript);
+            }
+
+            System.Threading.Thread.Sleep(3000);
+        }
+
+        [Test]
         // Modified from:  http://stackoverflow.com/questions/13244225/selenium-how-to-make-the-web-driver-to-wait-for-page-to-refresh-before-executin
         public void WaitForPageLoad(int browser, int maxWaitTimeInSeconds = 60)
         {
