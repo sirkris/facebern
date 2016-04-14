@@ -274,6 +274,8 @@ namespace FaceBERN_
                 res.Add(per);
             }
 
+            Log("Retrieved " + res.Count.ToString() + " results for friends of friends" + logMsg + ".");
+
             return res;
         }
 
