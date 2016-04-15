@@ -422,13 +422,13 @@ namespace FaceBERN_
                 return false;
             }
 
-            if (Globals.StateConfigs[stateAbbr].facebookId == null || Globals.StateConfigs[stateAbbr].facebookId.Length == 0)
+            if (Globals.StateConfigs[stateAbbr].FTBEventId == null || Globals.StateConfigs[stateAbbr].FTBEventId.Length == 0)
             {
                 Log("Warning:  No Facebook event ID found for " + stateAbbr + "!");
                 return false;
             }
 
-            webDriver.GoToUrl(browser, "https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].facebookId);
+            webDriver.GoToUrl(browser, "https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
 
             System.Threading.Thread.Sleep(3000);  // Just in case the driver doesn't wait long enough on its own.  --Kris
 

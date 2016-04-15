@@ -16,8 +16,9 @@ namespace FaceBERN_
         public string primaryType;
         public string primaryAccess;
         public string facebookId;
+        public string FTBEventId;
 
-        public States(string abbr, string name, string primaryDateStr, string primaryType, string primaryAccess, string facebookId)
+        public States(string abbr, string name, string primaryDateStr, string primaryType, string primaryAccess, string facebookId, string FTBEventId = null)
         {
             this.abbr = abbr;
             this.name = name;
@@ -25,6 +26,7 @@ namespace FaceBERN_
             this.primaryType = primaryType;
             this.primaryAccess = primaryAccess;
             this.facebookId = facebookId;
+            this.FTBEventId = FTBEventId;
         }
 
         public States()
