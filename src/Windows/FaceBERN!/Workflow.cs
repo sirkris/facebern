@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using OpenQA.Selenium;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security;
@@ -72,7 +75,31 @@ namespace FaceBERN_
             Ready();
         }
 
+        // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
         private void GOTV()
+        {
+            WebDriver webDriver = FacebookLogin();
+
+            // TEST
+            GetFacebookFriendsOfFriends(ref webDriver, "WA");
+
+            /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
+            foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
+            {
+                // TODO - Logic for when to perform GOTV.  --Kris
+                // TODO - GOTV.  --Kris
+            }
+
+            // TODO - Either find an existing GOTV event for that state or create a new one.  --Kris
+            // TODO - Do the magic Bernie friends search.  --Kris
+            // TODO - Quit signing my name on every fucking comment.  --Kris
+            // TODO - Change my mind and decide to keep doing it just to piss people off.  --Kris
+            // TODO - Send the invites.  --Kris
+            // TODO - Persist invited users in the registry as an encrypted string; used for stats and avoiding duplicate invites.  --Kris
+        }
+
+        /* Open a new browser session and login to Facebook.  --Kris */
+        private WebDriver FacebookLogin(int retry = 5)
         {
             /* Initialize the Selenium WebDriver.  --Kris */
             WebDriver webDriver = new WebDriver();
@@ -149,42 +176,92 @@ namespace FaceBERN_
                         }
                         else
                         {
-                            Log("Unexpected post-login page data for Facebook!  GOTV aborted.");
-                            return;
+                            Log("Unexpected post-login page data for Facebook!");
+                            webDriver.error = WebDriver.ERROR_UNEXPECTED;
                         }
                     }
                     else
                     {
-                        Log("Login to Facebook FAILED!  GOTV aborted.");
-                        return;
+                        Log("Login to Facebook FAILED!");
+                        // Note - Sometimes this will happen with good credentials due to an odd, intermittent bug where, upon clicking login, the page instead reloads in some Asian language.  --Kris
+                        webDriver.error = WebDriver.ERROR_BADCREDENTIALS;
                     }
-
-                    // TEST
-                    getFacebookFriendsOfFriends(ref webDriver, "WA");
-
-                    /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
-                    foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
-                    {
-                        // TODO - Logic for when to perform GOTV.  --Kris
-                        // TODO - GOTV.  --Kris
-                    }
-
-                    // TODO - Either find an existing GOTV event for that state or create a new one.  --Kris
-                    // TODO - Do the magic Bernie friends search.  --Kris
-                    // TODO - Quit signing my name on every fucking comment.  --Kris
-                    // TODO - Change my mind and decide to keep doing it just to piss people off.  --Kris
-                    // TODO - Send the invites.  --Kris
-                    // TODO - Persist invited users in the registry as an encrypted string; used for stats and avoiding duplicate invites.  --Kris
                 }
                 else
                 {
-                    Log("Unable to login to Facebook due to lack of credentials.  GOTV aborted.");
-                    return;
+                    Log("Unable to login to Facebook due to lack of credentials.");
+                    webDriver.error = WebDriver.ERROR_NOCREDENTIALS;
                 }
             }
+
+            if (webDriver.error > 0)
+            {
+                Log("Closing browser session....");
+                webDriver.FixtureTearDown(browser);
+
+                retry--;
+                if (retry > 0)
+                {
+                    Log("Retrying Facebook login....");
+                    return FacebookLogin(retry);
+                }
+                else
+                {
+                    Log("Maximum retries reached without success.  Facebook login aborted.");
+                }
+            }
+            else
+            {
+                /* While we're here, let's grab the Facebook profile URL for this user and store it.  Login may be different so check every time.  --Kris */
+                string profileURL = null;
+                
+                IWebDriver w = webDriver.GetDriver(browser);
+                IWebElement ele = w.FindElement(By.CssSelector("[data-testid=\"blue_bar_profile_link\"]"));
+                if (ele != null)
+                {
+                    profileURL = ele.GetAttribute("href");
+                    if (profileURL != null && profileURL.Length > 0)
+                    {
+                        try
+                        {
+                            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                            RegistryKey facebookKey = appKey.CreateSubKey("Facebook");
+
+                            /* I don't think we need to bother encrypting this since it's just a public profile URL; if someone has access to your registry, you've got bigger problems, anyway.  --Kris */
+                            facebookKey.SetValue("profileURL", profileURL, RegistryValueKind.String);
+                            facebookKey.SetValue("lastLogin", DateTime.Now.Ticks.ToString(), RegistryValueKind.String);
+
+                            facebookKey.Flush();
+                            appKey.Flush();
+                            softwareKey.Flush();
+
+                            facebookKey.Close();
+                            appKey.Close();
+                            softwareKey.Close();
+
+                            Log("Facebook profile URL retrieved and stored successfully!");
+                        }
+                        catch (IOException e)
+                        {
+                            Log("Warning:  Error storing Facebook profile URL : " + e.Message);
+                        }
+                    }
+                    else
+                    {
+                        Log("Warning:  NULL or empty value found for Facebook profile URL!");
+                    }
+                }
+                else
+                {
+                    Log("Warning:  Unable to extract Facebook profile URL from page source!");
+                }
+            }
+
+            return webDriver;
         }
 
-        private List<Person> getFacebookFriendsOfFriends(ref WebDriver webDriver, string stateAbbr = null, bool bernieSupportersOnly = true)
+        private List<Person> GetFacebookFriendsOfFriends(ref WebDriver webDriver, string stateAbbr = null, bool bernieSupportersOnly = true)
         {
             List<Person> res = new List<Person>();
 
@@ -219,7 +296,7 @@ namespace FaceBERN_
             webDriver.GoToUrl(browser, URL);
 
             /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
-            OpenQA.Selenium.IWebDriver iWebDriver = webDriver.GetDriver(browser);
+            IWebDriver iWebDriver = webDriver.GetDriver(browser);
             webDriver.ScrollToBottom(ref iWebDriver);
 
             /* Scrape the results from the page source.  --Kris */

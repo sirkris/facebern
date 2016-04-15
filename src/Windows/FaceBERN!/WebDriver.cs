@@ -28,6 +28,11 @@ namespace FaceBERN_
         private WebView awesomium;
         private bool documentReady;
 
+        public int error = 0;
+        public const int ERROR_NOCREDENTIALS = 1;
+        public const int ERROR_BADCREDENTIALS = 2;
+        public const int ERROR_UNEXPECTED = 3;
+
         SynchronizationContext awesomiumContext;
 
         [TestFixtureSetUp]
