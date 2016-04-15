@@ -25,8 +25,11 @@ namespace FaceBERN_
         /* How long to wait for an action element to appear before dying.  --Kris */
         public static int __TIMEOUT__ = 3;  // Seconds
 
-        /* Seconds to wait between each browser iteration.  --Kris */
-        public static int __BROWSE_DELAY__ = 1;
+        /* How long to wait between each browser iteration.  --Kris */
+        public static int __BROWSE_DELAY__ = 1;  // Seconds
+
+        /* How long to wait between checks for having received the feelthebern.events friend request.  --Kris */
+        public static int __FTB_REQUEST_ACCESS_WAIT_INTERVAL__ = 60;  // Minutes
 
         /*
          * -- END GLOBAL SETTINGS --
@@ -48,8 +51,9 @@ namespace FaceBERN_
         public static Log WorkflowLog;
 
         /* Execution states (any state > 0 means that the Workflow thread is running).  --Kris */
-        public const int STATE_INITIALIZING = -2;  // Default state.
-        public const int STATE_BROKEN = -1;  // An unrecoverable error occurred.
+        public const int STATE_INITIALIZING = -3;  // Default state.
+        public const int STATE_ERROR = -2;  // A recoverable error has occurred.
+        public const int STATE_BROKEN = -1;  // An unrecoverable error has occurred.
         public const int STATE_READY = 0;  // Application is running but execution is either paused or not started yet (essentially the same thing).
         public const int STATE_VALIDATING = 1;  // Running sanity checks prior to a state change.
         public const int STATE_WAITING = 2;  // Sitting idle until some action needs to be taken (then switches to executing state).

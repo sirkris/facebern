@@ -179,6 +179,9 @@ namespace FaceBERN_
                 case Globals.STATE_INITIALIZING:
                     logState = "INITIALIZING";
                     break;
+                case Globals.STATE_ERROR:
+                    logState = "ERROR";
+                    break;
                 case Globals.STATE_BROKEN:
                     logState = "BROKEN";
                     break;

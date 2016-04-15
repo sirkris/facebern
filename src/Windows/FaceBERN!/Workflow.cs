@@ -27,6 +27,8 @@ namespace FaceBERN_
 
         public Thread ExecuteThread()
         {
+            SetExecState(Globals.STATE_VALIDATING);
+
             int browser = -1;
             if (Main.InvokeRequired)
             {
@@ -63,11 +65,12 @@ namespace FaceBERN_
 
             Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
+            // TEST - This will end up going into the loop below.  --Kris
             GOTV();
 
 
             /* Loop until terminated by the user.  --Kris */
-            while (true)
+            while (Globals.executionState > 0)
             {
                 // TODO - The actual work.  --Kris
             }
@@ -78,10 +81,42 @@ namespace FaceBERN_
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
         private void GOTV()
         {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
             WebDriver webDriver = FacebookLogin();
+            if (webDriver.error > 0)
+            {
+                Log("Error logging into Facebook.  GOTV aborted.");
+                return;
+            }
 
             // TEST
             GetFacebookFriendsOfFriends(ref webDriver, "WA");
+
+            int retries = 5;
+            while (!CheckFTBEventAccess("WA", ref webDriver) && retries > 0)
+            {
+                retries--;
+                Log("Access denied for state event page.");
+
+                if (retries > 0)
+                {
+                    RequestFTBInvitation();
+
+                    Log("Waiting " + Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__.ToString() + " minutes for retry....");
+                    System.Threading.Thread.Sleep(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__ * 60 * 1000);
+
+                    // TODO - Write function to check for and accept friend request from feelthebern.events.  --Kris
+                }
+                else
+                {
+                    Log("Retries exhausted.  Aborting GOTV.");
+                    SetExecState(Globals.STATE_ERROR);
+
+                    return;
+                }
+            }
 
             /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
             foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
@@ -96,11 +131,16 @@ namespace FaceBERN_
             // TODO - Change my mind and decide to keep doing it just to piss people off.  --Kris
             // TODO - Send the invites.  --Kris
             // TODO - Persist invited users in the registry as an encrypted string; used for stats and avoiding duplicate invites.  --Kris
+
+            SetExecState(lastState);
         }
 
         /* Open a new browser session and login to Facebook.  --Kris */
         private WebDriver FacebookLogin(int retry = 5)
         {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
             /* Initialize the Selenium WebDriver.  --Kris */
             WebDriver webDriver = new WebDriver();
 
@@ -109,6 +149,7 @@ namespace FaceBERN_
             webDriver.TestSetUp(browser, "http://www.facebook.com");
 
             /* If needed, prompt the user for username/password or use the encrypted copy in the system registry.  --Kris */
+            SetExecState(Globals.STATE_VALIDATING);
             if (webDriver.GetElementById(browser, "loginbutton") != null)
             {
                 Credentials credentials = new Credentials();
@@ -136,6 +177,8 @@ namespace FaceBERN_
                 {
                     Log("Facebook credentials loaded successfully.");
                 }
+
+                SetExecState(Globals.STATE_EXECUTING);
 
                 if (u != null && p != null && u.Length > 0 && p.Length > 0)
                 {
@@ -196,12 +239,16 @@ namespace FaceBERN_
 
             if (webDriver.error > 0)
             {
+                SetExecState(Globals.STATE_ERROR);
+
                 Log("Closing browser session....");
                 webDriver.FixtureTearDown(browser);
 
                 retry--;
                 if (retry > 0)
                 {
+                    SetExecState(Globals.STATE_VALIDATING);
+
                     Log("Retrying Facebook login....");
                     return FacebookLogin(retry);
                 }
@@ -256,6 +303,8 @@ namespace FaceBERN_
                 {
                     Log("Warning:  Unable to extract Facebook profile URL from page source!");
                 }
+
+                SetExecState(lastState);
             }
 
             return webDriver;
@@ -263,6 +312,9 @@ namespace FaceBERN_
 
         private List<Person> GetFacebookFriendsOfFriends(ref WebDriver webDriver, string stateAbbr = null, bool bernieSupportersOnly = true)
         {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
             List<Person> res = new List<Person>();
 
             string logBaseMsg = "Searching Facebook for friends of friends";
@@ -353,7 +405,80 @@ namespace FaceBERN_
 
             Log("Retrieved " + res.Count.ToString() + " results for friends of friends" + logMsg + ".");
 
+            SetExecState(lastState);
+
             return res;
+        }
+
+        /* Load the Facebook event page from feelthebern.events and return whether or not the user has access to the event.  --Kris */
+        private bool CheckFTBEventAccess(string stateAbbr, ref WebDriver webDriver)
+        {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_VALIDATING);
+
+            if (stateAbbr == null || stateAbbr.Length == 0 || !Globals.StateConfigs.ContainsKey(stateAbbr))
+            {
+                Log("Warning:  Unrecognized stateAbbr '" + stateAbbr + "' sent to CheckFTBEventAccess()!");
+                return false;
+            }
+
+            if (Globals.StateConfigs[stateAbbr].facebookId == null || Globals.StateConfigs[stateAbbr].facebookId.Length == 0)
+            {
+                Log("Warning:  No Facebook event ID found for " + stateAbbr + "!");
+                return false;
+            }
+
+            webDriver.GoToUrl(browser, "https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].facebookId);
+
+            System.Threading.Thread.Sleep(3000);  // Just in case the driver doesn't wait long enough on its own.  --Kris
+
+            SetExecState(lastState);
+
+            return (webDriver.GetPageSource(browser).IndexOf("Sorry, this page isn't available") == -1);
+        }
+
+        /* Load feelthebern.events in a separate browser session and attempt to get invited to the state events.  Note that it can take over an hour for the request to be processed.  --Kris */
+        private void RequestFTBInvitation()
+        {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_VALIDATING);
+
+            /* Retrieve the Facebook profile URL for the logged-in user from the registry.  It's automatically stored on login.  --Kris */
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey facebookKey = appKey.CreateSubKey("Facebook");
+
+            string profileURL = facebookKey.GetValue("profileURL", null, RegistryValueOptions.None).ToString();
+
+            /* Initialize the driver and navigate to feelthebern.events.  --Kris */
+            if (profileURL != null)
+            {
+                Log("Requesting invitation from feelthebern.events....");
+
+                SetExecState(Globals.STATE_EXECUTING);
+
+                WebDriver webDriver2 = new WebDriver();
+
+                webDriver2.FixtureSetup(browser);
+                webDriver2.TestSetUp(browser, "http://www.feelthebern.events");
+
+                webDriver2.TypeInXPath(browser, @"/html/body/div[2]/input", profileURL);
+                webDriver2.ClickOnXPath(browser, @"/html/body/div[2]/button");
+
+                System.Threading.Thread.Sleep(5000);
+
+                Log("Request sent.");
+
+                webDriver2.FixtureTearDown(browser);
+            }
+            else
+            {
+                SetExecState(Globals.STATE_ERROR);
+
+                Log("Unable to request feelthebern.events invitation due to unknown profile URL!");
+            }
+
+            SetExecState(lastState);
         }
 
         private void Ready()
