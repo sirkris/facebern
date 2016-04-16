@@ -16,13 +16,22 @@ namespace FaceBERN_
     public class Workflow
     {
         private string logName = "Workflow";
-        protected Log WorkflowLog;
+        public Log WorkflowLog;
         private Form1 Main;
         private int browser = 0;
 
-        public Workflow(Form1 Main)
+        public Workflow(Form1 Main, Log MainLog = null)
         {
             this.Main = Main;
+            if (MainLog == null)
+            {
+                InitLog();
+            }
+            else
+            {
+                WorkflowLog = MainLog;
+                WorkflowLog.Init("Workflow");
+            }
         }
 
         public Thread ExecuteThread()
@@ -39,7 +48,7 @@ namespace FaceBERN_
                 browser = Main.browserModeComboBox.SelectedIndex;
             }
 
-            Thread thread = new Thread(() => Execute(browser));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
+            Thread thread = new Thread(() => Execute(browser, WorkflowLog));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
 
             Main.LogW("Attempting to start Workflow thread....", false);
 
@@ -53,9 +62,10 @@ namespace FaceBERN_
             return thread;
         }
 
-        public void Execute(int browser)
+        public void Execute(int browser, Log WorkflowLog)
         {
-            InitLog();
+            //InitLog();
+            this.WorkflowLog = WorkflowLog;
 
             this.browser = browser;
 
@@ -76,6 +86,8 @@ namespace FaceBERN_
             }
 
             Ready();
+
+            Main.Invoke(new MethodInvoker(delegate() { Main.MainLog = WorkflowLog; }));
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris

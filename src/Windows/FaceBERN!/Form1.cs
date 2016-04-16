@@ -30,6 +30,8 @@ namespace FaceBERN_
 
         private Icon trayIcon;
 
+        public Log MainLog = new Log();
+
         public Form1(bool logging = true)
         {
             InitializeComponent();
@@ -166,7 +168,7 @@ namespace FaceBERN_
 
             if (logObj == null)
             {
-                logObj = Globals.MainLog;
+                logObj = this.MainLog;
             }
 
             string logState = null;
@@ -271,7 +273,7 @@ namespace FaceBERN_
         }
         public void InitINI()
         {
-            Globals.sINI = new INI(Globals.MainLog.csLog, Globals.MainLog.csLogType, Globals.MainLog.csLogInstance);
+            Globals.sINI = new INI(this.MainLog.csLog, this.MainLog.csLogType, this.MainLog.csLogInstance);
         }
 
         public void LoadINI()
@@ -343,10 +345,10 @@ namespace FaceBERN_
 
             foreach (KeyValuePair<string, string> directive in Globals.Config)
             {
-                Globals.MainLog.Append(confLogName, directive.Key + @" = " + directive.Value, true);
+                this.MainLog.Append(confLogName, directive.Key + @" = " + directive.Value, true);
             }
 
-            Globals.MainLog.Save(confLogName);
+            this.MainLog.Save(confLogName);
         }
 
         public void SetTrayIcon()
@@ -370,11 +372,11 @@ namespace FaceBERN_
 
         public void InitLog()
         {
-            Globals.MainLog = new Log();
+            this.MainLog = new Log();
         }
 
         /* Interact with the log handler.  --Kris */
-        internal void Log(string text = null, string action = "append", bool newline = true, string logName = null, Log logObj = null)
+        internal void Log(string text = null, string action = "append", bool newline = true, string logName = null, Log logObj = null, bool remove = false)
         {
             if (logName == null)
             {
@@ -383,7 +385,8 @@ namespace FaceBERN_
 
             if (logObj == null)
             {
-                logObj = Globals.getLogObj(logName);
+                //logObj = Globals.getLogObj(logName);
+                logObj = MainLog;
             }
 
             if (csLogEnabled == true)
@@ -401,7 +404,7 @@ namespace FaceBERN_
                         logObj.Decrement(logName, Int32.Parse(text));
                         break;
                     case "save":
-                        logObj.Save(logName);
+                        logObj.Save(logName, remove);
                         break;
                 }
             }
