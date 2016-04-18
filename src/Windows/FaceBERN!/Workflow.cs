@@ -443,7 +443,49 @@ namespace FaceBERN_
             
             Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
 
-            // TODO - Send invites.  --Kris
+            /* Invite up to 200 people to this event.  --Kris */
+            if (friends.Count > 0)
+            {
+                Log("Sending invitations....");
+
+                webDriver.ClickElement(browser, inviteButton);
+                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
+
+                IWebElement searchBox = webDriver.GetInputElementByPlaceholder(browser, "Search for people or enter their email address");
+                if (searchBox == null)
+                {
+                    Log("Unable to locate search box!  Invitations aborted.");
+                    return false;
+                }
+                
+                int i = 0;
+                List<Person> oldFriends = new List<Person>();
+                foreach (Person friend in friends)
+                {
+                    webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Control + "a");
+                    webDriver.TypeText(browser, searchBox, @"@" + friend.getFacebookID());
+
+                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
+                    webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
+                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
+
+                    // TODO - Store invited user ID to avoid duplicates later (not a spam issue but can still throw off how many invites we get into each event since there's a limit).  --Kris
+
+                    oldFriends.Add(friend);
+
+                    i++;
+                    if (i == 200)  // Leaving one open for good measure.  --Kris
+                    {
+                        break;
+                    }
+                }
+
+                foreach (Person friend in oldFriends)
+                {
+                    friends.Remove(friend);
+                }
+
+            }
 
             return true;
         }
