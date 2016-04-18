@@ -431,7 +431,18 @@ namespace FaceBERN_
             webDriver.TypeText(browser, webDriver.GetElementByTagNameAndAttribute(browser, "div", "title", "Tell people more about the event"), description);
             webDriver.ClickOnXPath(browser, ".//button[.='Create']");
 
-            // TODO - Make sure event was actually created successfully.  --Kris
+            /* Check to see if we're on the new event page.  --Kris */
+            System.Threading.Thread.Sleep(5000);
+
+            IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
+            if (inviteButton == null)
+            {
+                Log("Event creation failed!  Aborted.");
+                return false;
+            }
+            
+            Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
+
             // TODO - Send invites.  --Kris
 
             return true;
