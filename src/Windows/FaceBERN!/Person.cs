@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace FaceBERN_
@@ -23,9 +24,16 @@ namespace FaceBERN_
 
         internal Person() { }
 
-        internal string getName()
+        internal string getName(bool sanitize = true)
         {
-            return this.name;
+            if (sanitize)
+            {
+                return Regex.Replace(this.name, "(\\(.*\\))", "").Replace("  ", " ").Trim();
+            }
+            else
+            {
+                return this.name;
+            }
         }
 
         internal void setName(string name)

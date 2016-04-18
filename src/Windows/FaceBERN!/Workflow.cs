@@ -471,20 +471,32 @@ namespace FaceBERN_
 
                     // TODO - Store invited user ID to avoid duplicates later (not a spam issue but can still throw off how many invites we get into each event since there's a limit).  --Kris
 
-                    oldFriends.Add(friend);
-
-                    i++;
-                    if (i == 200)  // Leaving one open for good measure.  --Kris
+                    if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 3) != null)
                     {
-                        break;
+                        Log("Added " + friend.getName() + " to invite list.");
+
+                        oldFriends.Add(friend);
+
+                        i++;
+                        if (i == 200)  // Leaving one open for good measure.  --Kris
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        Log("Unable to add " + friend.getName() + " to invite list.");
                     }
                 }
+
+                // TODO - Click the "Send Invites" button.  --Kris
+
+                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event for " + stateAbbr + ".");
 
                 foreach (Person friend in oldFriends)
                 {
                     friends.Remove(friend);
                 }
-
             }
 
             return true;

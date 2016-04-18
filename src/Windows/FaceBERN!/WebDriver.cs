@@ -312,25 +312,44 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByXPath(int browser, string xpath)
+        public dynamic GetElementByXPath(int browser, string xpath, int timeout = -1)
         {
+            dynamic res;
+            IWebDriver driver;
+
+            switch (browser)
+            {
+                default:
+                case Globals.FIREFOX:
+                    driver = GetDriver(browser);
+                    break;
+                case Globals.AWESOMIUM:
+                    // TODO
+                    return null;
+            }
+
+            if (timeout >= 0)
+            {
+                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
+            }
+
             try
             {
-                switch (browser)
-                {
-                    default:
-                    case Globals.FIREFOX:
-                        IWebDriver driver = GetDriver(browser);
-                        return driver.FindElement(By.XPath(xpath));
-                    case Globals.AWESOMIUM:
-                        // TODO
-                        return null;
-                }
+                res = driver.FindElement(By.XPath(xpath));
             }
             catch (NoSuchElementException e)
             {
                 return null;
             }
+            finally
+            {
+                if (timeout >= 0)
+                {
+                    driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                }
+            }
+
+            return res;
         }
 
         [Test]
