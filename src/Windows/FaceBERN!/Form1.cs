@@ -67,6 +67,8 @@ namespace FaceBERN_
 
             //Globals.Config.Add("CurrentDirectory", Environment.CurrentDirectory);
             Globals.Config.Add("AutoUpdate", "1");
+            Globals.Config.Add("UseFTBEvents", "1");
+            Globals.Config.Add("UseCustomEvents", "1");
 
             this.INIPath = (Globals.ConfigDir != null ? Globals.ConfigDir : "") 
                 + Path.DirectorySeparatorChar 
@@ -486,6 +488,39 @@ namespace FaceBERN_
             else
             {
                 this.TopMost = false;
+            }
+        }
+
+        private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // TODO
+        }
+
+        private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void aboutToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            // TODO
+        }
+
+        private void startToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (buttonStart.Enabled
+                && Globals.executionState == Globals.STATE_READY)
+            {
+                buttonStart_Click(sender, e);
+            }
+        }
+
+        private void pauseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (buttonStart.Enabled
+                && Globals.executionState > Globals.STATE_READY)
+            {
+                buttonStart_Click(sender, e);
             }
         }
     }

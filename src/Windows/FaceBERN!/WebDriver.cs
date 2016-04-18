@@ -215,7 +215,7 @@ namespace FaceBERN_
                     default:
                     case Globals.FIREFOX:
                         IWebDriver driver = GetDriver(browser);
-
+                        
                         /*
                          * This is necessary to fix a bug in the IE WebDriver.
                          * Basically, what this does is "click" on a parent element in 
@@ -331,6 +331,47 @@ namespace FaceBERN_
             {
                 return null;
             }
+        }
+
+        [Test]
+        public List<IWebElement> GetElementsByTagName(int browser, string tagName)
+        {
+            try
+            {
+                IWebDriver driver = GetDriver(browser);
+
+                return new List<IWebElement>(driver.FindElements(By.TagName(tagName)));
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
+            }
+        }
+
+        [Test]
+        public IWebElement GetInputElementByPlaceholder(int browser, string placeholder)
+        {
+            return GetElementByTagNameAndAttribute(browser, "input", "placeholder", placeholder);
+        }
+
+        [Test]
+        public IWebElement GetElementByTagNameAndAttribute(int browser, string tagName, string attributeName, string attributeValue)
+        {
+            List<IWebElement> eles = GetElementsByTagName(browser, tagName);
+            if (eles == null)
+            {
+                return null;
+            }
+
+            foreach (IWebElement ele in eles)
+            {
+                if (ele.GetAttribute(attributeName).Equals(attributeValue))
+                {
+                    return ele;
+                }
+            }
+
+            return null;
         }
 
         [Test]
