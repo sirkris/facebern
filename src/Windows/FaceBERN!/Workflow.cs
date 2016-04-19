@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Newtonsoft.Json;
 using OpenQA.Selenium;
 using System;
 using System.Collections.Generic;
@@ -159,12 +160,7 @@ namespace FaceBERN_
                         /* If there are no errors, proceed with the invitations.  --Kris */
                         if (Globals.executionState > 0 && CheckFTBEventAccess(state.Key, ref webDriver))
                         {
-                            IWebDriver w = webDriver.GetDriver(browser);
-                            webDriver.ClickElement(browser, w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]")));
-
-                            System.Threading.Thread.Sleep(3000);
-
-                            // TODO - Enter the invites and submit.  --Kris
+                            InviteToEvent(ref webDriver, ref friends, state.Key);
                         }
                     }
                     else
@@ -177,8 +173,15 @@ namespace FaceBERN_
                 if (Globals.Config["UseCustomEvents"].Equals("1") && friends.Count > 0)
                 {
                     int c = friends.Count;
+                    int i = 0;
                     while (c > 0)
                     {
+                        if (i > 0)
+                        {
+                            Wait((10 + (10 * i)), "for ratelimit pause between Facebook event creations.");
+                        }
+                        i++;
+
                         CreateGOTVEvent(ref webDriver, ref friends, state.Key);
 
                         if (c == friends.Count)
@@ -187,7 +190,6 @@ namespace FaceBERN_
                         }
                     }
                 }
-                // TODO - GOTV.  --Kris
             }
 
             // TODO - Either find an existing GOTV event for that state or create a new one.  --Kris
@@ -449,8 +451,43 @@ namespace FaceBERN_
         }
 
         /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
-        private void InviteToEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr = null)
+        private void InviteToEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
         {
+            List<Person> invited = new List<Person>();
+            List<string> exclude = null;
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+                string invitedJSON = (string) GOTVKey.GetValue("invitedJSON", null);
+                if (invitedJSON != null && invitedJSON.Trim() != "")
+                {
+                    invited = JsonConvert.DeserializeObject<List<Person>>(invitedJSON);
+                }
+
+                GOTVKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+
+                if (excludeDupsContactedAfterTicks != null && invited != null && invited.Count > 0)
+                {
+                    exclude = new List<string>();
+                    foreach (Person inv in invited)
+                    {
+                        if (inv.getLastGOTVInvite() != null && long.Parse(inv.getLastGOTVInvite()) > long.Parse(excludeDupsContactedAfterTicks))
+                        {
+                            exclude.Add(inv.getFacebookID());
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                Log("Warning:  Error reading previous invitations from registry : " + e.Message);
+            }
+            
             if (friends.Count > 0)
             {
                 Log("Sending invitations....");
@@ -477,14 +514,29 @@ namespace FaceBERN_
                 List<Person> oldFriends = new List<Person>();
                 foreach (Person friend in friends)
                 {
+                    if (exclude != null && exclude.Contains(friend.getFacebookID()))
+                    {
+                        Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
+                        continue;
+                    }
+
                     webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Control + "a");
                     webDriver.TypeText(browser, searchBox, @"@" + friend.getName());
 
+                    /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
                     webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
 
-                    // TODO - Store invited user ID to avoid duplicates later (not a spam issue but can still throw off how many invites we get into each event since there's a limit).  --Kris
+                    /* Every 20 invites, pause for one minute.  Every 100 invites, pause for five minutes.  Again, we don't want to trigger any false positives from the spam algos.  --Kris */
+                    if (i % 100 == 0)
+                    {
+                        Wait(5, "for 100-interval ratelimit");
+                    }
+                    else if (i % 20 == 0)
+                    {
+                        Wait(1, "for 20-interval ratelimit");
+                    }
 
                     if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
                     {
@@ -528,13 +580,62 @@ namespace FaceBERN_
                 }
 
                 /* Send the invitations!  --Kris */
-                webDriver.ClickOnXPath(browser, ".//button[.='Send Invites']");
+                //webDriver.ClickOnXPath(browser, ".//button[.='Send Invites']");  // Comment if you want to test without actually sending the invitations.  --Kris
 
                 Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
 
                 foreach (Person friend in oldFriends)
                 {
+                    if (invited.Contains(friend))
+                    {
+                        invited.Remove(friend);
+                    }
+                    else
+                    {
+                        Person remove = null;
+                        foreach (Person inv in invited)
+                        {
+                            if (inv.getFacebookID() == friend.getFacebookID())
+                            {
+                                remove = inv;
+                                break;
+                            }
+                        }
+
+                        if (remove != null)
+                        {
+                            invited.Remove(remove);
+                        }
+                    }
+
                     friends.Remove(friend);
+
+                    friend.setLastGOTVInvite(DateTime.Now);
+
+                    invited.Add(friend);
+                }
+
+                string invitedJSON = JsonConvert.SerializeObject(invited);
+
+                try
+                {
+                    RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                    RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                    RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+                    GOTVKey.SetValue("invitedJSON", invited, RegistryValueKind.String);
+
+                    GOTVKey.Flush();
+                    appKey.Flush();
+                    softwareKey.Flush();
+
+                    GOTVKey.Close();
+                    appKey.Close();
+                    softwareKey.Close();
+                }
+                catch (IOException e)
+                {
+                    Log("Warning:  Error storing updated invitations record : " + e.Message);
                 }
             }
         }

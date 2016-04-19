@@ -195,8 +195,8 @@
             this.browserModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
-            "Awesomium (runs invisibly in background)",
-            "Firefox (runs in a visible window)"});
+            "Invisible",
+            "Visible"});
             this.browserModeComboBox.Location = new System.Drawing.Point(340, 310);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
@@ -219,7 +219,7 @@
             this.pauseToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(185, 114);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(185, 92);
             // 
             // openControlCenterToolStripMenuItem
             // 

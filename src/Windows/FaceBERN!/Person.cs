@@ -9,10 +9,12 @@ namespace FaceBERN_
 {
     internal class Person
     {
-        private string name;
-        private string facebookID;
-        private string stateAbbr;
-        private bool bernieSupporter;
+        public string name;
+        public string facebookID;
+        public string stateAbbr;
+        public bool bernieSupporter;
+
+        public string lastGOTVInvite;  // Ticks.  --Kris
 
         internal Person(string name, string facebookID, string stateAbbr, bool bernieSupporter)
         {
@@ -20,6 +22,8 @@ namespace FaceBERN_
             this.facebookID = facebookID;
             this.stateAbbr = stateAbbr;
             this.bernieSupporter = bernieSupporter;
+
+            this.lastGOTVInvite = null;
         }
 
         internal Person() { }
@@ -74,6 +78,26 @@ namespace FaceBERN_
         internal bool isBernieSupporter()
         {
             return getBernieSupporter();
+        }
+
+        internal string getLastGOTVInvite()
+        {
+            return this.lastGOTVInvite;
+        }
+
+        internal DateTime getLastGOTVInviteAsDateTime()
+        {
+            return new DateTime(long.Parse(this.lastGOTVInvite));
+        }
+
+        internal void setLastGOTVInvite(string ticks)
+        {
+            this.lastGOTVInvite = ticks;
+        }
+
+        internal void setLastGOTVInvite(DateTime lastInvite)
+        {
+            this.lastGOTVInvite = lastInvite.Ticks.ToString();
         }
     }
 }

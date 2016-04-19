@@ -232,7 +232,7 @@ namespace FaceBERN_
                 Globals.thread = workflow.ExecuteThread();
                 //workflow.Execute(browserModeComboBox.SelectedIndex);  // Use this if you want to debug on a single thread (be sure to comment the ExecuteThread() call).  --Kris
 
-                LogW("Workflow thread detached from form thread successfully.");
+                LogW("Re-reticulating previously unreticulated splines....");
             }
             else
             {
