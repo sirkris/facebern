@@ -443,10 +443,25 @@ namespace FaceBERN_
             
             Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
 
-            /* Invite up to 200 people to this event.  --Kris */
+            InviteToEvent(ref webDriver, ref friends, stateAbbr);
+
+            return true;
+        }
+
+        /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
+        private void InviteToEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr = null)
+        {
             if (friends.Count > 0)
             {
                 Log("Sending invitations....");
+
+                IWebDriver w = webDriver.GetDriver(browser);
+                IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
+                if (inviteButton == null)
+                {
+                    Log("Invite button not found!  Invitations aborted.");
+                    return;
+                }
 
                 webDriver.ClickElement(browser, inviteButton);
                 System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
@@ -455,15 +470,15 @@ namespace FaceBERN_
                 if (searchBox == null)
                 {
                     Log("Unable to locate search box!  Invitations aborted.");
-                    return false;
+                    return;
                 }
-                
+
                 int i = 0;
                 List<Person> oldFriends = new List<Person>();
                 foreach (Person friend in friends)
                 {
                     webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Control + "a");
-                    webDriver.TypeText(browser, searchBox, @"@" + friend.getFacebookID());
+                    webDriver.TypeText(browser, searchBox, @"@" + friend.getName());
 
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
                     webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
@@ -471,7 +486,7 @@ namespace FaceBERN_
 
                     // TODO - Store invited user ID to avoid duplicates later (not a spam issue but can still throw off how many invites we get into each event since there's a limit).  --Kris
 
-                    if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 3) != null)
+                    if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
                     {
                         Log("Added " + friend.getName() + " to invite list.");
 
@@ -485,21 +500,43 @@ namespace FaceBERN_
                     }
                     else
                     {
-                        Log("Unable to add " + friend.getName() + " to invite list.");
+                        /* Try the lookup by Facebook ID before giving up.  --Kris */
+                        webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Control + "a");
+                        webDriver.TypeText(browser, searchBox, @"@" + friend.getFacebookID());
+
+                        System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
+                        webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
+                        System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
+
+                        if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
+                        {
+                            Log("Added " + friend.getName() + " to invite list.");
+
+                            oldFriends.Add(friend);
+
+                            i++;
+                            if (i == 200)  // Leaving one open for good measure.  --Kris
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            Log("Unable to add " + friend.getName() + " to invite list.");
+                        }
                     }
                 }
 
-                // TODO - Click the "Send Invites" button.  --Kris
+                /* Send the invitations!  --Kris */
+                webDriver.ClickOnXPath(browser, ".//button[.='Send Invites']");
 
-                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event for " + stateAbbr + ".");
+                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
 
                 foreach (Person friend in oldFriends)
                 {
                     friends.Remove(friend);
                 }
             }
-
-            return true;
         }
 
         private bool AcceptFacebookFTBRequest(ref WebDriver webDriver)
@@ -591,6 +628,19 @@ namespace FaceBERN_
                 string end = "\">";
                 // NOTE - We're not going to be using these IDs in any graph searches so we don't need to worry about retrieving the actual numeric ID; the username is sufficient.  --Kris
                 string userId = resRaw[i].Substring(resRaw[i].IndexOf(start) + start.Length, resRaw[i].IndexOf(end) - (resRaw[i].IndexOf(start) + start.Length));
+
+                start = "profile.php?id=";
+                end = @"&";
+
+                if (userId.IndexOf(start) == 0)
+                {
+                    userId = userId.Substring(start.Length);
+                    if (userId.IndexOf(end) != -1)
+                    {
+                        userId = userId.Substring(0, userId.IndexOf(end));
+                    }
+                }
+
                 if (userId.IndexOf("?") != -1)
                 {
                     userId = userId.Substring(0, userId.IndexOf("?"));  // Strips any URL parameters that Facebook might have tagged-on.  --Kris
