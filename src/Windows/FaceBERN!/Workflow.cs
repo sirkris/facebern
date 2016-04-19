@@ -623,7 +623,7 @@ namespace FaceBERN_
                     RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
                     RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
-                    GOTVKey.SetValue("invitedJSON", invited, RegistryValueKind.String);
+                    GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
 
                     GOTVKey.Flush();
                     appKey.Flush();
