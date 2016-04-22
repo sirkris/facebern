@@ -223,7 +223,7 @@ namespace FaceBERN_
             int retries = 5;
             if (Globals.Config["UseFTBEvents"].Equals("1") && friends.Count > 0)
             {
-                if (Globals.StateConfigs.ContainsKey("FTBEventId") && Globals.StateConfigs["FTBEventId"] != null)
+                if (Globals.StateConfigs[state.abbr].FTBEventId != null)
                 {
                     while (!CheckFTBEventAccess(state.abbr, ref webDriver) && retries > 0)
                     {
@@ -281,7 +281,7 @@ namespace FaceBERN_
                 {
                     if (i > 0)
                     {
-                        Wait((10 + (10 * i)), "for ratelimit pause between Facebook event creations.");
+                        Wait((10 + (5 * i)), "for ratelimit pause between Facebook event creations.");
                     }
                     i++;
 
@@ -690,6 +690,8 @@ namespace FaceBERN_
                         }
                         else
                         {
+                            oldFriends.Add(friend);
+
                             Log("Unable to add " + friend.getName() + " to invite list.");
                         }
                     }

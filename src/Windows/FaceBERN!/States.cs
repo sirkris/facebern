@@ -10,13 +10,13 @@ namespace FaceBERN_
     /* Decided to create a class for storing states configuration info, given the data complexity.  --Kris */
     public class States
     {
-        public string abbr;
-        public string name;
+        public string abbr = null;
+        public string name = null;
         public DateTime primaryDate;
-        public string primaryType;
-        public string primaryAccess;
-        public string facebookId;
-        public string FTBEventId;
+        public string primaryType = null;
+        public string primaryAccess = null;
+        public string facebookId = null;
+        public string FTBEventId = null;
 
         public States(string abbr, string name, string primaryDateStr, string primaryType, string primaryAccess, string facebookId, string FTBEventId = null)
         {
