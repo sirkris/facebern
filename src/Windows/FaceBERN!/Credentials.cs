@@ -108,8 +108,14 @@ namespace FaceBERN_
 
         internal void Destroy()
         {
-            facebookUsername.Dispose();
-            facebookPassword.Dispose();
+            if (facebookUsername != null)
+            {
+                facebookUsername.Dispose();
+            }
+            if (facebookPassword != null)
+            {
+                facebookPassword.Dispose();
+            }
 
             facebookKey.Close();
             credentialsKey.Close();

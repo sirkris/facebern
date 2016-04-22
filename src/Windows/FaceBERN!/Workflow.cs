@@ -22,6 +22,8 @@ namespace FaceBERN_
         private int browser = 0;
         private bool ftbFriended = false;
 
+        public long invitesSent = 0;  // Tracked for current session only.  TODO - Persist and combine stats with other users for impressive totals.  --Kris
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             this.Main = Main;
@@ -73,18 +75,25 @@ namespace FaceBERN_
 
             Log("Thread execution initialized.");
 
-            SetExecState(Globals.STATE_WAITING);
+            SetExecState(Globals.STATE_EXECUTING);
 
             Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
             // TEST - This will end up going into the loop below.  --Kris
-            GOTV();
+            //GOTV();
 
 
             /* Loop until terminated by the user.  --Kris */
             while (Globals.executionState > 0)
             {
-                // TODO - The actual work.  --Kris
+                /* Get-out-the-vote!  --Kris */
+                GOTV();
+
+                /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
+                Log("Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes....");
+                SetExecState(Globals.STATE_WAITING);
+                System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
+                SetExecState(Globals.STATE_EXECUTING);
             }
 
             Ready();
@@ -96,115 +105,210 @@ namespace FaceBERN_
         private void GOTV()
         {
             int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
+            SetExecState(Globals.STATE_VALIDATING);
+
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+            string lastCheck;
+            if ((lastCheck = GOTVKey.GetValue("LastCheck", "", RegistryValueOptions.None).ToString()) != "")
+            {
+                if (DateTime.Now.Subtract(new DateTime(long.Parse(lastCheck))).TotalHours < Int32.Parse(Globals.Config["GOTVIntervalHours"]))
+                {
+                    GOTVKey.Close();
+                    appKey.Close();
+                    softwareKey.Close();
+
+                    SetExecState(lastState);
+
+                    return;
+                }
+            }
+
+            Log("Running GOTV checklist....");
 
             WebDriver webDriver = FacebookLogin();
             if (webDriver.error > 0)
             {
+                GOTVKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+
+                SetExecState(lastState);
+
                 Log("Error logging into Facebook.  GOTV aborted.");
                 return;
             }
 
             // TEST (TODO - Move to the state loop below and make sure count > 0 for each given state).
-            List<Person> friends = GetFacebookFriendsOfFriends(ref webDriver, "WA");
+            //List<Person> friends = GetFacebookFriendsOfFriends(ref webDriver, "WA");
 
             // TEST
-            CreateGOTVEvent(ref webDriver, ref friends, "NY");
+            //CreateGOTVEvent(ref webDriver, ref friends, "NY");
             
             /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
+            string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
             foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
             {
-                // TODO - Logic for when to perform GOTV.  --Kris
+                Log("Checking GOTV for " + state.Key + "....");
 
-                /* Attempt to gain access to feelthebern.events event for this state, if applicable.  --Kris */
-                int retries = 5;
-                if (Globals.Config["UseFTBEvents"].Equals("1") && friends.Count > 0)
+                /* Determine if it's time for GOTV in this state.  --Kris */
+                // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
+                RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
+
+                string lastGOTVDaysBack = stateKey.GetValue("LastGOTVDaysBack", "", RegistryValueOptions.None).ToString();
+                int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
+
+                bool dateAppropriate = false;
+                foreach (string entry in defaultGOTVDaysBack)
                 {
-                    if (Globals.StateConfigs.ContainsKey("FTBEventId") && Globals.StateConfigs["FTBEventId"] != null)
+                    int milestone = Int32.Parse(entry);
+                    if ((last == -1 || last > milestone)
+                        && state.Value.primaryDate.Subtract(DateTime.Now).TotalDays >= 0
+                        && state.Value.primaryDate.Subtract(DateTime.Now).TotalDays <= milestone)
                     {
-                        while (!CheckFTBEventAccess(state.Key, ref webDriver) && retries > 0)
+                        /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
+                        List<Person> friends = GetFacebookFriendsOfFriends(ref webDriver, state.Key);
+
+                        // TODO - Add direct friends who like Bernie Sanders and live in this state.  --Kris
+
+                        if (friends == null || friends.Count == 0)
                         {
-                            retries--;
-                            Log("Access denied for state event page.");
+                            Log("You have no friends or friends of friends in " + state.Key + " who like Bernie Sanders.  Skipped.");
+                        }
+                        else
+                        {
+                            ExecuteGOTV(ref webDriver, ref friends, ref stateKey, state.Value);
+                        }
 
-                            if (retries > 0)
+                        dateAppropriate = true;
+
+                        break;
+                    }
+                }
+
+                if (!dateAppropriate)
+                {
+                    Log("No GOTV needed for " + state.Key + " at this time.");
+                }
+
+                stateKey.Close();
+            }
+
+            try
+            {
+                GOTVKey.SetValue("LastCheck", DateTime.Now.Ticks.ToString(), RegistryValueKind.String);
+            }
+            catch (IOException e)
+            {
+                Log("Warning:  Error updating last GOTV check : " + e.Message);
+            }
+
+            GOTVKey.Close();
+            appKey.Close();
+            softwareKey.Close();
+
+            SetExecState(lastState);
+        }
+
+        private void ExecuteGOTV(ref WebDriver webDriver, ref List<Person> friends, ref RegistryKey stateKey, States state)
+        {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
+            Log("Executing GOTV for " + state.name + "....");
+
+            /* Attempt to gain access to feelthebern.events event for this state, if applicable.  --Kris */
+            int retries = 5;
+            if (Globals.Config["UseFTBEvents"].Equals("1") && friends.Count > 0)
+            {
+                if (Globals.StateConfigs.ContainsKey("FTBEventId") && Globals.StateConfigs["FTBEventId"] != null)
+                {
+                    while (!CheckFTBEventAccess(state.abbr, ref webDriver) && retries > 0)
+                    {
+                        retries--;
+                        Log("Access denied for state event page.");
+
+                        if (retries > 0)
+                        {
+                            RequestFTBInvitation();
+
+                            Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for retry");
+
+                            /* Check for and accept friend request from feelthebern.events.  --Kris */
+                            if (!ftbFriended)
                             {
-                                RequestFTBInvitation();
-
-                                Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for retry");
-
-                                /* Check for and accept friend request from feelthebern.events.  --Kris */
-                                if (!ftbFriended)
+                                if ((ftbFriended = AcceptFacebookFTBRequest(ref webDriver)))
                                 {
-                                    if ((ftbFriended = AcceptFacebookFTBRequest(ref webDriver)))
-                                    {
-                                        Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for event invitations");
-                                    }
-                                    else
-                                    {
-                                        Log("Friend request for feelthebern.events not yet found!");
-                                    }
+                                    Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for event invitations");
                                 }
                                 else
                                 {
-                                    Log("Friend request accepted but still no event invitations received.");
+                                    Log("Friend request for feelthebern.events not yet found!");
                                 }
                             }
                             else
                             {
-                                Log("Retries exhausted.  Aborting feelthebern.events action for " + state.Key + ".");
-                                SetExecState(Globals.STATE_ERROR);
+                                Log("Friend request accepted but still no event invitations received.");
                             }
                         }
-
-                        /* If there are no errors, proceed with the invitations.  --Kris */
-                        if (Globals.executionState > 0 && CheckFTBEventAccess(state.Key, ref webDriver))
+                        else
                         {
-                            InviteToEvent(ref webDriver, ref friends, state.Key);
+                            Log("Retries exhausted.  Aborting feelthebern.events action for " + state.abbr + ".");
+                            SetExecState(Globals.STATE_ERROR);
                         }
                     }
-                    else
+
+                    /* If there are no errors, proceed with the invitations.  --Kris */
+                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr, ref webDriver))
                     {
-                        Log("No feelthebern.events event exists for " + state.Key + ".");
+                        InviteToEvent(ref webDriver, ref friends, state.abbr);
                     }
                 }
-
-                /* If there are any people left to invite, create a new private event for every 200 people and do the remaining invites there.  --Kris */
-                if (Globals.Config["UseCustomEvents"].Equals("1") && friends.Count > 0)
+                else
                 {
-                    int c = friends.Count;
-                    int i = 0;
-                    while (c > 0)
+                    Log("No feelthebern.events event exists for " + state.abbr + ".");
+                }
+            }
+
+            /* If there are any people left to invite, create a new private event for every 200 people and do the remaining invites there.  --Kris */
+            if (Globals.Config["UseCustomEvents"].Equals("1") && friends.Count > 0)
+            {
+                int c = friends.Count;
+                int i = 0;
+                while (c > 0)
+                {
+                    if (i > 0)
                     {
-                        if (i > 0)
-                        {
-                            Wait((10 + (10 * i)), "for ratelimit pause between Facebook event creations.");
-                        }
-                        i++;
+                        Wait((10 + (10 * i)), "for ratelimit pause between Facebook event creations.");
+                    }
+                    i++;
 
-                        CreateGOTVEvent(ref webDriver, ref friends, state.Key);
+                    CreateGOTVEvent(ref webDriver, ref friends, state.abbr);
 
-                        if (c == friends.Count)
-                        {
-                            break;  // To prevent infinite recursion in the event of an unexpected error.  --Kris
-                        }
+                    if (c == friends.Count)
+                    {
+                        break;  // To prevent infinite recursion in the event of an unexpected error.  --Kris
                     }
                 }
             }
 
-            // TODO - Either find an existing GOTV event for that state or create a new one.  --Kris
-            // TODO - Do the magic Bernie friends search.  --Kris
-            // TODO - Quit signing my name on every fucking comment.  --Kris
-            // TODO - Change my mind and decide to keep doing it just to piss people off.  --Kris
-            // TODO - Send the invites.  --Kris
-            // TODO - Persist invited users in the registry as an encrypted string; used for stats and avoiding duplicate invites.  --Kris
+            try
+            {
+                stateKey.SetValue("LastGOTVDaysBack", (state.primaryDate.Subtract(DateTime.Now).TotalDays).ToString(), RegistryValueKind.String);
+            }
+            catch (IOException e)
+            {
+                Log("Warning:  Error updating last GOTV for " + state.name + " : " + e.Message);
+            }
 
             SetExecState(lastState);
         }
 
         private void Wait(int minutes, string reason = "")
         {
-            Log("Waiting " + minutes.ToString() + "minutes" + (reason != "" ? " " + reason : "") + "....");
+            Log("Waiting " + minutes.ToString() + (minutes != 1 ? " minutes" : " minute") + (reason != "" ? " " + reason : "") + "....");
 
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_WAITING);
@@ -279,8 +383,11 @@ namespace FaceBERN_
                     webDriver.TypeInId(browser, "pass", credentials.ToString(p));
 
                     /* Get this sensitive data out of active memory.  --Kris */
-                    credentials.Destroy();
-                    credentials = null;
+                    if (credentials != null)
+                    {
+                        credentials.Destroy();
+                        credentials = null;
+                    }
 
                     /* Click the login button on Facebook.  --Kris */
                     dynamic element = webDriver.GetElementById(browser, "u_0_y");
@@ -382,15 +489,18 @@ namespace FaceBERN_
                 {
                     Log("Warning:  Unable to extract Facebook profile URL from page source!");
                 }
-
-                SetExecState(lastState);
             }
+
+            SetExecState(lastState);
 
             return webDriver;
         }
 
         private bool CreateGOTVEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr)
         {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
             Log("Creating private GOTV event for " + stateAbbr + "....");
 
             webDriver.GoToUrl(browser, "https://www.facebook.com/events/upcoming");
@@ -447,12 +557,17 @@ namespace FaceBERN_
 
             InviteToEvent(ref webDriver, ref friends, stateAbbr);
 
+            SetExecState(lastState);
+
             return true;
         }
 
         /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
         private void InviteToEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
         {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
             List<Person> invited = new List<Person>();
             List<string> exclude = null;
             try
@@ -528,14 +643,14 @@ namespace FaceBERN_
                     webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
 
-                    /* Every 20 invites, pause for one minute.  Every 100 invites, pause for five minutes.  Again, we don't want to trigger any false positives from the spam algos.  --Kris */
-                    if (i % 100 == 0)
+                    /* Every 25 invites, pause for one minute.  Every 100 invites, pause for five minutes.  Again, we don't want to trigger any false positives from the spam algos.  --Kris */
+                    if (i % 100 == 0 && i > 1)
                     {
                         Wait(5, "for 100-interval ratelimit");
                     }
-                    else if (i % 20 == 0)
+                    else if (i % 25 == 0 && i > 1)
                     {
-                        Wait(1, "for 20-interval ratelimit");
+                        Wait(1, "for 25-interval ratelimit");
                     }
 
                     if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
@@ -547,6 +662,7 @@ namespace FaceBERN_
                         i++;
                         if (i == 200)  // Leaving one open for good measure.  --Kris
                         {
+                            Wait(3, "for max-invites ratelimit");
                             break;
                         }
                     }
@@ -583,6 +699,8 @@ namespace FaceBERN_
                 //webDriver.ClickOnXPath(browser, ".//button[.='Send Invites']");  // Comment if you want to test without actually sending the invitations.  --Kris
 
                 Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
+
+                UpdateInvitationsCount(i);
 
                 foreach (Person friend in oldFriends)
                 {
@@ -638,10 +756,15 @@ namespace FaceBERN_
                     Log("Warning:  Error storing updated invitations record : " + e.Message);
                 }
             }
+
+            SetExecState(lastState);
         }
 
         private bool AcceptFacebookFTBRequest(ref WebDriver webDriver)
         {
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
             webDriver.GoToUrl(browser, "http://www.facebook.com");
 
             IWebDriver w = webDriver.GetDriver( browser );
@@ -662,11 +785,15 @@ namespace FaceBERN_
                 Log("Facebook friend request for feelthebern.events accepted.");
                 System.Threading.Thread.Sleep(3000);
 
+                SetExecState(lastState);
+
                 return true;
             }
             else
             {
                 Log("Error clicking on friend request accept button!");
+
+                SetExecState(lastState);
 
                 return false;
             }
@@ -778,7 +905,14 @@ namespace FaceBERN_
                 res.Add(per);
             }
 
-            Log("Retrieved " + res.Count.ToString() + " results for friends of friends" + logMsg + ".");
+            if (res.Count > 0)
+            {
+                Log("Retrieved " + res.Count.ToString() + " results for friends of friends" + logMsg + ".");
+            }
+            else
+            {
+                Log("No results found.");
+            }
 
             SetExecState(lastState);
 
@@ -824,6 +958,10 @@ namespace FaceBERN_
             RegistryKey facebookKey = appKey.CreateSubKey("Facebook");
 
             string profileURL = facebookKey.GetValue("profileURL", null, RegistryValueOptions.None).ToString();
+
+            facebookKey.Close();
+            appKey.Close();
+            softwareKey.Close();
 
             /* Initialize the driver and navigate to feelthebern.events.  --Kris */
             if (profileURL != null)
@@ -896,6 +1034,31 @@ namespace FaceBERN_
                 Main.LogW(text, show, appendW, newline, timestamp, logName, WorkflowLog);
 
                 Main.Refresh();
+            }
+        }
+
+        private void UpdateInvitationsCount(int n = 1, bool clear = false)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateInvitationsCount(n, clear); }));
+            }
+            else
+            {
+                Main.UpdateInvitationsCount(n, clear);
+
+                Main.Refresh();
+            }
+
+            if (!clear)
+            {
+                invitesSent += n;
+            }
+            else
+            {
+                invitesSent = 0;
             }
         }
 

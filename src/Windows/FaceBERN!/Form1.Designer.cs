@@ -52,6 +52,8 @@
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.alwaysOnTopCheckBox = new System.Windows.Forms.CheckBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.labelInvitesSent = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -261,12 +263,37 @@
             this.alwaysOnTopCheckBox.UseVisualStyleBackColor = false;
             this.alwaysOnTopCheckBox.CheckedChanged += new System.EventHandler(this.alwaysOnTopCheckBox_CheckedChanged);
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.BackColor = System.Drawing.Color.Transparent;
+            this.label3.ForeColor = System.Drawing.Color.Blue;
+            this.label3.Location = new System.Drawing.Point(274, 543);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(83, 13);
+            this.label3.TabIndex = 31;
+            this.label3.Text = "Invitations Sent:";
+            // 
+            // labelInvitesSent
+            // 
+            this.labelInvitesSent.AutoSize = true;
+            this.labelInvitesSent.BackColor = System.Drawing.Color.Transparent;
+            this.labelInvitesSent.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelInvitesSent.ForeColor = System.Drawing.Color.Red;
+            this.labelInvitesSent.Location = new System.Drawing.Point(354, 543);
+            this.labelInvitesSent.Name = "labelInvitesSent";
+            this.labelInvitesSent.Size = new System.Drawing.Size(14, 13);
+            this.labelInvitesSent.TabIndex = 32;
+            this.labelInvitesSent.Text = "0";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.labelInvitesSent);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.alwaysOnTopCheckBox);
             this.Controls.Add(this.browserModeComboBox);
             this.Controls.Add(this.label2);
@@ -316,6 +343,8 @@
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         internal System.Windows.Forms.ComboBox browserModeComboBox;
         private System.Windows.Forms.CheckBox alwaysOnTopCheckBox;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label labelInvitesSent;
     }
 }
 

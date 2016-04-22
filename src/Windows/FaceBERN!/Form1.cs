@@ -36,6 +36,8 @@ namespace FaceBERN_
         {
             InitializeComponent();
             labelVersion.Text = Globals.__VERSION__;
+            label3.Visible = false;
+            labelInvitesSent.Visible = false;
             this.Resize += Form1_Resize;
 
             /* Initialize the log.  --Kris */
@@ -69,6 +71,13 @@ namespace FaceBERN_
             Globals.Config.Add("AutoUpdate", "1");
             Globals.Config.Add("UseFTBEvents", "1");
             Globals.Config.Add("UseCustomEvents", "1");
+            Globals.Config.Add("CheckRememberPasswordByDefault", "1");
+
+            /* How long to wait between GOTV checks.  --Kris */
+            Globals.Config.Add("GOTVIntervalHours", "24");
+
+            /* Each comma-delineated value represents how many days prior to a state's primary/caucus to execute a GOTV for that state.  Multiple entries means multiple GOTV runs.  --Kris */
+            Globals.Config.Add("DefaultGOTVDaysBack", "30,10,1");
 
             this.INIPath = (Globals.ConfigDir != null ? Globals.ConfigDir : "") 
                 + Path.DirectorySeparatorChar 
@@ -440,6 +449,28 @@ namespace FaceBERN_
             }
 
             saveLog(logName, logObj);
+        }
+
+        internal void UpdateInvitationsCount(int n = 1, bool clear = false)
+        {
+            if (!clear)
+            {
+                label3.Visible = true;
+                labelInvitesSent.Visible = true;
+
+                labelInvitesSent.Text = (long.Parse(labelInvitesSent.Text) + n).ToString();
+
+                LogW("Incremented displayed invitations count by:  " + (n >= 0 ? "+" : "-") + n.ToString(), false);
+            }
+            else
+            {
+                labelInvitesSent.Text = "0";
+
+                labelInvitesSent.Visible = false;
+                label3.Visible = false;
+
+                LogW("Cleared displayed invitations count and reset to 0.", false);
+            }
         }
 
         private void Form1_Resize(object sender, EventArgs e)

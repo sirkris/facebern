@@ -41,6 +41,10 @@ namespace FaceBERN_
         private void LoginPrompt_Load(object sender, EventArgs e)
         {
             labelSite.Text = site;
+            if (Globals.Config["CheckRememberPasswordByDefault"] == "0")
+            {
+                rememberCheckBox.Checked = false;
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)

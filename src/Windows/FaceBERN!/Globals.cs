@@ -31,6 +31,9 @@ namespace FaceBERN_
         /* How long to wait between checks for having received the feelthebern.events friend request.  --Kris */
         public static int __FTB_REQUEST_ACCESS_WAIT_INTERVAL__ = 60;  // Minutes
 
+        /* How long to wait between each iteration of the main workflow loop.  Note that notifications and everything else will be subject to this wait period so don't set it too high.  --Kris */
+        public static int __WORKFLOW_WAIT_INTERVAL__ = 5;  // Minutes
+
         /*
          * -- END GLOBAL SETTINGS --
          */
