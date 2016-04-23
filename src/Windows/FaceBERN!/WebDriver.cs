@@ -1,5 +1,5 @@
-﻿using Awesomium;
-using Awesomium.Core;
+﻿using NHtmlUnit;
+using NHtmlUnit.Html;
 using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
@@ -25,7 +25,8 @@ namespace FaceBERN_
         private IWebDriver _driverFirefox;
         private FirefoxProfile _profileFirefox;
         private ISelenium selenium;
-        private WebView awesomium;
+        private WebClient webClient;
+        private HtmlPage page;
         private bool documentReady;
 
         public int error = 0;
@@ -33,33 +34,21 @@ namespace FaceBERN_
         public const int ERROR_BADCREDENTIALS = 2;
         public const int ERROR_UNEXPECTED = 3;
 
-        SynchronizationContext awesomiumContext;
-
         [TestFixtureSetUp]
         public void FixtureSetup(int browser)
         {
             switch (browser)
             {
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     _driverFirefox = new FirefoxDriver();
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
                     Maximize(browser);
                     break;
-                case Globals.AWESOMIUM:
-                    Thread awesomiumThread = new System.Threading.Thread(new System.Threading.ThreadStart(() =>
-                    {
-                        WebCore.Started += (s, e) =>
-                        {
-                            awesomiumContext = SynchronizationContext.Current;
-                        };
-
-                        WebCore.Run();
-                    }));
-
-                    awesomiumThread.Start();
-                    WebCore.Initialize(new WebConfig() { });
-                    //WebCore.Initialize(new WebConfig(), true);
-                    awesomium = WebCore.CreateWebView(1024, 768, WebViewType.Window);
+                case Globals.FIREFOX_HEADLESS:
+                    webClient = new WebClient(BrowserVersion.FIREFOX_38);
+                    webClient.Options.JavaScriptEnabled = true;
+                    webClient.WaitForBackgroundJavaScript(10000);
+                    webClient.AjaxController = new NicelyResynchronizingAjaxController();
                     break;
             }
         }
@@ -69,23 +58,11 @@ namespace FaceBERN_
         {
             switch (browser)
             {
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     _driverFirefox.Navigate().GoToUrl(URL);
                     break;
-                case Globals.AWESOMIUM:
-                    awesomiumContext.Post(state =>
-                    {
-                        awesomium.Source = new Uri(URL);
-                    }, null);
-                    //awesomium.Source = new Uri(URL);
-                    documentReady = false;
-                    /*Task t = new Task(() =>
-                    {
-                        awesomium.DocumentReady += OnDocumentReadyHandler;
-                        awesomium.Source = new Uri(URL);
-                        WebCore.Run();
-                    });
-                    t.Start();*/
+                case Globals.FIREFOX_HEADLESS:
+                    page = webClient.GetHtmlPage(URL);
                     break;
             }
         }
@@ -94,19 +71,6 @@ namespace FaceBERN_
         public void GoToUrl(int browser, string URL)
         {
             TestSetUp(browser, URL);
-        }
-
-        // Used by Awesomium only.  --Kris
-        private void OnDocumentReadyHandler(Object sender, DocumentReadyEventArgs e)
-        {
-            if (e != null && e.ReadyState == DocumentReadyState.Loaded)
-            {
-                documentReady = true;
-            }
-            else
-            {
-                documentReady = false;
-            }
         }
 
         [Test]
@@ -119,7 +83,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     if (driver.PageSource != null)
                     {
                         return driver.PageSource;
@@ -137,24 +101,8 @@ namespace FaceBERN_
                             return GetPageSource(browser, retry);
                         }
                     }
-                case Globals.AWESOMIUM:
-                    if (documentReady)
-                    {
-                        return awesomium.HTML;
-                    }
-                    else
-                    {
-                        aRetry--;
-                        if (aRetry == 0)
-                        {
-                            return null;
-                        }
-                        else
-                        {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__);
-                            return GetPageSource(browser, retry, aRetry);
-                        }
-                    }
+                case Globals.FIREFOX_HEADLESS:
+                    return page.AsXml();
             }
         }
 
@@ -164,16 +112,21 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     return _driverFirefox;
-                case Globals.AWESOMIUM:
-                    return awesomium;
+                case Globals.FIREFOX_HEADLESS:
+                    return page;  // Doesn't go through the WebDriver interface, unfortunately.  --Kris
             }
         }
 
         [Test]
         public void Maximize(int browser)
         {
+            if (browser == Globals.FIREFOX_HEADLESS)
+            {
+                return;
+            }
+
             IWebDriver driver = GetDriver(browser);
 
             string script;
@@ -213,7 +166,7 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX:
+                    case Globals.FIREFOX_WINDOWED:
                         IWebDriver driver = GetDriver(browser);
                         
                         /*
@@ -232,9 +185,8 @@ namespace FaceBERN_
                         }
 
                         return driver.FindElement(By.Id(elementid));
-                    case Globals.AWESOMIUM:
-                        dynamic document = (Awesomium.Core.JSObject)awesomium.ExecuteJavascriptWithResult("document");
-                        return document.getElementById(elementid);
+                    case Globals.FIREFOX_HEADLESS:
+                        return page.GetElementById(elementid);
                 }
             }
             catch (NoSuchElementException e)
@@ -251,7 +203,7 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX:
+                    case Globals.FIREFOX_WINDOWED:
                         IWebDriver driver = GetDriver(browser);
 
                         /*
@@ -270,9 +222,8 @@ namespace FaceBERN_
                         }
 
                         return driver.FindElement(By.Name(elementname));
-                    case Globals.AWESOMIUM:
-                        dynamic document = (Awesomium.Core.JSObject)awesomium.ExecuteJavascriptWithResult("document");
-                        return document.getElementByName(elementname);
+                    case Globals.FIREFOX_HEADLESS:
+                        return page.GetElementByName(elementname);
                 }
             }
             catch (NoSuchElementException e)
@@ -289,7 +240,7 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX:
+                    case Globals.FIREFOX_WINDOWED:
                         IWebDriver driver = GetDriver(browser);
 
                         if (partial == true)
@@ -300,9 +251,8 @@ namespace FaceBERN_
                         {
                             return driver.FindElement(By.LinkText(linktext));
                         }
-                    case Globals.AWESOMIUM:
-                        // TODO
-                        return null;
+                    case Globals.FIREFOX_HEADLESS:
+                        return page.GetAnchorByText(linktext);
                 }
             }
             catch (NoSuchElementException e)
@@ -320,36 +270,34 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     driver = GetDriver(browser);
-                    break;
-                case Globals.AWESOMIUM:
-                    // TODO
-                    return null;
-            }
 
-            if (timeout >= 0)
-            {
-                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
-            }
+                    if (timeout >= 0)
+                    {
+                        driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
+                    }
 
-            try
-            {
-                res = driver.FindElement(By.XPath(xpath));
-            }
-            catch (NoSuchElementException e)
-            {
-                return null;
-            }
-            finally
-            {
-                if (timeout >= 0)
-                {
-                    driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
-                }
-            }
+                    try
+                    {
+                        res = driver.FindElement(By.XPath(xpath));
+                    }
+                    catch (NoSuchElementException e)
+                    {
+                        return null;
+                    }
+                    finally
+                    {
+                        if (timeout >= 0)
+                        {
+                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                        }
+                    }
 
-            return res;
+                    return res;
+                case Globals.FIREFOX_HEADLESS:
+                    return page.GetByXPath(xpath);
+            }
         }
 
         [Test]
@@ -401,7 +349,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
@@ -433,7 +381,7 @@ namespace FaceBERN_
                         element.Click();
                     }
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -538,10 +486,10 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     ((IJavaScriptExecutor)driver).ExecuteScript(script);
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -553,7 +501,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementByLinkText(browser, linktext, partial);
@@ -572,7 +520,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -584,7 +532,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementByXPath(browser, xpath);
@@ -603,7 +551,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -617,7 +565,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
@@ -634,7 +582,7 @@ namespace FaceBERN_
                     element.SendKeys(text);
 
                     return true;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -646,7 +594,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementByXPath(browser, xpath);
@@ -665,7 +613,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -677,7 +625,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementById(browser, elementid, iefix);
@@ -696,7 +644,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -708,7 +656,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementByName(browser, elementname, iefix);
@@ -727,7 +675,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -741,7 +689,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
@@ -755,7 +703,7 @@ namespace FaceBERN_
                     element.Clear();
 
                     return true;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -767,7 +715,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementByXPath(browser, xpath);
@@ -786,7 +734,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -798,7 +746,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementById(browser, id, iefix);
@@ -817,7 +765,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -829,7 +777,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         IWebElement element = GetElementByName(browser, name, iefix);
@@ -848,7 +796,7 @@ namespace FaceBERN_
                             return false;
                         }
                     }
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -862,7 +810,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         driver.SwitchTo().DefaultContent();
@@ -882,7 +830,7 @@ namespace FaceBERN_
                         }
                     }
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -896,7 +844,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
                         driver.SwitchTo().DefaultContent();
@@ -915,7 +863,7 @@ namespace FaceBERN_
                         }
                     }
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -931,7 +879,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     /* Recursively wait and retry if specified.  --Kris */
                     if (wait == true)
                     {
@@ -954,7 +902,7 @@ namespace FaceBERN_
                         Assert.IsTrue(driver.PageSource.Contains(text));
                     }
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -970,10 +918,10 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     Assert.IsTrue(Regex.IsMatch(regex, driver.PageSource));
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -985,10 +933,10 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     Assert.AreEqual(title, _driverFirefox.Title);
                     break;
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     break;
             }
@@ -1004,7 +952,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     IWebElement element;
                     switch (by)
                     {
@@ -1022,7 +970,7 @@ namespace FaceBERN_
                             break;
                     }
                     return (!(element.Size.IsEmpty));
-                case Globals.AWESOMIUM:
+                case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return false;
             }
@@ -1033,15 +981,15 @@ namespace FaceBERN_
         {
             switch (browser)
             {
-                case Globals.FIREFOX:
+                case Globals.FIREFOX_WINDOWED:
                     if (_driverFirefox != null)
                     {
                         _driverFirefox.Close();
                     }
                     break;
-                case Globals.AWESOMIUM:
-                    awesomium.DocumentReady -= OnDocumentReadyHandler;
-                    WebCore.Shutdown();
+                case Globals.FIREFOX_HEADLESS:
+                    page.CleanUp();
+                    webClient.Close();
                     break;
             }
         }

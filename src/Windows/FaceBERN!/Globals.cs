@@ -64,8 +64,8 @@ namespace FaceBERN_
         public const int STATE_EXECUTING = 4;  // Doing the actual work.
 
         /* Browser constants.  --Kris */
-        public const int AWESOMIUM = 0;
-        public const int FIREFOX = 1;
+        public const int FIREFOX_HEADLESS = 0;
+        public const int FIREFOX_WINDOWED = 1;
         public const int CHROME = 2;
         public const int IE = 3;
 
@@ -102,10 +102,10 @@ namespace FaceBERN_
         {
             string[] names = new string[99];
 
-            names[FIREFOX] = "Firefox";
+            names[FIREFOX_WINDOWED] = "Firefox";
             names[IE] = "Internet Explorer";
             names[CHROME] = "Chrome";
-            names[AWESOMIUM] = "Awesomium";
+            names[FIREFOX_HEADLESS] = "Awesomium";
 
             return names;
         }
@@ -125,10 +125,10 @@ namespace FaceBERN_
         {
             string[] names = new string[99];
 
-            names[FIREFOX] = "Mozilla Firefox";
+            names[FIREFOX_WINDOWED] = "Mozilla Firefox";
             names[IE] = "Windows Internet Explorer";
             names[CHROME] = "Google Chrome";
-            names[AWESOMIUM] = "Awesomium";
+            names[FIREFOX_HEADLESS] = "Awesomium";
 
             return names;
         }
@@ -148,11 +148,11 @@ namespace FaceBERN_
         {
             Dictionary<string, Int32> consts = new Dictionary<string, Int32>();
 
-            consts["firefox"] = FIREFOX;
+            consts["firefox"] = FIREFOX_WINDOWED;
             consts["ie"] = IE;
             consts["internet explorer"] = IE;
             consts["chrome"] = CHROME;
-            consts["awesomium"] = AWESOMIUM;
+            consts["awesomium"] = FIREFOX_HEADLESS;
 
             return consts;
         }
