@@ -524,7 +524,8 @@ namespace FaceBERN_
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // TODO
+            FormSettings settings = new FormSettings();
+            settings.Show();
         }
 
         private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
