@@ -1,4 +1,7 @@
-﻿using System;
+﻿using LibGit2Sharp;
+using LibGit2Sharp.Core;
+using LibGit2Sharp.Handlers;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.ComponentModel;
@@ -58,6 +61,7 @@ namespace FaceBERN_
             SetDefaults();
             InitINI();
             LoadINI();
+            CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
             SetTrayIcon();
             HideCaret(outBox.Handle);
             Ready();
@@ -78,6 +82,12 @@ namespace FaceBERN_
 
             /* Each comma-delineated value represents how many days prior to a state's primary/caucus to execute a GOTV for that state.  Multiple entries means multiple GOTV runs.  --Kris */
             Globals.Config.Add("DefaultGOTVDaysBack", "30,10,1");
+
+            /* Remote name for Github repo.  If you used the installer, it should be origin.  --Kris */
+            Globals.Config.Add("GithubRemoteName", "origin");
+
+            /* Branch to use for updates.  It's recommended you go with master or develop.  --Kris */
+            Globals.Config.Add("RepoBranch", "master");
 
             this.INIPath = (Globals.ConfigDir != null ? Globals.ConfigDir : "") 
                 + Path.DirectorySeparatorChar 
@@ -168,6 +178,70 @@ namespace FaceBERN_
             }
 
             Globals.StateConfigs = states;
+        }
+
+        public string GetRepoBaseDir()
+        {
+            // TODO - Make this smarter.  For now, I just want this to work from the Debug and Release directories to make testing a bit more convenient.  --Kris
+            if (Environment.CurrentDirectory.IndexOf("Debug") != -1 || Environment.CurrentDirectory.IndexOf("Release") != -1)
+            {
+                return Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(@"\src\Windows\FaceBERN!\bin\"));
+            }
+            else
+            {
+                return Environment.CurrentDirectory;
+            }
+        }
+
+        /* Checks for updates, then either returns whether an update is available or closes this app and runs the installer/updater if there is an update and autoInstall is true.  --Kris */
+        public bool CheckForUpdates(bool autoInstall = false)
+        {
+            LogW("Checking for updates....");
+
+            string shaLocal;
+            string shaRemote;
+            using (var repo = new Repository(GetRepoBaseDir()))
+            {
+                /* Do a git fetch to get the latest remotes data.  --Kris */
+                LogW("> git fetch origin", false);
+                Remote remote = repo.Network.Remotes[Globals.Config["GithubRemoteName"]];
+                repo.Network.Fetch(remote);
+
+                /* Compare the current local revision SHA with the newest revision SHA on the remote copy of the branch.  If they don't match, an update is needed.  --Kris */
+                Branch branch = repo.Head;  // Current/active local branch.  --Kris
+                LogW("Active branch is:  " + branch.CanonicalName, false);
+
+                shaLocal = branch.Tip.Sha;  // SHA revision string for HEAD.  --Kris
+                LogW("Current revision on local:  " + shaLocal);
+
+                Branch branchRemote = repo.Branches["origin/" + branch.CanonicalName];
+                shaRemote = branchRemote.Tip.Sha;
+                LogW("Current revision on remote:  " + shaRemote);
+            }
+
+
+            if (autoInstall == true && !shaLocal.Equals(shaRemote))
+            {
+                LogW("Update found!  This application will close then restart.  Preparing to run installer....");
+                System.Threading.Thread.Sleep(3000);  // Give the user time to read it before the window goes bye-bye.  --Kris
+
+                ExecuteInstaller();
+            }
+            
+            return shaLocal.Equals(shaRemote);
+        }
+
+        private void ExecuteInstaller()
+        {
+            // TODO - Run the installer.  --Kris
+
+            Exit();
+        }
+
+        private void Exit()
+        {
+            // TODO - Save configs.  --Kris
+            this.Close();
         }
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
@@ -501,7 +575,7 @@ namespace FaceBERN_
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Exit();
         }
 
         private void donateToBernieToolStripMenuItem_Click(object sender, EventArgs e)
@@ -530,7 +604,7 @@ namespace FaceBERN_
 
         private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Exit();
         }
 
         private void aboutToolStripMenuItem1_Click(object sender, EventArgs e)
