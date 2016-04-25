@@ -212,11 +212,11 @@ namespace FaceBERN_
                 LogW("Active branch is:  " + branch.CanonicalName, false);
 
                 shaLocal = branch.Tip.Sha;  // SHA revision string for HEAD.  --Kris
-                LogW("Current revision on local:  " + shaLocal);
+                LogW("Current revision on local....  " + shaLocal);
 
-                Branch branchRemote = repo.Branches["origin/" + branch.CanonicalName];
+                Branch branchRemote = repo.Branches[Globals.Config["GithubRemoteName"] + @"/" + branch.FriendlyName];
                 shaRemote = branchRemote.Tip.Sha;
-                LogW("Current revision on remote:  " + shaRemote);
+                LogW("Current revision on remote...  " + shaRemote);
             }
 
 
