@@ -61,9 +61,9 @@ namespace FaceBERN_
             SetDefaults();
             InitINI();
             LoadINI();
-            CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
             SetTrayIcon();
             HideCaret(outBox.Handle);
+            CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
             Ready();
         }
 
@@ -208,8 +208,10 @@ namespace FaceBERN_
                 repo.Network.Fetch(remote);
 
                 /* Compare the current local revision SHA with the newest revision SHA on the remote copy of the branch.  If they don't match, an update is needed.  --Kris */
-                Branch branch = repo.Head;  // Current/active local branch.  --Kris
-                LogW("Active branch is:  " + branch.CanonicalName, false);
+                //Branch branch = repo.Head;  // Current/active local branch.  --Kris
+                Branch branch = repo.Branches[Globals.Config["RepoBranch"]];
+                LogW("Active branch is:  " + repo.Head.CanonicalName, false);
+                LogW("Using update branch: " + branch.FriendlyName);
 
                 shaLocal = branch.Tip.Sha;  // SHA revision string for HEAD.  --Kris
                 LogW("Current revision on local....  " + shaLocal);
@@ -223,7 +225,7 @@ namespace FaceBERN_
             if (autoInstall == true && !shaLocal.Equals(shaRemote))
             {
                 LogW("Update found!  This application will close then restart.  Preparing to run installer....");
-                System.Threading.Thread.Sleep(3000);  // Give the user time to read it before the window goes bye-bye.  --Kris
+                System.Threading.Thread.Sleep(1000);
 
                 ExecuteInstaller();
             }
