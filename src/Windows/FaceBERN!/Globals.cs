@@ -25,6 +25,15 @@ namespace FaceBERN_
         /* How long to wait for an action element to appear before dying.  --Kris */
         public static int __TIMEOUT__ = 3;  // Seconds
 
+        /* How long to wait between each browser iteration.  --Kris */
+        public static int __BROWSE_DELAY__ = 1;  // Seconds
+
+        /* How long to wait between checks for having received the feelthebern.events friend request.  --Kris */
+        public static int __FTB_REQUEST_ACCESS_WAIT_INTERVAL__ = 60;  // Minutes
+
+        /* How long to wait between each iteration of the main workflow loop.  Note that notifications and everything else will be subject to this wait period so don't set it too high.  --Kris */
+        public static int __WORKFLOW_WAIT_INTERVAL__ = 5;  // Minutes
+
         /*
          * -- END GLOBAL SETTINGS --
          */
@@ -34,6 +43,10 @@ namespace FaceBERN_
         public static Process process = null;
         public static Thread thread = null;
         public static int executionState = -2;
+        public static List<string> bernieFacebookIDs;
+
+        /* Global state configs container.  Individual states setup in Form1.SetStateDefaults.  --Kris */
+        public static Dictionary<string, States> StateConfigs;
 
         /* Global singletons.  --Kris */
         public static INI sINI;
@@ -41,19 +54,20 @@ namespace FaceBERN_
         public static Log WorkflowLog;
 
         /* Execution states (any state > 0 means that the Workflow thread is running).  --Kris */
-        public const int STATE_INITIALIZING = -2;  // Default state.
-        public const int STATE_BROKEN = -1;  // An unrecoverable error occurred.
+        public const int STATE_INITIALIZING = -3;  // Default state.
+        public const int STATE_ERROR = -2;  // A recoverable error has occurred.
+        public const int STATE_BROKEN = -1;  // An unrecoverable error has occurred.
         public const int STATE_READY = 0;  // Application is running but execution is either paused or not started yet (essentially the same thing).
         public const int STATE_VALIDATING = 1;  // Running sanity checks prior to a state change.
         public const int STATE_WAITING = 2;  // Sitting idle until some action needs to be taken (then switches to executing state).
         public const int STATE_SLEEPING = 3;  // Sitting idle because the end-user restricted execution to another timeframe (then switches to waiting state).
         public const int STATE_EXECUTING = 4;  // Doing the actual work.
 
-        /* Bitwise constants for browser usage.  --Kris */
-        public const int FIREFOX = 2;
-        public const int IE = 4;
-        public const int CHROME = 8;
-        public const int AWESOMIUM = 16;
+        /* Browser constants.  --Kris */
+        public const int FIREFOX_HEADLESS = 0;
+        public const int FIREFOX_WINDOWED = 1;
+        public const int CHROME = 2;
+        public const int IE = 3;
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
@@ -88,10 +102,10 @@ namespace FaceBERN_
         {
             string[] names = new string[99];
 
-            names[FIREFOX] = "Firefox";
+            names[FIREFOX_WINDOWED] = "Firefox";
             names[IE] = "Internet Explorer";
             names[CHROME] = "Chrome";
-            names[AWESOMIUM] = "Awesomium";
+            names[FIREFOX_HEADLESS] = "Awesomium";
 
             return names;
         }
@@ -111,10 +125,10 @@ namespace FaceBERN_
         {
             string[] names = new string[99];
 
-            names[FIREFOX] = "Mozilla Firefox";
+            names[FIREFOX_WINDOWED] = "Mozilla Firefox";
             names[IE] = "Windows Internet Explorer";
             names[CHROME] = "Google Chrome";
-            names[AWESOMIUM] = "Awesomium";
+            names[FIREFOX_HEADLESS] = "Awesomium";
 
             return names;
         }
@@ -134,11 +148,11 @@ namespace FaceBERN_
         {
             Dictionary<string, Int32> consts = new Dictionary<string, Int32>();
 
-            consts["firefox"] = FIREFOX;
+            consts["firefox"] = FIREFOX_WINDOWED;
             consts["ie"] = IE;
             consts["internet explorer"] = IE;
             consts["chrome"] = CHROME;
-            consts["awesomium"] = AWESOMIUM;
+            consts["awesomium"] = FIREFOX_HEADLESS;
 
             return consts;
         }

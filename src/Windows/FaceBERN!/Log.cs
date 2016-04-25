@@ -73,6 +73,12 @@ namespace FaceBERN_
                 new object[] { });
         }
 
+        public Dictionary<string, string> GetBuffer()
+        {
+            return (Dictionary<string, string>)csLogType.InvokeMember("GetBuffer", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, csLogInstance,
+                new object[] { });
+        }
+
         public string GetData(string logname)
         {
             return (string)csLogType.InvokeMember("GetData", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, csLogInstance,

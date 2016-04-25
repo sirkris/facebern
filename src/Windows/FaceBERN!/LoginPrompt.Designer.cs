@@ -136,10 +136,11 @@
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Login Required!";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.LoginPrompt_Load);
+            this.Shown += new System.EventHandler(this.LoginPrompt_Shown);
             this.ResumeLayout(false);
             this.PerformLayout();
 

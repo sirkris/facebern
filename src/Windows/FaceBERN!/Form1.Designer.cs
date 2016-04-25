@@ -51,6 +51,9 @@
             this.startToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.alwaysOnTopCheckBox = new System.Windows.Forms.CheckBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.labelInvitesSent = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -109,9 +112,11 @@
             // 
             // exitToolStripMenuItem1
             // 
+            this.exitToolStripMenuItem1.Image = global::FaceBERN_.Properties.Resources.Close;
             this.exitToolStripMenuItem1.Name = "exitToolStripMenuItem1";
             this.exitToolStripMenuItem1.Size = new System.Drawing.Size(92, 22);
             this.exitToolStripMenuItem1.Text = "Exit";
+            this.exitToolStripMenuItem1.Click += new System.EventHandler(this.exitToolStripMenuItem1_Click);
             // 
             // toolsToolStripMenuItem1
             // 
@@ -123,9 +128,11 @@
             // 
             // settingsToolStripMenuItem
             // 
+            this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
+            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem1
             // 
@@ -138,9 +145,11 @@
             // 
             // aboutToolStripMenuItem1
             // 
+            this.aboutToolStripMenuItem1.Image = global::FaceBERN_.Properties.Resources.Info;
             this.aboutToolStripMenuItem1.Name = "aboutToolStripMenuItem1";
             this.aboutToolStripMenuItem1.Size = new System.Drawing.Size(165, 22);
             this.aboutToolStripMenuItem1.Text = "About";
+            this.aboutToolStripMenuItem1.Click += new System.EventHandler(this.aboutToolStripMenuItem1_Click);
             // 
             // donateToBernieToolStripMenuItem
             // 
@@ -191,8 +200,8 @@
             this.browserModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
-            "Awesomium (runs invisibly in background)",
-            "Firefox (runs in a visible window)"});
+            "Invisible",
+            "Visible"});
             this.browserModeComboBox.Location = new System.Drawing.Point(340, 310);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
@@ -229,12 +238,14 @@
             this.startToolStripMenuItem.Name = "startToolStripMenuItem";
             this.startToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.startToolStripMenuItem.Text = "Start";
+            this.startToolStripMenuItem.Click += new System.EventHandler(this.startToolStripMenuItem_Click);
             // 
             // pauseToolStripMenuItem
             // 
             this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
             this.pauseToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
-            this.pauseToolStripMenuItem.Text = "Pause";
+            this.pauseToolStripMenuItem.Text = "Stop";
+            this.pauseToolStripMenuItem.Click += new System.EventHandler(this.pauseToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
@@ -243,12 +254,50 @@
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
+            // alwaysOnTopCheckBox
+            // 
+            this.alwaysOnTopCheckBox.AutoSize = true;
+            this.alwaysOnTopCheckBox.BackColor = System.Drawing.Color.Transparent;
+            this.alwaysOnTopCheckBox.Location = new System.Drawing.Point(299, 359);
+            this.alwaysOnTopCheckBox.Name = "alwaysOnTopCheckBox";
+            this.alwaysOnTopCheckBox.Size = new System.Drawing.Size(92, 17);
+            this.alwaysOnTopCheckBox.TabIndex = 30;
+            this.alwaysOnTopCheckBox.Text = "Always on top";
+            this.alwaysOnTopCheckBox.UseVisualStyleBackColor = false;
+            this.alwaysOnTopCheckBox.CheckedChanged += new System.EventHandler(this.alwaysOnTopCheckBox_CheckedChanged);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.BackColor = System.Drawing.Color.Transparent;
+            this.label3.ForeColor = System.Drawing.Color.Blue;
+            this.label3.Location = new System.Drawing.Point(274, 543);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(83, 13);
+            this.label3.TabIndex = 31;
+            this.label3.Text = "Invitations Sent:";
+            // 
+            // labelInvitesSent
+            // 
+            this.labelInvitesSent.AutoSize = true;
+            this.labelInvitesSent.BackColor = System.Drawing.Color.Transparent;
+            this.labelInvitesSent.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelInvitesSent.ForeColor = System.Drawing.Color.Red;
+            this.labelInvitesSent.Location = new System.Drawing.Point(354, 543);
+            this.labelInvitesSent.Name = "labelInvitesSent";
+            this.labelInvitesSent.Size = new System.Drawing.Size(14, 13);
+            this.labelInvitesSent.TabIndex = 32;
+            this.labelInvitesSent.Text = "0";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.labelInvitesSent);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.alwaysOnTopCheckBox);
             this.Controls.Add(this.browserModeComboBox);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.buttonStart);
@@ -289,13 +338,16 @@
         internal System.Windows.Forms.RichTextBox outBox;
         private System.Windows.Forms.Button buttonStart;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.ComboBox browserModeComboBox;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem openControlCenterToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem startToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem pauseToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+        internal System.Windows.Forms.ComboBox browserModeComboBox;
+        private System.Windows.Forms.CheckBox alwaysOnTopCheckBox;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label labelInvitesSent;
     }
 }
 
