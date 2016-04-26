@@ -15,9 +15,10 @@ namespace FaceBERN_
         private Dictionary<int, string> stateIndexes;
         private int selectedStateIndex = 0;
 
-        public FormSettings()
+        public FormSettings(bool topMost = false)
         {
             InitializeComponent();
+            this.TopMost = topMost;
         }
 
         private void buttonOk_Click(object sender, EventArgs e)
