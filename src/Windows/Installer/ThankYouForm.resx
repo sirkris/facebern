@@ -118,19 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>The Setup Wizard will install the latest version of FaceBERN! on your computer. Click Next to continue or Cancel to exit the Setup Wizard.
+    <value>You have successfully installed FaceBERN!
 
-FaceBERN! is a tool designed to help the average person participate in the political process through streamlined online activism. In short, this tool essentially automates the Facebanking process so that even a person with a busy schedule or not much tech savvy can make a difference! This application should also help reduce unintended spam and account lockouts, as it contains built-in ratelimiting and automatically prevents duplicate invitations from being sent.
+FaceBERN! is designed to run in the background, unattended.  It will automatically perform facebanking GOTV for upcoming primary states; all you have to do is start it and let it run!
 
-Please note that this software is still under development and will require more time to fully realize its potential. Some features will not be present or may not function correctly. More information about this program can be found on Reddit in /r/CodersForSanders and /r/SandersForPresident. This software was not developed by the Sanders campaign. I'm just a supporter with some time to bern.
+IMPORTANT:  The first time you run FaceBERN!, it will ask for your Facebook username and password.  Just like in a web browser, you can choose to securely store those values in the system registry or opt to enter them each time (though that may get tedious, after awhile).  Assuming you leave the remember password box checked, you won't have to worry about that after the first run.
 
-System Requirements:
+There is no documentation right now.  In the meantime, if you need help, please post your questions to /r/CodersForSanders.  The author's contact information can be found by clicking Help-&gt;About in FaceBERN! and clicking the "About the Author" link.
 
-Microsoft Windows (tested/built on Windows 7)
-.NET Framework 4.5 or newer
-Mozilla Firefox
 
-WARNING: THIS IS AN EARLY ALPHA BUILD! USE AT YOUR OWN RISK!</value>
+
+
+
+"If you put your mind to it, you can accomplish anything!"
+
+--Doc Brown, Back to the Future</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">

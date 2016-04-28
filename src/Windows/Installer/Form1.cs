@@ -10,7 +10,9 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.IO;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -29,6 +31,10 @@ namespace Installer
         private bool startAfter;
         private string installed;
 
+        private string repoURL = @"https://github.com/sirkris/facebern.git";
+
+        public string installerVersion = "1.0.0.a";
+
         public Form1(string githubRemoteName, string branchName, bool startAfter)
         {
             InitializeComponent();
@@ -45,6 +51,84 @@ namespace Installer
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
 
             installed = (string) appKey.GetValue("Installed", null);
+            
+            SetStatus("Extracting Git library....");
+            WriteResourceToFile("git2-381caf5.dll");
+            WriteResourceToFile("LibGit2Sharp.dll");
+            
+            SetStatus("Please wait....");
+        }
+
+        public static byte[] ReadToEnd(System.IO.Stream stream)
+        {
+            long originalPosition = 0;
+
+            if (stream.CanSeek)
+            {
+                originalPosition = stream.Position;
+                stream.Position = 0;
+            }
+
+            try
+            {
+                byte[] readBuffer = new byte[4096];
+
+                int totalBytesRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = stream.Read(readBuffer, totalBytesRead, readBuffer.Length - totalBytesRead)) > 0)
+                {
+                    totalBytesRead += bytesRead;
+
+                    if (totalBytesRead == readBuffer.Length)
+                    {
+                        int nextByte = stream.ReadByte();
+                        if (nextByte != -1)
+                        {
+                            byte[] temp = new byte[readBuffer.Length * 2];
+                            Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
+                            Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
+                            readBuffer = temp;
+                            totalBytesRead++;
+                        }
+                    }
+                }
+
+                byte[] buffer = readBuffer;
+                if (readBuffer.Length != totalBytesRead)
+                {
+                    buffer = new byte[totalBytesRead];
+                    Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
+                }
+                return buffer;
+            }
+            finally
+            {
+                if (stream.CanSeek)
+                {
+                    stream.Position = originalPosition;
+                }
+            }
+        }
+
+        public void WriteResourceToFile(string resourceName)
+        {
+            if (File.Exists(Environment.CurrentDirectory + Path.DirectorySeparatorChar + resourceName))
+            {
+                try
+                {
+                    File.Delete(Environment.CurrentDirectory + Path.DirectorySeparatorChar + resourceName);
+                }
+                catch (Exception e)
+                {
+                    return;
+                }
+            }
+
+            Assembly ass = Assembly.GetExecutingAssembly();
+            Stream stream = ass.GetManifestResourceStream("Installer.Resources." + resourceName);
+            File.WriteAllBytes(Environment.CurrentDirectory + Path.DirectorySeparatorChar + resourceName, ReadToEnd(stream));
+            stream.Close();
         }
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -52,7 +136,8 @@ namespace Installer
             if (installed == null)
             {
                 /* Assume first-time installation and prompt the user accordingly.  --Kris */
-
+                Workflow workflow = new Workflow(this);
+                Thread thread = workflow.ExecuteInstallThread(installerVersion, repoURL);
             }
             else
             {
@@ -68,7 +153,7 @@ namespace Installer
                 {
                     SetStatus("Update found!  Preparing to install....");
 
-
+                    // TODO - Copy Installer.exe to a Git-ignored/untracked name, execute it, then proceed with the update and delete when finished.  This will prevent file-lock conflicts on Git pull.  --Kris
                 }
             }
         }
@@ -112,7 +197,7 @@ namespace Installer
             return null;
         }
 
-        private void Exit()
+        public void Exit()
         {
             string appPath = GetAppPath();
             if (startAfter && appPath != null)
@@ -126,14 +211,22 @@ namespace Installer
             this.Close();
         }
 
-        private void SetStatus(string text, int percent = -1)
+        public void SetStatus(string text, int percent = -1)
         {
             statusTextBox.Text = text;
 
             if (percent != -1)
             {
                 progressBar1.Value = percent;
+                progressBar1.Style = ProgressBarStyle.Continuous;
             }
+
+            this.Refresh();
+        }
+
+        public void SetStartAfter(bool startAfter)
+        {
+            this.startAfter = startAfter;
         }
 
         public bool CheckForUpdates()
