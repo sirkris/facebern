@@ -1,0 +1,13 @@
+This directory is used to store the executable that will be copied by the installer.  I put it here instead of the repo root because FaceBERN!.exe won't run without its dependency DLLs, which you'll need to either run the installer for or copy manually, and I didn't want there to be any confusion.
+
+FaceBERN!.exe is NOT intended to be run from this directory!  It is automatically deleted by the installer, by default (disable by checking the "Include Source" box).
+
+The build, itself, will be updated by me directly, at least for the time-being, as having multiple people do that cross-merging would kinda defeat the whole point of having a branching schema like this.
+
+If you have write access to the repo, you are responsible for git-rebasing your branch on a freshly-pulled copy of develop immediately prior to merging!  Any merge conflicts you run into as a result of not doing this will be your responsibility to fix on your end.
+
+
+Thanks!
+
+--Kris
+04.08.2016

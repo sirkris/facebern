@@ -98,31 +98,39 @@ namespace Installer
                 /* Copy the executable.  --Kris */
                 if (!File.Exists(installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe"))
                 {
-                    string binDir = @"src\Windows\FaceBERN!\bin";
-                    if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir))
+                    if (Directory.Exists(installPath + Path.DirectorySeparatorChar + "program")
+                        && File.Exists(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe"))
                     {
-                        if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release")
-                            && File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
-                        {
-                            File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
-                                        installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
-                        }
-                        else if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug")
-                            && File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
-                        {
-                            File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
-                                        installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
-                        }
-                        else
-                        {
-                            SetStatus("ERROR(2)!  FaceBERN.exe not found!");
-                            return;
-                        }
+                        File.Copy(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe", installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe");
                     }
                     else
                     {
-                        SetStatus("ERROR!  FaceBERN!.exe not found!");
-                        return;
+                        string binDir = @"src\Windows\FaceBERN!\bin";
+                        if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir))
+                        {
+                            if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release")
+                                && File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
+                            {
+                                File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
+                                            installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
+                            }
+                            else if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug")
+                                && File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
+                            {
+                                File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
+                                            installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
+                            }
+                            else
+                            {
+                                SetStatus("ERROR(2)!  FaceBERN.exe not found!");
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            SetStatus("ERROR!  FaceBERN!.exe not found!");
+                            return;
+                        }
                     }
                 }
 
@@ -147,11 +155,16 @@ namespace Installer
                 }
 
                 /* Delete the source directory if specified by the user.  --Kris */
-                if (deleteSrc && Directory.Exists(installPath + Path.DirectorySeparatorChar + @"src"))
-                {
-                    SetStatus("Cleaning-up source files....", 85);
+                SetStatus("Cleaning-up source files....", 85);
 
-                    Directory.Delete(installPath + Path.DirectorySeparatorChar + @"src", true);
+                if (Directory.Exists(installPath + Path.DirectorySeparatorChar + "program"))
+                {
+                    Directory.Delete(installPath + Path.DirectorySeparatorChar + "program", true);
+                }
+
+                if (deleteSrc && Directory.Exists(installPath + Path.DirectorySeparatorChar + "src"))
+                {
+                    Directory.Delete(installPath + Path.DirectorySeparatorChar + "src", true);
                 }
 
                 SetStatus("Updating system registry....", 90);
