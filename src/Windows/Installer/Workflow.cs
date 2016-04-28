@@ -142,7 +142,7 @@ namespace Installer
 
                     foreach (string s in files)
                     {
-                        if (Path.GetExtension(s).ToLower().Equals("dll"))
+                        if (Path.GetExtension(s).ToLower().Equals(".dll"))
                         {
                             File.Copy(s, installPath + Path.DirectorySeparatorChar + Path.GetFileName(s));
                         }
