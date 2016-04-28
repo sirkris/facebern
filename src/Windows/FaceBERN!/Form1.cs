@@ -1,6 +1,7 @@
 ﻿using LibGit2Sharp;
 using LibGit2Sharp.Core;
 using LibGit2Sharp.Handlers;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -35,13 +36,19 @@ namespace FaceBERN_
 
         public Log MainLog = new Log();
 
-        public Form1(bool logging = true)
+        private bool logging;
+        private bool updated;
+
+        public Form1(bool updated = false, bool logging = true)
         {
             InitializeComponent();
             labelVersion.Text = Globals.__VERSION__;
             label3.Visible = false;
             labelInvitesSent.Visible = false;
             this.Resize += Form1_Resize;
+
+            this.logging = logging;
+            this.updated = updated;
 
             /* Initialize the log.  --Kris */
             if (logging == true)
@@ -61,9 +68,16 @@ namespace FaceBERN_
             SetDefaults();
             InitINI();
             LoadINI();
-            CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
             SetTrayIcon();
             HideCaret(outBox.Handle);
+            if (!updated)
+            {
+                CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
+            }
+            else
+            {
+                LogW("Launched by updater so no need to check for updates.");
+            }
             Ready();
         }
 
@@ -193,6 +207,36 @@ namespace FaceBERN_
             }
         }
 
+        public string GetInstallerPath()
+        {
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+            string installed = (string)appKey.GetValue("Installed", null);
+
+            List<string> guesses = new List<string>();
+            if (installed != null)
+            {
+                guesses.Add(installed);
+            }
+            guesses.Add(Environment.CurrentDirectory);
+            guesses.Add(Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(@"\FaceBERN!\bin\")) + @"\Installer\bin\Release");
+            guesses.Add(Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(@"\FaceBERN!\bin\")) + @"\Installer\bin\Debug");
+
+            string executable = Path.DirectorySeparatorChar + "Installer.exe";
+            foreach (string guess in guesses)
+            {
+                if (File.Exists(guess + executable))
+                {
+                    return guess + executable;
+                }
+            }
+
+            LogW("Warning:  Unable to locate FaceBERN! Installer!");
+
+            return null;
+        }
+
         /* Checks for updates, then either returns whether an update is available or closes this app and runs the installer/updater if there is an update and autoInstall is true.  --Kris */
         public bool CheckForUpdates(bool autoInstall = false)
         {
@@ -208,22 +252,37 @@ namespace FaceBERN_
                 repo.Network.Fetch(remote);
 
                 /* Compare the current local revision SHA with the newest revision SHA on the remote copy of the branch.  If they don't match, an update is needed.  --Kris */
-                Branch branch = repo.Head;  // Current/active local branch.  --Kris
-                LogW("Active branch is:  " + branch.CanonicalName, false);
+                //Branch branch = repo.Head;  // Current/active local branch.  --Kris
+                Branch branch = repo.Branches[Globals.Config["RepoBranch"]];
+                LogW("Active branch is:  " + repo.Head.CanonicalName, false);
+                LogW("Using update branch: " + branch.FriendlyName);
 
                 shaLocal = branch.Tip.Sha;  // SHA revision string for HEAD.  --Kris
-                LogW("Current revision on local:  " + shaLocal);
+                LogW("Current revision on local....  " + shaLocal);
 
-                Branch branchRemote = repo.Branches["origin/" + branch.CanonicalName];
+                Branch branchRemote = repo.Branches[Globals.Config["GithubRemoteName"] + @"/" + branch.FriendlyName];
                 shaRemote = branchRemote.Tip.Sha;
-                LogW("Current revision on remote:  " + shaRemote);
+                LogW("Current revision on remote...  " + shaRemote);
+
+                /* Save these values to the registry so the installer can run without having the branch/remote names passed as arguments.  --Kris */
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                appKey.SetValue("GithubRemoteName", Globals.Config["GithubRemoteName"], RegistryValueKind.String);
+                appKey.SetValue("BranchName", Globals.Config["RepoBranch"], RegistryValueKind.String);
+
+                appKey.Flush();
+                softwareKey.Flush();
+
+                appKey.Close();
+                softwareKey.Close();
             }
 
 
             if (autoInstall == true && !shaLocal.Equals(shaRemote))
             {
                 LogW("Update found!  This application will close then restart.  Preparing to run installer....");
-                System.Threading.Thread.Sleep(3000);  // Give the user time to read it before the window goes bye-bye.  --Kris
+                System.Threading.Thread.Sleep(1000);
 
                 ExecuteInstaller();
             }
@@ -233,9 +292,20 @@ namespace FaceBERN_
 
         private void ExecuteInstaller()
         {
-            // TODO - Run the installer.  --Kris
+            string installerPath = GetInstallerPath();
+            if (installerPath == null)
+            {
+                LogW("Unable to run installer.  Aborted.");
+            }
+            else
+            {
+                Process process = new Process();
+                process.StartInfo.FileName = installerPath;
+                process.StartInfo.Arguments = Globals.Config["GithubRemoteName"] + " " + Globals.Config["RepoBranch"] + " /startafter";
+                process.Start();
 
-            Exit();
+                Exit();
+            }
         }
 
         private void Exit()
@@ -598,7 +668,7 @@ namespace FaceBERN_
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FormSettings settings = new FormSettings();
+            FormSettings settings = new FormSettings(this.TopMost);
             settings.Show();
         }
 
