@@ -28,7 +28,7 @@ namespace FaceBERN_
         protected Type csLogType = null;
         protected object csLogInstance = null;
 
-        protected bool csLogEnabled = true;
+        protected bool csLogEnabled = false;  // TODO - Fix some minor IO bugs before re-enabling.  Just don't have time to look into it right now.  It's an old mess, anyway.  --Kris
 
         protected string INIPath;
 
@@ -39,9 +39,16 @@ namespace FaceBERN_
         private bool logging;
         private bool updated;
 
+        private RegistryKey softwareKey;
+        private RegistryKey appKey;
+
         public Form1(bool updated = false, bool logging = true)
         {
             InitializeComponent();
+
+            softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            appKey = softwareKey.CreateSubKey("FaceBERN!");
+
             labelVersion.Text = Globals.__VERSION__;
             label3.Visible = false;
             labelInvitesSent.Visible = false;
@@ -98,10 +105,10 @@ namespace FaceBERN_
             Globals.Config.Add("DefaultGOTVDaysBack", "30,10,1");
 
             /* Remote name for Github repo.  If you used the installer, it should be origin.  --Kris */
-            Globals.Config.Add("GithubRemoteName", "origin");
+            //Globals.Config.Add("GithubRemoteName", "origin"); // Add to your config if you want to overwrite whatever's in the registry.  --Kris
 
             /* Branch to use for updates.  It's recommended you go with master or develop.  --Kris */
-            Globals.Config.Add("RepoBranch", "master");
+            //Globals.Config.Add("RepoBranch", "master"); // Add to your config if you want to overwrite whatever's in the registry.  --Kris
 
             this.INIPath = (Globals.ConfigDir != null ? Globals.ConfigDir : "") 
                 + Path.DirectorySeparatorChar 
@@ -209,10 +216,7 @@ namespace FaceBERN_
 
         public string GetInstallerPath()
         {
-            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-
-            string installed = (string)appKey.GetValue("Installed", null);
+            string installed = (string) appKey.GetValue("Installed", null);
 
             List<string> guesses = new List<string>();
             if (installed != null)
@@ -237,47 +241,53 @@ namespace FaceBERN_
             return null;
         }
 
+        public string getGithubRemoteName()
+        {
+            return (string) appKey.GetValue("GithubRemoteName", (Globals.Config["GithubRemoteName"] != null ? Globals.Config["GithubRemoteName"] : "origin"));
+        }
+
+        public string getBranchName()
+        {
+            return (string) appKey.GetValue("BranchName", (Globals.Config["RepoBranch"] != null ? Globals.Config["RepoBranch"] : "master"));
+        }
+
         /* Checks for updates, then either returns whether an update is available or closes this app and runs the installer/updater if there is an update and autoInstall is true.  --Kris */
         public bool CheckForUpdates(bool autoInstall = false)
         {
             LogW("Checking for updates....");
+
+            string githubRemoteName = getGithubRemoteName();
+            string branchName = getBranchName();
 
             string shaLocal;
             string shaRemote;
             using (var repo = new Repository(GetRepoBaseDir()))
             {
                 /* Do a git fetch to get the latest remotes data.  --Kris */
-                LogW("> git fetch origin", false);
-                Remote remote = repo.Network.Remotes[Globals.Config["GithubRemoteName"]];
+                LogW("> git fetch " + githubRemoteName, false);
+                Remote remote = repo.Network.Remotes[githubRemoteName];
                 repo.Network.Fetch(remote);
 
                 /* Compare the current local revision SHA with the newest revision SHA on the remote copy of the branch.  If they don't match, an update is needed.  --Kris */
                 //Branch branch = repo.Head;  // Current/active local branch.  --Kris
-                Branch branch = repo.Branches[Globals.Config["RepoBranch"]];
+                Branch branch = repo.Branches[branchName];
                 LogW("Active branch is:  " + repo.Head.CanonicalName, false);
                 LogW("Using update branch: " + branch.FriendlyName);
 
                 shaLocal = branch.Tip.Sha;  // SHA revision string for HEAD.  --Kris
                 LogW("Current revision on local....  " + shaLocal);
 
-                Branch branchRemote = repo.Branches[Globals.Config["GithubRemoteName"] + @"/" + branch.FriendlyName];
+                Branch branchRemote = repo.Branches[githubRemoteName + @"/" + branch.FriendlyName];
                 shaRemote = branchRemote.Tip.Sha;
                 LogW("Current revision on remote...  " + shaRemote);
 
                 /* Save these values to the registry so the installer can run without having the branch/remote names passed as arguments.  --Kris */
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-
-                appKey.SetValue("GithubRemoteName", Globals.Config["GithubRemoteName"], RegistryValueKind.String);
-                appKey.SetValue("BranchName", Globals.Config["RepoBranch"], RegistryValueKind.String);
+                appKey.SetValue("GithubRemoteName", githubRemoteName, RegistryValueKind.String);
+                appKey.SetValue("BranchName", branchName, RegistryValueKind.String);
 
                 appKey.Flush();
                 softwareKey.Flush();
-
-                appKey.Close();
-                softwareKey.Close();
             }
-
 
             if (autoInstall == true && !shaLocal.Equals(shaRemote))
             {
@@ -301,7 +311,7 @@ namespace FaceBERN_
             {
                 Process process = new Process();
                 process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = Globals.Config["GithubRemoteName"] + " " + Globals.Config["RepoBranch"] + " /startafter";
+                process.StartInfo.Arguments = getGithubRemoteName() + " " + getBranchName() + " /startafter";
                 process.Start();
 
                 Exit();
@@ -311,6 +321,10 @@ namespace FaceBERN_
         private void Exit()
         {
             // TODO - Save configs.  --Kris
+
+            appKey.Close();
+            softwareKey.Close();
+
             this.Close();
         }
 

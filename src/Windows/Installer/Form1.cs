@@ -158,6 +158,11 @@ namespace Installer
             }
         }
 
+        private void statusTextBox_Enter(object sender, EventArgs e)
+        {
+            button1.Focus();
+        }
+
         public string GetAppPath()
         {
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
@@ -205,6 +210,9 @@ namespace Installer
                 Process process = new Process();
                 process.StartInfo.FileName = appPath;
                 process.StartInfo.Arguments = @"/updated";  // This will prevent infinite cross-process loops in the event of an unforseen error.  --Kris
+                process.StartInfo.LoadUserProfile = true;
+                process.StartInfo.UseShellExecute = true;
+                process.StartInfo.WorkingDirectory = Path.GetDirectoryName(appPath);
                 process.Start();
             }
             

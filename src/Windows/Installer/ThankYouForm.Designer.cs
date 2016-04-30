@@ -142,6 +142,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FaceBERN! Installation Complete!";
+            this.TopMost = true;
             this.Load += new System.EventHandler(this.ThankYouForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
             this.ResumeLayout(false);
