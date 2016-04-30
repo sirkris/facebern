@@ -1,4 +1,5 @@
-﻿using LibGit2Sharp;
+﻿using IWshRuntimeLibrary;
+using LibGit2Sharp;
 using LibGit2Sharp.Core;
 using LibGit2Sharp.Handlers;
 using Microsoft.Win32;
@@ -6,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +39,8 @@ namespace Installer
             string installPath = null;
             string branchName = null;
             bool deleteSrc = false;
+            bool createStartMenuShortcut = false;
+            bool createDesktopShortcut = false;
             using (WorkflowForm1 workflowForm1 = new WorkflowForm1(installerVersion))
             {
                 workflowForm1.ShowDialog();
@@ -59,6 +64,8 @@ namespace Installer
                             installPath = workflowForm2.installPath;
                             branchName = workflowForm2.branchName;
                             deleteSrc = !(workflowForm2.includeSrcCheckbox.Checked);
+                            createStartMenuShortcut = !(workflowForm2.createStartMenuFolderCheckbox.Checked);
+                            createDesktopShortcut = !(workflowForm2.createDesktopShortcutCheckbox.Checked);
                         }
                     }
                 }
@@ -96,12 +103,12 @@ namespace Installer
                 SetStatus("Finalizing filesystem....", 80);
 
                 /* Copy the executable.  --Kris */
-                if (!File.Exists(installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe"))
+                if (!System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe"))
                 {
                     if (Directory.Exists(installPath + Path.DirectorySeparatorChar + "program")
-                        && File.Exists(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe"))
+                        && System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe"))
                     {
-                        File.Copy(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe", installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe");
+                        System.IO.File.Copy(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe", installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe");
                     }
                     else
                     {
@@ -109,15 +116,15 @@ namespace Installer
                         if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir))
                         {
                             if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release")
-                                && File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
+                                && System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
                             {
-                                File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
+                                System.IO.File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
                                             installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
                             }
                             else if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug")
-                                && File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
+                                && System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
                             {
-                                File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
+                                System.IO.File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
                                             installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
                             }
                             else
@@ -139,12 +146,12 @@ namespace Installer
                 if (Directory.Exists(installPath + Path.DirectorySeparatorChar + resourceDir))
                 {
                     string[] files = Directory.GetFiles(installPath + Path.DirectorySeparatorChar + resourceDir);
-
+                    
                     foreach (string s in files)
                     {
                         if (Path.GetExtension(s).ToLower().Equals(".dll"))
                         {
-                            File.Copy(s, installPath + Path.DirectorySeparatorChar + Path.GetFileName(s));
+                            System.IO.File.Copy(s, installPath + Path.DirectorySeparatorChar + Path.GetFileName(s));
                         }
                     }
                 }
@@ -154,8 +161,19 @@ namespace Installer
                     return;
                 }
 
+                /* Set the directory and file permissions.  --Kris */
+                SetPermissions(installPath);
+
+                /* Create shortcuts.  --Kris */
+                if (createStartMenuShortcut || createDesktopShortcut)
+                {
+                    SetStatus("Creating shortcut(s)....", 85);
+
+                    CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);
+                }
+
                 /* Delete the source directory if specified by the user.  --Kris */
-                SetStatus("Cleaning-up source files....", 85);
+                SetStatus("Cleaning-up the establishment....", 90);
 
                 if (Directory.Exists(installPath + Path.DirectorySeparatorChar + "program"))
                 {
@@ -194,6 +212,102 @@ namespace Installer
                 }
 
                 Exit();
+            }
+        }
+
+        private void CreateShortcuts(string installPath, bool startMenu = true, bool desktop = true)
+        {
+            if (startMenu)
+            {
+                string commonSMP = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
+                string appSMP = Path.Combine(commonSMP, "Programs");
+
+                if (!Directory.Exists(appSMP))
+                {
+                    Directory.CreateDirectory(appSMP);
+                }
+
+                string shortcutPath = Path.Combine(appSMP, "Shortcut to FaceBERN!.lnk");
+
+                CreateShortcut(shortcutPath, installPath);
+            }
+
+            if (desktop)
+            {
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+
+                if (!Directory.Exists(desktopPath))
+                {
+                    return;  // If your desktop directory doesn't exist, you've got bigger problems to deal with.  --Kris
+                }
+
+                string shortcutPath = Path.Combine(desktopPath, "Shortcut to FaceBERN!.lnk");
+
+                CreateShortcut(shortcutPath, installPath);
+            }
+        }
+
+        private void CreateShortcut(string shortcutPath, string installPath)
+        {
+            WshShell shell = new WshShell();
+            IWshShortcut shortcut = (IWshShortcut) shell.CreateShortcut(shortcutPath);
+
+            shortcut.Description = "FaceBERN! - Because the political revolution begins at home";
+            shortcut.TargetPath = installPath;
+            shortcut.Save();
+
+            
+        }
+
+        /* Recursively set permissions so that the application can run freely.  Path should be a directory.  --Kris */
+        private void SetPermissions(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                return;
+            }
+            
+            /* Set the permissions.  --Kris */
+            SetFSOToEveryone(path);
+
+            string[] files = Directory.GetFiles(path);
+            string[] subDirs = Directory.GetDirectories(path);
+
+            foreach (string file in files)
+            {
+                SetFSOToEveryone(file);
+            }
+
+            foreach (string dir in subDirs)
+            {
+                SetPermissions(dir);
+            }
+        }
+
+        private void SetFSOToEveryone(string path)
+        {
+            SecurityIdentifier everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+            FileSystemAccessRule perms = new FileSystemAccessRule(everyone, FileSystemRights.FullControl, AccessControlType.Allow);
+
+            if (Directory.Exists(path))
+            {
+                DirectoryInfo di = new DirectoryInfo(path);
+                DirectorySecurity diS = di.GetAccessControl();
+
+                //diS.SetOwner(everyone);  // Throws an InvalidOperationException.  Could probably do it with SetACL but the distribution license for the COM library is incompatible with OSS.  --Kris
+                diS.SetAccessRule(perms);
+
+                di.SetAccessControl(diS);
+            }
+            else if (System.IO.File.Exists(path))
+            {
+                FileInfo fi = new FileInfo(path);
+                FileSecurity fiS = fi.GetAccessControl();
+
+                //fiS.SetOwner(everyone);
+                fiS.SetAccessRule(perms);
+
+                fi.SetAccessControl(fiS);
             }
         }
 

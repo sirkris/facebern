@@ -40,6 +40,8 @@
             this.label5 = new System.Windows.Forms.Label();
             this.branchComboBox = new System.Windows.Forms.ComboBox();
             this.includeSrcCheckbox = new System.Windows.Forms.CheckBox();
+            this.createStartMenuFolderCheckbox = new System.Windows.Forms.CheckBox();
+            this.createDesktopShortcutCheckbox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -147,12 +149,36 @@
             this.includeSrcCheckbox.Text = "Include Source Files (leave unchecked if you\'re not a developer)";
             this.includeSrcCheckbox.UseVisualStyleBackColor = true;
             // 
+            // createStartMenuFolderCheckbox
+            // 
+            this.createStartMenuFolderCheckbox.AutoSize = true;
+            this.createStartMenuFolderCheckbox.Enabled = false;
+            this.createStartMenuFolderCheckbox.Location = new System.Drawing.Point(67, 155);
+            this.createStartMenuFolderCheckbox.Name = "createStartMenuFolderCheckbox";
+            this.createStartMenuFolderCheckbox.Size = new System.Drawing.Size(153, 17);
+            this.createStartMenuFolderCheckbox.TabIndex = 16;
+            this.createStartMenuFolderCheckbox.Text = "Create Start Menu shortcut";
+            this.createStartMenuFolderCheckbox.UseVisualStyleBackColor = true;
+            // 
+            // createDesktopShortcutCheckbox
+            // 
+            this.createDesktopShortcutCheckbox.AutoSize = true;
+            this.createDesktopShortcutCheckbox.Enabled = false;
+            this.createDesktopShortcutCheckbox.Location = new System.Drawing.Point(67, 179);
+            this.createDesktopShortcutCheckbox.Name = "createDesktopShortcutCheckbox";
+            this.createDesktopShortcutCheckbox.Size = new System.Drawing.Size(141, 17);
+            this.createDesktopShortcutCheckbox.TabIndex = 17;
+            this.createDesktopShortcutCheckbox.Text = "Create Desktop shortcut";
+            this.createDesktopShortcutCheckbox.UseVisualStyleBackColor = true;
+            // 
             // WorkflowForm2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 312);
+            this.ClientSize = new System.Drawing.Size(480, 308);
             this.ControlBox = false;
+            this.Controls.Add(this.createDesktopShortcutCheckbox);
+            this.Controls.Add(this.createStartMenuFolderCheckbox);
             this.Controls.Add(this.includeSrcCheckbox);
             this.Controls.Add(this.branchComboBox);
             this.Controls.Add(this.label5);
@@ -173,6 +199,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FaceBERN! Installation Wizard";
+            this.TopMost = true;
             this.Load += new System.EventHandler(this.WorkflowForm2_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -192,5 +219,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ComboBox branchComboBox;
         public System.Windows.Forms.CheckBox includeSrcCheckbox;
+        public System.Windows.Forms.CheckBox createStartMenuFolderCheckbox;
+        public System.Windows.Forms.CheckBox createDesktopShortcutCheckbox;
     }
 }

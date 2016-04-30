@@ -141,6 +141,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FaceBERN! Installation Wizard";
+            this.TopMost = true;
             this.Load += new System.EventHandler(this.WorkflowForm1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
             this.ResumeLayout(false);
