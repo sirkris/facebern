@@ -154,6 +154,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="01001011011100100110100101110011001000000100001101110010011000010110100101100111.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="01001011011100100110100101110011001000000100001101110010011000010110100101100111.Designer.cs">
+      <DependentUpon>01001011011100100110100101110011001000000100001101110010011000010110100101100111.cs</DependentUpon>
+    </Compile>
+    <Compile Include="About.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="About.Designer.cs">
+      <DependentUpon>About.cs</DependentUpon>
+    </Compile>
     <Compile Include="Credentials.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -182,6 +194,12 @@
     <Compile Include="States.cs" />
     <Compile Include="WebDriver.cs" />
     <Compile Include="Workflow.cs" />
+    <EmbeddedResource Include="01001011011100100110100101110011001000000100001101110010011000010110100101100111.resx">
+      <DependentUpon>01001011011100100110100101110011001000000100001101110010011000010110100101100111.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="About.resx">
+      <DependentUpon>About.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -223,6 +241,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="bernie.ico" />
+    <Content Include="berniebirdie.jpg" />
     <Content Include="csINI.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -232,6 +251,8 @@
     <Content Include="git2-381caf5.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="Resources\imnotstonedinthisphotojustreallytirednoreallyitstruethoughiamstonedrightnowasimtypingthis.png" />
+    <None Include="Resources\berniebirdie.png" />
     <None Include="Resources\Info.png" />
     <None Include="Resources\Settings.png" />
     <None Include="Resources\Close.png" />
