@@ -683,7 +683,7 @@ namespace FaceBERN_
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FormSettings settings = new FormSettings(this.TopMost);
-            settings.Show();
+            settings.Show(); // TODO - Should probably be ShowDialog(), now that I think of it....  --Kris
         }
 
         private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -693,7 +693,8 @@ namespace FaceBERN_
 
         private void aboutToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            // TODO
+            About about = new About();
+            about.Show();
         }
 
         private void startToolStripMenuItem_Click(object sender, EventArgs e)
