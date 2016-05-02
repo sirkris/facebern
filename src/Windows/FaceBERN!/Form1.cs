@@ -243,12 +243,12 @@ namespace FaceBERN_
 
         public string getGithubRemoteName()
         {
-            return (string) appKey.GetValue("GithubRemoteName", (Globals.Config["GithubRemoteName"] != null ? Globals.Config["GithubRemoteName"] : "origin"));
+            return (string) appKey.GetValue("GithubRemoteName", (Globals.Config.ContainsKey( "GithubRemoteName" ) ? Globals.Config["GithubRemoteName"] : "origin"));
         }
 
         public string getBranchName()
         {
-            return (string) appKey.GetValue("BranchName", (Globals.Config["RepoBranch"] != null ? Globals.Config["RepoBranch"] : "master"));
+            return (string) appKey.GetValue("BranchName", (Globals.Config.ContainsKey( "RepoBranch" ) ? Globals.Config["RepoBranch"] : "master"));
         }
 
         /* Checks for updates, then either returns whether an update is available or closes this app and runs the installer/updater if there is an update and autoInstall is true.  --Kris */
@@ -271,9 +271,30 @@ namespace FaceBERN_
                 /* Compare the current local revision SHA with the newest revision SHA on the remote copy of the branch.  If they don't match, an update is needed.  --Kris */
                 //Branch branch = repo.Head;  // Current/active local branch.  --Kris
                 Branch branch = repo.Branches[branchName];
+                if (branch == null)
+                {
+                    Branch rb = repo.Branches[githubRemoteName + @"/" + branchName];
+                    branch = repo.CreateBranch(branchName, rb.Tip);
+                    if (branch == null)
+                    {
+                        LogW("ERROR loading Git branch '" + branchName + "'!  Update check aborted.");
+
+                        foreach (Branch b in repo.Branches)
+                        {
+                            LogW("DEBUG - Repo branch:  " + b.FriendlyName);  // Uncomment to get a list of available branches if the one attempted comes up null.  --Kris
+                        }
+
+                        return false;
+                    }
+                    else if (!branch.IsTracking)
+                    {
+                        branch = repo.Branches.Update(branch, b => b.TrackedBranch = rb.CanonicalName);
+                    }
+                }
+
                 LogW("Active branch is:  " + repo.Head.CanonicalName, false);
                 LogW("Using update branch: " + branch.FriendlyName);
-
+                
                 shaLocal = branch.Tip.Sha;  // SHA revision string for HEAD.  --Kris
                 LogW("Current revision on local....  " + shaLocal);
 
@@ -297,7 +318,7 @@ namespace FaceBERN_
                 ExecuteInstaller();
             }
             
-            return shaLocal.Equals(shaRemote);
+            return !shaLocal.Equals(shaRemote);
         }
 
         private void ExecuteInstaller()
