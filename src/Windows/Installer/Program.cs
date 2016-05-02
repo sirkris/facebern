@@ -17,10 +17,24 @@ namespace Installer
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            bool startAfter = (args.Length >= 3 && args[2].ToLower().Trim().Equals(@"/startafter") ? true : false);
-            if (args.Length >= 2)
+            bool startAfter = false;
+            bool cleanup = false;
+            if (args.Length > 0)
             {
-                Application.Run(new Form1(args[0], args[1], startAfter));
+                for (int i = 0; i < args.Length; i++)
+                {
+                    switch (args[i].ToLower().Trim())
+                    {
+                        case @"/startafter":
+                            startAfter = true;
+                            break;
+                        case @"/cleanup":
+                            cleanup = true;
+                            break;
+                    }
+                }
+
+                Application.Run(new Form1(args[0], args[1], startAfter, cleanup));
             }
             else
             {
