@@ -65,10 +65,12 @@ namespace Installer
         {
             SetStatus("Updating FaceBERN!....");
 
+            bool keepSrc = Directory.Exists(Path.Combine(Main.repoBaseDir, "src"));
             try
             {
                 using (Repository repo = new Repository(Main.repoBaseDir))
                 {
+                    repo.Reset(ResetMode.Hard, "HEAD");  // This is necessary to clean things up for Git; configs/logs won't be affected.  --Kris
                     Commands.Pull(repo, new LibGit2Sharp.Signature("FaceBERN! Updater", "KrisCraig@php.net", new DateTimeOffset()), new PullOptions());  // Just do a git pull.  That's the update.  --Kris
                 }
 
@@ -78,6 +80,15 @@ namespace Installer
             {
                 SetStatus("ERROR:  Update FAILED!");
                 return;
+            }
+
+            if (!keepSrc)
+            {
+                SetStatus("Cleaning-up the corrupt campagin finance system....", 90);
+                if (Directory.Exists(Path.Combine(Main.repoBaseDir, "src")))
+                {
+                    Directory.Delete(Path.Combine(Main.repoBaseDir, "src"), true);
+                }
             }
 
             SetStatus("Update Complete!", 100);
