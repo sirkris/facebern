@@ -5,6 +5,7 @@ using LibGit2Sharp.Handlers;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.IO;
 using System.Security.AccessControl;
@@ -23,6 +24,79 @@ namespace Installer
         public Workflow(Form1 Main)
         {
             this.Main = Main;
+        }
+
+        public Thread ExecuteCleanupThread()
+        {
+            Thread thread = new Thread(() => ExecuteCleanup());
+            thread.Start();
+            while (!thread.IsAlive) { }
+
+            return thread;
+        }
+
+        public void ExecuteCleanup()
+        {
+            SetStatus("Cleaning-up Wall Street....");
+
+            try
+            {
+                System.IO.File.Delete(Path.Combine(Main.repoBaseDir, "Updater.exe"));
+            }
+            catch (Exception e)
+            {
+                SetStatus("ERROR!  Unable to delete temp exe!");
+                return;
+            }
+
+            SetStatus("Done!");
+        }
+
+        public Thread ExecuteUpdateThread()
+        {
+            Thread thread = new Thread(() => ExecuteUpdate());
+            thread.Start();
+            while (!thread.IsAlive) { }
+
+            return thread;
+        }
+
+        public void ExecuteUpdate()
+        {
+            SetStatus("Updating FaceBERN!....");
+
+            try
+            {
+                using (Repository repo = new Repository(Main.repoBaseDir))
+                {
+                    Commands.Pull(repo, new LibGit2Sharp.Signature("FaceBERN! Updater", "KrisCraig@php.net", new DateTimeOffset()), new PullOptions());  // Just do a git pull.  That's the update.  --Kris
+                }
+
+                SetPermissions(Main.repoBaseDir);
+            }
+            catch (Exception e)
+            {
+                SetStatus("ERROR:  Update FAILED!");
+                return;
+            }
+
+            SetStatus("Update Complete!", 100);
+
+            string installerPath = Path.Combine(Main.repoBaseDir, "Installer.exe");
+            try
+            {
+                Process process = new Process();
+                process.StartInfo.FileName = installerPath;
+                process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " /startafter /cleanup";
+                process.Start();
+            }
+            catch (Exception ex)
+            {
+                SetStatus("ERROR:  Installer re-launch FAILED!");
+                return;
+            }
+
+            Main.Close();
         }
 
         public Thread ExecuteInstallThread(string installerVersion, string repoURL)
@@ -96,62 +170,66 @@ namespace Installer
 
                     using (Repository repo = new Repository(installPath))
                     {
-                        repo.Checkout(repo.Branches[@"origin/" + branchName]);
+                        RepositoryExtensions.Checkout(repo, repo.Branches[@"origin/" + branchName]);
                     }
                 }
 
                 SetStatus("Finalizing filesystem....", 80);
 
-                /* Copy the executable.  --Kris */
-                if (!System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe"))
+                /* Copy the executables.  --Kris */
+                List<string> executables = new List<string>();
+                executables.Add(@"FaceBERN!");
+                executables.Add(@"Installer");
+                foreach (string program in executables)
                 {
-                    if (Directory.Exists(installPath + Path.DirectorySeparatorChar + "program")
-                        && System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe"))
+                    string exe = program + ".exe";
+                    if (Directory.Exists(Path.Combine(installPath, "program"))
+                        && System.IO.File.Exists(Path.Combine(installPath, "program", exe)))
                     {
-                        System.IO.File.Copy(installPath + Path.DirectorySeparatorChar + @"program\FaceBERN!.exe", installPath + Path.DirectorySeparatorChar + @"FaceBERN!.exe");
+                        System.IO.File.Copy(Path.Combine(installPath, "program", exe), Path.Combine(installPath, exe));
                     }
                     else
                     {
-                        string binDir = @"src\Windows\FaceBERN!\bin";
-                        if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir))
+                        string binDir = Path.Combine("src", "Windows", program, "bin");
+                        if (Directory.Exists(Path.Combine(installPath, binDir)))
                         {
-                            if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release")
-                                && System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
+                            if (Directory.Exists(Path.Combine(installPath, binDir, "Release"))
+                                && System.IO.File.Exists(Path.Combine(installPath, binDir, "Release", exe)))
                             {
-                                System.IO.File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
-                                            installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
+                                System.IO.File.Copy(Path.Combine(installPath, binDir, "Release", exe),
+                                            Path.Combine(installPath, exe));
                             }
-                            else if (Directory.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug")
-                                && System.IO.File.Exists(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe"))
+                            else if (Directory.Exists(Path.Combine(installPath, binDir, "Debug"))
+                                && System.IO.File.Exists(Path.Combine(installPath, binDir, "Debug", exe)))
                             {
-                                System.IO.File.Copy(installPath + Path.DirectorySeparatorChar + binDir + Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar + @"FaceBERN.exe",
-                                            installPath + Path.DirectorySeparatorChar + @"FaceBERN.exe");
+                                System.IO.File.Copy(Path.Combine(installPath, binDir, "Debug", exe),
+                                            Path.Combine(installPath, exe));
                             }
                             else
                             {
-                                SetStatus("ERROR(2)!  FaceBERN.exe not found!");
+                                SetStatus("ERROR(2)!  " + exe + " not found!");
                                 return;
                             }
                         }
                         else
                         {
-                            SetStatus("ERROR!  FaceBERN!.exe not found!");
+                            SetStatus("ERROR!  " + exe + " not found!");
                             return;
                         }
                     }
                 }
 
                 /* Copy all dependencies.  --Kris */
-                string resourceDir = @"src\Windows\FaceBERN!\Resources";
-                if (Directory.Exists(installPath + Path.DirectorySeparatorChar + resourceDir))
+                string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
+                if (Directory.Exists(Path.Combine(installPath, resourceDir)))
                 {
-                    string[] files = Directory.GetFiles(installPath + Path.DirectorySeparatorChar + resourceDir);
+                    string[] files = Directory.GetFiles(Path.Combine(installPath, resourceDir));
                     
                     foreach (string s in files)
                     {
                         if (Path.GetExtension(s).ToLower().Equals(".dll"))
                         {
-                            System.IO.File.Copy(s, installPath + Path.DirectorySeparatorChar + Path.GetFileName(s));
+                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
                         }
                     }
                 }
@@ -169,20 +247,20 @@ namespace Installer
                 {
                     SetStatus("Creating shortcut(s)....", 85);
 
-                    CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);
+                    CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);  // TODO - This currently fails silently; the shortcuts aren't being created for whatever reason.  No time to debug.  --Kris
                 }
 
                 /* Delete the source directory if specified by the user.  --Kris */
                 SetStatus("Cleaning-up the establishment....", 90);
 
-                if (Directory.Exists(installPath + Path.DirectorySeparatorChar + "program"))
+                if (Directory.Exists(Path.Combine(installPath, "program")))
                 {
-                    Directory.Delete(installPath + Path.DirectorySeparatorChar + "program", true);
+                    Directory.Delete(Path.Combine(installPath, "program"), true);
                 }
 
-                if (deleteSrc && Directory.Exists(installPath + Path.DirectorySeparatorChar + "src"))
+                if (deleteSrc && Directory.Exists(Path.Combine(installPath, "src")))
                 {
-                    Directory.Delete(installPath + Path.DirectorySeparatorChar + "src", true);
+                    Directory.Delete(Path.Combine(installPath, "src"), true);
                 }
 
                 SetStatus("Updating system registry....", 90);

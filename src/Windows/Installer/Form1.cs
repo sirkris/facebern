@@ -20,27 +20,30 @@ namespace Installer
 {
     public partial class Form1 : Form
     {
-        private string repoBaseDir;
-        private string githubRemoteName;
-        private string branchName;
+        public string repoBaseDir;
+        public string githubRemoteName;
+        public string branchName;
 
         private Remote remote;
         private Branch branch;
         private Branch branchRemote;
 
         private bool startAfter;
+        private bool cleanup;
+
         private string installed;
 
         private string repoURL = @"https://github.com/sirkris/facebern.git";
 
         public string installerVersion = "1.0.0.a";
 
-        public Form1(string githubRemoteName, string branchName, bool startAfter)
+        public Form1(string githubRemoteName, string branchName, bool startAfter, bool cleanup = false)
         {
             InitializeComponent();
             this.githubRemoteName = githubRemoteName;
             this.branchName = branchName;
             this.startAfter = startAfter;
+            this.cleanup = cleanup;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -51,10 +54,6 @@ namespace Installer
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
 
             installed = (string) appKey.GetValue("Installed", null);
-            
-            SetStatus("Extracting Git library....");
-            WriteResourceToFile("git2-381caf5.dll");
-            WriteResourceToFile("LibGit2Sharp.dll");
             
             SetStatus("Please wait....");
         }
@@ -133,6 +132,22 @@ namespace Installer
 
         private void Form1_Shown(object sender, EventArgs e)
         {
+            if (cleanup)
+            {
+                SetStatus("Initializing clean-up thread....");
+
+                Workflow workflow = new Workflow(this);
+                workflow.ExecuteCleanup();
+
+                Exit();
+                return;
+            }
+
+            SetStatus("Extracting Git library....");
+
+            WriteResourceToFile("git2-381caf5.dll");
+            WriteResourceToFile("LibGit2Sharp.dll");
+
             if (installed == null)
             {
                 /* Assume first-time installation and prompt the user accordingly.  --Kris */
@@ -151,9 +166,49 @@ namespace Installer
                 }
                 else
                 {
-                    SetStatus("Update found!  Preparing to install....");
+                    /* Copy this executable to an untracked name and run that.  This will enable the installer to update itself, as well.  --Kris */
+                    string executingAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    string updaterName = "Updater.exe";
+                    
+                    // Decided this isn't necessary since the installer is not being run from the directory it's tracked in.  To enable this, simply get rid of the "false &&" on the line below.  --Kris
+                    if (false && executingAssembly.IndexOf(updaterName) == -1)
+                    {
+                        SetStatus("Update found!  Preparing to launch updater....");
 
-                    // TODO - Copy Installer.exe to a Git-ignored/untracked name, execute it, then proceed with the update and delete when finished.  This will prevent file-lock conflicts on Git pull.  --Kris
+                        string updaterPath = Path.Combine(repoBaseDir, updaterName);
+                        try
+                        {
+                            File.Copy(System.Reflection.Assembly.GetExecutingAssembly().Location, updaterPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            SetStatus("ERROR:  Installer copy FAILED!");
+                            return;
+                        }
+
+                        try
+                        {
+                            Process process = new Process();
+                            process.StartInfo.FileName = updaterPath;
+                            process.StartInfo.Arguments = githubRemoteName + " " + branchName + " /startafter";
+                            process.Start();
+                        }
+                        catch (Exception ex)
+                        {
+                            SetStatus("ERROR:  Updater launch FAILED!");
+                            return;
+                        }
+
+                        this.Close();
+                    }
+                    else
+                    {
+                        /* Perform the update!  --Kris */
+                        SetStatus("Update found!  Preparing to install....");
+
+                        Workflow workflow = new Workflow(this);
+                        workflow.ExecuteUpdateThread();
+                    }
                 }
             }
         }
