@@ -148,6 +148,10 @@ namespace Installer
             WriteResourceToFile("git2-381caf5.dll");
             WriteResourceToFile("LibGit2Sharp.dll");
 
+            SetStatus("Extracting SetACL utility....");
+
+            WriteResourceToFile("SetACL.exe");
+
             if (installed == null)
             {
                 /* Assume first-time installation and prompt the user accordingly.  --Kris */
