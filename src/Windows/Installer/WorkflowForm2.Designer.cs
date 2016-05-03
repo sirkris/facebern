@@ -177,7 +177,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(476, 304);
+            this.ClientSize = new System.Drawing.Size(472, 300);
             this.ControlBox = false;
             this.Controls.Add(this.createDesktopShortcutCheckbox);
             this.Controls.Add(this.createStartMenuFolderCheckbox);
@@ -201,6 +201,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FaceBERN! Installation Wizard";
+            this.TopMost = true;
             this.Load += new System.EventHandler(this.WorkflowForm2_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
