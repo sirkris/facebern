@@ -165,8 +165,8 @@ namespace FaceBERN_
                 {
                     int milestone = Int32.Parse(entry);
                     if ((last == -1 || last > milestone)
-                        && state.Value.primaryDate.Subtract(DateTime.Now).TotalDays >= 0
-                        && state.Value.primaryDate.Subtract(DateTime.Now).TotalDays <= milestone)
+                        && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
+                        && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays <= milestone)
                     {
                         /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
                         List<Person> friends = GetFacebookFriendsOfFriends(ref webDriver, state.Key);
@@ -769,7 +769,7 @@ namespace FaceBERN_
 
             webDriver.GoToUrl(browser, "http://www.facebook.com");
 
-            IWebDriver w = webDriver.GetDriver( browser );
+            IWebDriver w = webDriver.GetDriver(browser);
             webDriver.ClickElement(browser, w.FindElement(By.CssSelector("[data-tooltip-content=\"Friend Requests\"]")));
             
             IWebElement button = webDriver.GetElementByXPath(browser, ".//button[contains(@onclick, '100001066887477')]");
