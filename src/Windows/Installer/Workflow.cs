@@ -410,6 +410,7 @@ namespace Installer
                 process.StartInfo.Arguments = args;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
                 process.Start();
+                process.WaitForExit(60000);  // If it takes more than a minute, something must be out of whack.  Should only take a few seconds under normal conditions.  --Kris
             }
             catch (Exception ex)
             {
