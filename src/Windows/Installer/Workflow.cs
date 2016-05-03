@@ -344,10 +344,8 @@ namespace Installer
             IWshShortcut shortcut = (IWshShortcut) shell.CreateShortcut(shortcutPath);
 
             shortcut.Description = "FaceBERN! - Because the political revolution begins at home";
-            shortcut.TargetPath = installPath;
+            shortcut.TargetPath = Path.Combine(installPath, @"FaceBERN!.exe");
             shortcut.Save();
-
-            
         }
 
         /* Recursively set permissions so that the application can run freely.  Path should be a directory.  --Kris */
