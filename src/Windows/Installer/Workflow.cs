@@ -345,6 +345,7 @@ namespace Installer
 
             shortcut.Description = "FaceBERN! - Because the political revolution begins at home";
             shortcut.TargetPath = Path.Combine(installPath, @"FaceBERN!.exe");
+            shortcut.WorkingDirectory = installPath;
             shortcut.Save();
         }
 
@@ -407,8 +408,7 @@ namespace Installer
                 Process process = new Process();
                 process.StartInfo.FileName = Path.Combine(Environment.CurrentDirectory, "SetACL.exe");
                 process.StartInfo.Arguments = args;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
                 process.Start();
             }
             catch (Exception ex)
