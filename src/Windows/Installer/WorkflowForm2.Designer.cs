@@ -152,7 +152,8 @@
             // createStartMenuFolderCheckbox
             // 
             this.createStartMenuFolderCheckbox.AutoSize = true;
-            this.createStartMenuFolderCheckbox.Enabled = false;
+            this.createStartMenuFolderCheckbox.Checked = true;
+            this.createStartMenuFolderCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.createStartMenuFolderCheckbox.Location = new System.Drawing.Point(67, 155);
             this.createStartMenuFolderCheckbox.Name = "createStartMenuFolderCheckbox";
             this.createStartMenuFolderCheckbox.Size = new System.Drawing.Size(153, 17);
@@ -163,7 +164,8 @@
             // createDesktopShortcutCheckbox
             // 
             this.createDesktopShortcutCheckbox.AutoSize = true;
-            this.createDesktopShortcutCheckbox.Enabled = false;
+            this.createDesktopShortcutCheckbox.Checked = true;
+            this.createDesktopShortcutCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.createDesktopShortcutCheckbox.Location = new System.Drawing.Point(67, 179);
             this.createDesktopShortcutCheckbox.Name = "createDesktopShortcutCheckbox";
             this.createDesktopShortcutCheckbox.Size = new System.Drawing.Size(141, 17);
@@ -175,7 +177,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(480, 308);
+            this.ClientSize = new System.Drawing.Size(476, 304);
             this.ControlBox = false;
             this.Controls.Add(this.createDesktopShortcutCheckbox);
             this.Controls.Add(this.createStartMenuFolderCheckbox);
@@ -199,7 +201,6 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FaceBERN! Installation Wizard";
-            this.TopMost = true;
             this.Load += new System.EventHandler(this.WorkflowForm2_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

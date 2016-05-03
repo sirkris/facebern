@@ -113,6 +113,7 @@ namespace Installer
         public Thread ExecuteInstallThread(string installerVersion, string repoURL)
         {
             Thread thread = new Thread(() => ExecuteInstall(installerVersion, repoURL));
+            thread.SetApartmentState(ApartmentState.STA);  // MTA is not compatible with FolderBrowserDialog.  --Kris
             thread.Start();
             while (!thread.IsAlive) { }
 
@@ -149,8 +150,8 @@ namespace Installer
                             installPath = workflowForm2.installPath;
                             branchName = workflowForm2.branchName;
                             deleteSrc = !(workflowForm2.includeSrcCheckbox.Checked);
-                            createStartMenuShortcut = !(workflowForm2.createStartMenuFolderCheckbox.Checked);
-                            createDesktopShortcut = !(workflowForm2.createDesktopShortcutCheckbox.Checked);
+                            createStartMenuShortcut = workflowForm2.createStartMenuFolderCheckbox.Checked;
+                            createDesktopShortcut = workflowForm2.createDesktopShortcutCheckbox.Checked;
                         }
                     }
                 }
@@ -251,7 +252,8 @@ namespace Installer
                 }
 
                 /* Set the directory and file permissions.  --Kris */
-                SetPermissions(installPath);
+                //SetPermissions(installPath);  // The built-in ACL libraries are terrible and wholly unreliable.  Resorting to Plan B.  --Kris
+                SetACLPermissions(installPath);
 
                 /* Create shortcuts.  --Kris */
                 if (createStartMenuShortcut || createDesktopShortcut)
@@ -316,7 +318,7 @@ namespace Installer
                     Directory.CreateDirectory(appSMP);
                 }
 
-                string shortcutPath = Path.Combine(appSMP, "Shortcut to FaceBERN!.lnk");
+                string shortcutPath = Path.Combine(appSMP, "FaceBERN!.lnk");
 
                 CreateShortcut(shortcutPath, installPath);
             }
@@ -330,7 +332,7 @@ namespace Installer
                     return;  // If your desktop directory doesn't exist, you've got bigger problems to deal with.  --Kris
                 }
 
-                string shortcutPath = Path.Combine(desktopPath, "Shortcut to FaceBERN!.lnk");
+                string shortcutPath = Path.Combine(desktopPath, "FaceBERN!.lnk");
 
                 CreateShortcut(shortcutPath, installPath);
             }
@@ -398,6 +400,47 @@ namespace Installer
 
                 fi.SetAccessControl(fiS);
             }
+        }
+
+        private bool SetACL(string args)
+        {
+            try
+            {
+                Process process = new Process();
+                process.StartInfo.FileName = Path.Combine(Environment.CurrentDirectory, "SetACL.exe");
+                process.StartInfo.Arguments = args;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.Start();
+            }
+            catch (Exception ex)
+            {
+                SetStatus("ERROR:  SetACL launch FAILED!");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool SetACLPermissions(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                return false;
+            }
+
+            bool res1, res2 = false;
+
+            /* Set the owner to Everyone.  --Kris */
+            res1 = SetACL("-on \"" + path + "\" -ot file -actn setowner -ownr n:S-1-1-0 -rec cont_obj");
+
+            /* Give full control to Everyone.  --Kris */
+            if (res1)
+            {
+                res2 = SetACL("-on \"" + path + "\" -ot file -actn ace -ace \"n:S-1-1-0;p:full\" -rec cont_obj");
+            }
+
+            return (res1 && res2);
         }
 
         private void SetStartAfter(bool startAfter)
