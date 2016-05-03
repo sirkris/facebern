@@ -150,8 +150,8 @@ namespace Installer
                             installPath = workflowForm2.installPath;
                             branchName = workflowForm2.branchName;
                             deleteSrc = !(workflowForm2.includeSrcCheckbox.Checked);
-                            createStartMenuShortcut = !(workflowForm2.createStartMenuFolderCheckbox.Checked);
-                            createDesktopShortcut = !(workflowForm2.createDesktopShortcutCheckbox.Checked);
+                            createStartMenuShortcut = workflowForm2.createStartMenuFolderCheckbox.Checked;
+                            createDesktopShortcut = workflowForm2.createDesktopShortcutCheckbox.Checked;
                         }
                     }
                 }

@@ -152,7 +152,8 @@
             // createStartMenuFolderCheckbox
             // 
             this.createStartMenuFolderCheckbox.AutoSize = true;
-            this.createStartMenuFolderCheckbox.Enabled = false;
+            this.createStartMenuFolderCheckbox.Checked = true;
+            this.createStartMenuFolderCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.createStartMenuFolderCheckbox.Location = new System.Drawing.Point(67, 155);
             this.createStartMenuFolderCheckbox.Name = "createStartMenuFolderCheckbox";
             this.createStartMenuFolderCheckbox.Size = new System.Drawing.Size(153, 17);
@@ -163,7 +164,8 @@
             // createDesktopShortcutCheckbox
             // 
             this.createDesktopShortcutCheckbox.AutoSize = true;
-            this.createDesktopShortcutCheckbox.Enabled = false;
+            this.createDesktopShortcutCheckbox.Checked = true;
+            this.createDesktopShortcutCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.createDesktopShortcutCheckbox.Location = new System.Drawing.Point(67, 179);
             this.createDesktopShortcutCheckbox.Name = "createDesktopShortcutCheckbox";
             this.createDesktopShortcutCheckbox.Size = new System.Drawing.Size(141, 17);
