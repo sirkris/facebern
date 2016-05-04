@@ -68,19 +68,30 @@ namespace Installer
             bool keepSrc = Directory.Exists(Path.Combine(Main.repoBaseDir, "src"));
             try
             {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
                 using (Repository repo = new Repository(Main.repoBaseDir))
                 {
                     repo.Reset(ResetMode.Hard, "HEAD");  // This is necessary to clean things up for Git; configs/logs won't be affected.  --Kris
+                    Commands.Checkout(repo, repo.Branches[(string)appKey.GetValue("BranchName", "master")]);  // You should not use the updater on manual installs!  --Kris
                     Commands.Pull(repo, new LibGit2Sharp.Signature("FaceBERN! Updater", "KrisCraig@php.net", new DateTimeOffset()), new PullOptions());  // Just do a git pull.  That's the update.  --Kris
                 }
+
+                appKey.Close();
+                softwareKey.Close();
 
                 SetPermissions(Main.repoBaseDir);
             }
             catch (Exception e)
             {
                 SetStatus("ERROR:  Update FAILED!");
+                //SetStatus(@"err=" + e.Message);  // Uncomment for DEBUG.  --Kris
                 return;
             }
+
+            SetStatus("Copying executables....", 80);
+            CopyExecutables(Main.repoBaseDir);
 
             if (!keepSrc)
             {
@@ -189,47 +200,7 @@ namespace Installer
                 SetStatus("Finalizing filesystem....", 80);
 
                 /* Copy the executables.  --Kris */
-                List<string> executables = new List<string>();
-                executables.Add(@"FaceBERN!");
-                executables.Add(@"Installer");
-                foreach (string program in executables)
-                {
-                    string exe = program + ".exe";
-                    if (Directory.Exists(Path.Combine(installPath, "program"))
-                        && System.IO.File.Exists(Path.Combine(installPath, "program", exe)))
-                    {
-                        System.IO.File.Copy(Path.Combine(installPath, "program", exe), Path.Combine(installPath, exe));
-                    }
-                    else
-                    {
-                        string binDir = Path.Combine("src", "Windows", program, "bin");
-                        if (Directory.Exists(Path.Combine(installPath, binDir)))
-                        {
-                            if (Directory.Exists(Path.Combine(installPath, binDir, "Release"))
-                                && System.IO.File.Exists(Path.Combine(installPath, binDir, "Release", exe)))
-                            {
-                                System.IO.File.Copy(Path.Combine(installPath, binDir, "Release", exe),
-                                            Path.Combine(installPath, exe));
-                            }
-                            else if (Directory.Exists(Path.Combine(installPath, binDir, "Debug"))
-                                && System.IO.File.Exists(Path.Combine(installPath, binDir, "Debug", exe)))
-                            {
-                                System.IO.File.Copy(Path.Combine(installPath, binDir, "Debug", exe),
-                                            Path.Combine(installPath, exe));
-                            }
-                            else
-                            {
-                                SetStatus("ERROR(2)!  " + exe + " not found!");
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            SetStatus("ERROR!  " + exe + " not found!");
-                            return;
-                        }
-                    }
-                }
+                CopyExecutables(installPath);
 
                 /* Copy all dependencies.  --Kris */
                 string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
@@ -303,6 +274,51 @@ namespace Installer
                 }
 
                 Exit();
+            }
+        }
+
+        private void CopyExecutables(string installPath)
+        {
+            List<string> executables = new List<string>();
+            executables.Add(@"FaceBERN!");
+            executables.Add(@"Installer");
+            foreach (string program in executables)
+            {
+                string exe = program + ".exe";
+                if (Directory.Exists(Path.Combine(installPath, "program"))
+                    && System.IO.File.Exists(Path.Combine(installPath, "program", exe)))
+                {
+                    System.IO.File.Copy(Path.Combine(installPath, "program", exe), Path.Combine(installPath, exe), true);
+                }
+                else
+                {
+                    string binDir = Path.Combine("src", "Windows", program, "bin");
+                    if (Directory.Exists(Path.Combine(installPath, binDir)))
+                    {
+                        if (Directory.Exists(Path.Combine(installPath, binDir, "Release"))
+                            && System.IO.File.Exists(Path.Combine(installPath, binDir, "Release", exe)))
+                        {
+                            System.IO.File.Copy(Path.Combine(installPath, binDir, "Release", exe),
+                                        Path.Combine(installPath, exe), true);
+                        }
+                        else if (Directory.Exists(Path.Combine(installPath, binDir, "Debug"))
+                            && System.IO.File.Exists(Path.Combine(installPath, binDir, "Debug", exe)))
+                        {
+                            System.IO.File.Copy(Path.Combine(installPath, binDir, "Debug", exe),
+                                        Path.Combine(installPath, exe), true);
+                        }
+                        else
+                        {
+                            SetStatus("ERROR(2)!  " + exe + " not found!");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        SetStatus("ERROR!  " + exe + " not found!");
+                        return;
+                    }
+                }
             }
         }
 
