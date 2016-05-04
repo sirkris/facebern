@@ -224,8 +224,15 @@ namespace FaceBERN_
                 guesses.Add(installed);
             }
             guesses.Add(Environment.CurrentDirectory);
-            guesses.Add(Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(@"\FaceBERN!\bin\")) + @"\Installer\bin\Release");
-            guesses.Add(Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(@"\FaceBERN!\bin\")) + @"\Installer\bin\Debug");
+
+            string mainBin = Path.DirectorySeparatorChar + Path.Combine(@"FaceBERN!", "bin") + Path.DirectorySeparatorChar;
+            string instBin = Path.DirectorySeparatorChar + Path.Combine("Installer", "bin") + Path.DirectorySeparatorChar;
+
+            if (Directory.Exists(mainBin) && Directory.Exists(instBin))
+            {
+                guesses.Add(Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(mainBin)) + instBin + "Release");
+                guesses.Add(Environment.CurrentDirectory.Substring(0, Environment.CurrentDirectory.IndexOf(mainBin)) + instBin + "Debug");
+            }
 
             string executable = Path.DirectorySeparatorChar + "Installer.exe";
             foreach (string guess in guesses)
