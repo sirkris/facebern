@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,9 +35,40 @@ namespace FaceBERN_
 
         private void buttonApply_Click(object sender, EventArgs e)
         {
-            buttonApply.Enabled = false;
+            Globals.Config["UseFTBEvents"] = (useFTBEventsCheckbox.Checked ? "1" : "0");
+            Globals.Config["UseCustomEvents"] = (useCustomEventsCheckbox.Checked ? "1" : "0");
+            Globals.Config["CheckRememberPasswordByDefault"] = (checkRememberPasswordByDefaultCheckbox.Checked ? "1" : "0");
+            Globals.Config["AutoUpdate"] = (autoUpdateCheckbox.Checked ? "1" : "0");
 
-            // TODO - Save changes to config container and INIs.  --Kris
+            Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
+
+            if (stateIndexes != null && stateIndexes[selectedStateIndex] != null)
+            {
+                States state = Globals.StateConfigs[stateIndexes[selectedStateIndex]];
+
+                state.facebookId = facebookIDTextBox.Text;
+                state.FTBEventId = FTBEventIdTextBox.Text;
+
+                Globals.StateConfigs[state.abbr] = state;
+
+                Dictionary<string, Dictionary<string, string>> config = new Dictionary<string, Dictionary<string, string>>();
+
+                string sectionName = "Settings";
+
+                config[sectionName] = new Dictionary<string, string>();
+                config[sectionName].Add("abbr", state.abbr);
+                config[sectionName].Add("name", state.name);
+                config[sectionName].Add("primaryDate", state.primaryDate.ToString("yyyy-MM-dd"));
+                config[sectionName].Add("primaryType", state.primaryType);
+                config[sectionName].Add("primaryAccess", state.primaryAccess);
+                config[sectionName].Add("facebookId", state.facebookId);
+                config[sectionName].Add("FTBEventId", state.FTBEventId);
+
+                Globals.sINI.Clear(Path.Combine(Globals.ConfigDir, state.abbr + ".ini"));
+                Globals.sINI.Save(Path.Combine(Globals.ConfigDir, state.abbr + ".ini"), config);
+            }
+
+            buttonApply.Enabled = false;
         }
 
         private void SetFormDefaults(string tab, bool inFocus = false)
