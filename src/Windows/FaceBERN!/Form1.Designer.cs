@@ -72,6 +72,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
+            this.label1.BackColor = System.Drawing.Color.Transparent;
             this.label1.ForeColor = System.Drawing.Color.Blue;
             this.label1.Location = new System.Drawing.Point(296, 135);
             this.label1.Name = "label1";
@@ -82,6 +83,7 @@
             // labelVersion
             // 
             this.labelVersion.AutoSize = true;
+            this.labelVersion.BackColor = System.Drawing.Color.Transparent;
             this.labelVersion.ForeColor = System.Drawing.Color.Blue;
             this.labelVersion.Location = new System.Drawing.Point(337, 135);
             this.labelVersion.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
@@ -130,7 +132,7 @@
             // 
             this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 

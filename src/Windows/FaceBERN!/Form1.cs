@@ -49,7 +49,6 @@ namespace FaceBERN_
             softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
             appKey = softwareKey.CreateSubKey("FaceBERN!");
 
-            labelVersion.Text = Globals.__VERSION__;
             label3.Visible = false;
             labelInvitesSent.Visible = false;
             this.Resize += Form1_Resize;
@@ -121,11 +120,24 @@ namespace FaceBERN_
 
             SetStateDefaults();
 
+            /* Add the branch and revision to the version string if we're not on the master branch.  --Kris */
+            string branchName = getBranchName();
+            if (!(branchName.Equals("master")))
+            {
+                using (var repo = new Repository(GetRepoBaseDir()))
+                {
+                    Globals.__VERSION__ += @"." + branchName + @"." + repo.Branches[branchName].Tip.Sha;
+                }
+
+                label1.Location = new Point(label1.Location.X - 145, label1.Location.Y);
+                labelVersion.Location = new Point(labelVersion.Location.X - 145, labelVersion.Location.Y);
+            }
+
             labelVersion.Text = Globals.__VERSION__;
 
             HideCaret(outBox.Handle);
 
-            /* Disable Awesomium option until we can get it working.  New York is coming up and I don't have time to figure that shit out, sorry.  --Kris */
+            /* Disable invisible option until it's ready.  --Kris */
             browserModeComboBox.SelectedIndex = 1;
             browserModeComboBox.Enabled = false;
         }
