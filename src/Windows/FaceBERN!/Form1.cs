@@ -87,6 +87,23 @@ namespace FaceBERN_
             Ready();
         }
 
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            int retry = 3;
+            while (Application.OpenForms[this.Name] == null)
+            {
+                retry--;
+                if (retry == 0)
+                {
+                    return;
+                }
+
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            Application.OpenForms[this.Name].Focus();
+        }
+
         public void SetDefaults()
         {
             Globals.Config = new Dictionary<string, string>();
