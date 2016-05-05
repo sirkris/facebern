@@ -120,19 +120,6 @@ namespace FaceBERN_
 
             SetStateDefaults();
 
-            /* Add the branch and revision to the version string if we're not on the master branch.  --Kris */
-            string branchName = getBranchName();
-            if (!(branchName.Equals("master")))
-            {
-                using (var repo = new Repository(GetRepoBaseDir()))
-                {
-                    Globals.__VERSION__ += @"." + branchName + @"." + repo.Branches[branchName].Tip.Sha;
-                }
-
-                label1.Location = new Point(label1.Location.X - 145, label1.Location.Y);
-                labelVersion.Location = new Point(labelVersion.Location.X - 145, labelVersion.Location.Y);
-            }
-
             labelVersion.Text = Globals.__VERSION__;
 
             HideCaret(outBox.Handle);
@@ -289,26 +276,10 @@ namespace FaceBERN_
 
                 /* Compare the current local revision SHA with the newest revision SHA on the remote copy of the branch.  If they don't match, an update is needed.  --Kris */
                 //Branch branch = repo.Head;  // Current/active local branch.  --Kris
-                Branch branch = repo.Branches[branchName];
+                Branch branch = GetBranch(repo, branchName);
                 if (branch == null)
                 {
-                    Branch rb = repo.Branches[githubRemoteName + @"/" + branchName];
-                    branch = repo.CreateBranch(branchName, rb.Tip);
-                    if (branch == null)
-                    {
-                        LogW("ERROR loading Git branch '" + branchName + "'!  Update check aborted.");
-
-                        foreach (Branch b in repo.Branches)
-                        {
-                            LogW("DEBUG - Repo branch:  " + b.FriendlyName);  // Uncomment to get a list of available branches if the one attempted comes up null.  --Kris
-                        }
-
-                        return false;
-                    }
-                    else if (!branch.IsTracking)
-                    {
-                        branch = repo.Branches.Update(branch, b => b.TrackedBranch = rb.CanonicalName);
-                    }
+                    return false;
                 }
 
                 LogW("Active branch is:  " + repo.Head.CanonicalName, false);
@@ -338,6 +309,60 @@ namespace FaceBERN_
             }
             
             return !shaLocal.Equals(shaRemote);
+        }
+
+        private Branch GetBranch(Repository repo, string branchName)
+        {
+            string githubRemoteName = getGithubRemoteName();
+
+            Branch branch = repo.Branches[branchName];
+            if (branch == null)
+            {
+                Branch rb = repo.Branches[githubRemoteName + @"/" + branchName];
+                branch = repo.CreateBranch(branchName, rb.Tip);
+                if (branch == null)
+                {
+                    LogW("ERROR loading Git branch '" + branchName + "'!  Update check aborted.");
+
+                    foreach (Branch b in repo.Branches)
+                    {
+                        LogW("DEBUG - Repo branch:  " + b.FriendlyName);  // Uncomment to get a list of available branches if the one attempted comes up null.  --Kris
+                    }
+
+                    return null;
+                }
+                else if (!branch.IsTracking)
+                {
+                    branch = repo.Branches.Update(branch, b => b.TrackedBranch = rb.CanonicalName);
+                }
+            }
+
+            return branch;
+        }
+
+        private void UpdateVersion()
+        {
+            /* Add the branch and revision to the version string if we're not on the master branch.  --Kris */
+            string branchName = getBranchName();
+
+            if (!(branchName.Equals("master")))
+            {
+                using (var repo = new Repository(GetRepoBaseDir()))
+                {
+                    Branch branch = GetBranch(repo, branchName);
+                    if (branch == null)
+                    {
+                        return;
+                    }
+
+                    Globals.__VERSION__ += @"." + branchName + @"." + repo.Branches[branchName].Tip.Sha;
+                }
+
+                labelVersion.Text = Globals.__VERSION__;
+                label1.Location = new Point(label1.Location.X - 145, label1.Location.Y);
+                labelVersion.Location = new Point(labelVersion.Location.X - 145, labelVersion.Location.Y);
+            }
+
         }
 
         private void ExecuteInstaller()
