@@ -120,7 +120,7 @@ namespace FaceBERN_
 
             SetStateDefaults();
 
-            labelVersion.Text = Globals.__VERSION__;
+            UpdateVersion();
 
             HideCaret(outBox.Handle);
 
@@ -358,11 +358,11 @@ namespace FaceBERN_
                     Globals.__VERSION__ += @"." + branchName + @"." + repo.Branches[branchName].Tip.Sha;
                 }
 
-                labelVersion.Text = Globals.__VERSION__;
                 label1.Location = new Point(label1.Location.X - 145, label1.Location.Y);
                 labelVersion.Location = new Point(labelVersion.Location.X - 145, labelVersion.Location.Y);
             }
 
+            labelVersion.Text = Globals.__VERSION__;
         }
 
         private void ExecuteInstaller()
