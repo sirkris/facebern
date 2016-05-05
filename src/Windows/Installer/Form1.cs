@@ -11,6 +11,7 @@ using System.Drawing;
 using System.Linq;
 using System.IO;
 using System.Reflection;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +31,7 @@ namespace Installer
 
         private bool startAfter;
         private bool cleanup;
+        private int retry;
 
         private string installed;
 
@@ -37,13 +39,14 @@ namespace Installer
 
         public string installerVersion = "1.0.0.a";
 
-        public Form1(string githubRemoteName, string branchName, bool startAfter, bool cleanup = false)
+        public Form1(string githubRemoteName, string branchName, bool startAfter, bool cleanup = false, int retry = 0)
         {
             InitializeComponent();
             this.githubRemoteName = githubRemoteName;
             this.branchName = branchName;
             this.startAfter = startAfter;
             this.cleanup = cleanup;
+            this.retry = retry;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -130,6 +133,11 @@ namespace Installer
             stream.Close();
         }
 
+        private bool IsAdministrator()
+        {
+            return (new WindowsPrincipal(WindowsIdentity.GetCurrent())).IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
         private void Form1_Shown(object sender, EventArgs e)
         {
             if (cleanup)
@@ -152,11 +160,45 @@ namespace Installer
 
             WriteResourceToFile("SetACL.exe");
 
+            SetStatus("Please wait....");
+
             if (installed == null)
             {
-                /* Assume first-time installation and prompt the user accordingly.  --Kris */
-                Workflow workflow = new Workflow(this);
-                Thread thread = workflow.ExecuteInstallThread(installerVersion, repoURL);
+                /* Since we're going to be doing an install, we're gonna need to relaunch as Administrator.  --Kris */
+                if (!IsAdministrator())
+                {
+                    /* This will prevent infinite relaunching in the event that it fails to elevate for whatever reason.  --Kris */
+                    retry++;
+                    if (retry == 5)
+                    {
+                        SetStatus("ERROR!  Unable to launch as Administrator!");
+                        return;
+                    }
+
+                    string executingAssembly = System.Reflection.Assembly.GetEntryAssembly().Location;
+                    try
+                    {
+                        Process process = new Process();
+                        process.StartInfo.FileName = executingAssembly;
+                        process.StartInfo.Arguments = "retry=" + retry.ToString();
+                        process.StartInfo.UseShellExecute = true;
+                        process.StartInfo.Verb = "runas";  // Run as Administrator.  --Kris
+                        process.Start();
+
+                        this.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        SetStatus("ERROR:  Updater launch FAILED!");
+                        return;
+                    }
+                }
+                else
+                {
+                    /* Assume first-time installation and prompt the user accordingly.  --Kris */
+                    Workflow workflow = new Workflow(this);
+                    Thread thread = workflow.ExecuteInstallThread(installerVersion, repoURL);
+                }
             }
             else
             {
@@ -174,15 +216,14 @@ namespace Installer
                     string executingAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
                     string updaterName = "Updater.exe";
                     
-                    // Decided this isn't necessary since the installer is not being run from the directory it's tracked in.  To enable this, simply get rid of the "false &&" on the line below.  --Kris
-                    if (false && executingAssembly.IndexOf(updaterName) == -1)
+                    if (executingAssembly.IndexOf(updaterName) == -1)
                     {
                         SetStatus("Update found!  Preparing to launch updater....");
 
                         string updaterPath = Path.Combine(repoBaseDir, updaterName);
                         try
                         {
-                            File.Copy(System.Reflection.Assembly.GetExecutingAssembly().Location, updaterPath);
+                            File.Copy(executingAssembly, updaterPath, true);
                         }
                         catch (Exception ex)
                         {
@@ -194,7 +235,7 @@ namespace Installer
                         {
                             Process process = new Process();
                             process.StartInfo.FileName = updaterPath;
-                            process.StartInfo.Arguments = githubRemoteName + " " + branchName + " /startafter";
+                            process.StartInfo.Arguments = "githubRemoteName=" + githubRemoteName + " branchName=" + branchName + " /startafter";
                             process.Start();
                         }
                         catch (Exception ex)
