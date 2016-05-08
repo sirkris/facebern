@@ -26,7 +26,7 @@ namespace FaceBERN_
         public static int __TIMEOUT__ = 3;  // Seconds
 
         /* How long to wait between each browser iteration.  --Kris */
-        public static int __BROWSE_DELAY__ = 1;  // Seconds
+        public static int __BROWSE_DELAY__ = 2;  // Seconds
 
         /* How long to wait between checks for having received the feelthebern.events friend request.  --Kris */
         public static int __FTB_REQUEST_ACCESS_WAIT_INTERVAL__ = 60;  // Minutes
@@ -62,6 +62,7 @@ namespace FaceBERN_
         public const int STATE_WAITING = 2;  // Sitting idle until some action needs to be taken (then switches to executing state).
         public const int STATE_SLEEPING = 3;  // Sitting idle because the end-user restricted execution to another timeframe (then switches to waiting state).
         public const int STATE_EXECUTING = 4;  // Doing the actual work.
+        public const int STATE_STOPPING = 5;  // Stop button has been clicked.
 
         /* Browser constants.  --Kris */
         public const int FIREFOX_HEADLESS = 0;

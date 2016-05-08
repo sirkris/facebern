@@ -42,6 +42,8 @@ namespace FaceBERN_
         private RegistryKey softwareKey;
         private RegistryKey appKey;
 
+        public bool stop = false;
+
         public Form1(bool updated = false, bool logging = true)
         {
             InitializeComponent();
@@ -487,6 +489,9 @@ namespace FaceBERN_
             {
                 LogW("Stopping....");
 
+                SetExecState(Globals.STATE_STOPPING);
+                stop = true;
+
                 Globals.thread.Abort();
                 Globals.thread.Join(60000);
 
@@ -633,6 +638,8 @@ namespace FaceBERN_
             }
 
             SetExecState(Globals.STATE_READY, logName);
+            stop = false;
+
             LogW("Ready.");
         }
 
