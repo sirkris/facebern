@@ -231,13 +231,13 @@ namespace Installer
                 {
                     SetStatus("Creating shortcut(s)....", 85);
 
-                    CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);  // TODO - This currently fails silently; the shortcuts aren't being created for whatever reason.  No time to debug.  --Kris
+                    CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);
                 }
 
                 /* Delete the source directory if specified by the user.  --Kris */
                 SetStatus("Cleaning-up the establishment....", 90);
 
-                if (Directory.Exists(Path.Combine(installPath, "program")))
+                if (deleteSrc && Directory.Exists(Path.Combine(installPath, "program")))
                 {
                     Directory.Delete(Path.Combine(installPath, "program"), true);
                 }
