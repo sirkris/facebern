@@ -836,7 +836,7 @@ namespace FaceBERN_
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
                 Log("Thread stop received.  Workflow aborted.");
-                return;
+                return false;
             }
 
             int lastState = Globals.executionState;
