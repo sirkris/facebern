@@ -104,6 +104,12 @@ namespace FaceBERN_
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
         private void GOTV()
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_VALIDATING);
 
@@ -151,6 +157,12 @@ namespace FaceBERN_
             string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
             foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
             {
+                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+                {
+                    Log("Thread stop received.  Workflow aborted.");
+                    return;
+                }
+
                 Log("Checking GOTV for " + state.Key + "....");
 
                 /* Determine if it's time for GOTV in this state.  --Kris */
@@ -214,6 +226,12 @@ namespace FaceBERN_
 
         private void ExecuteGOTV(ref WebDriver webDriver, ref List<Person> friends, ref RegistryKey stateKey, States state)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
@@ -308,6 +326,12 @@ namespace FaceBERN_
 
         private void Wait(int minutes, string reason = "")
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
             Log("Waiting " + minutes.ToString() + (minutes != 1 ? " minutes" : " minute") + (reason != "" ? " " + reason : "") + "....");
 
             int lastState = Globals.executionState;
@@ -321,6 +345,12 @@ namespace FaceBERN_
         /* Open a new browser session and login to Facebook.  --Kris */
         private WebDriver FacebookLogin(int retry = 5)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return null;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
@@ -498,6 +528,12 @@ namespace FaceBERN_
 
         private bool CreateGOTVEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr, int retry = 5)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return false;
+            }
+
             int lastState = Globals.executionState;
             try
             {
@@ -586,6 +622,12 @@ namespace FaceBERN_
         /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
         private void InviteToEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+            
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
@@ -624,6 +666,7 @@ namespace FaceBERN_
                 Log("Warning:  Error reading previous invitations from registry : " + e.Message);
             }
             
+            /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
             if (friends.Count > 0)
             {
                 Log("Sending invitations....");
@@ -662,16 +705,21 @@ namespace FaceBERN_
                     /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
                     webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
-                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
+                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
 
-                    /* Every 25 invites, pause for one minute.  Every 100 invites, pause for five minutes.  Again, we don't want to trigger any false positives from the spam algos.  --Kris */
+                    /* We don't want to trigger any false positives from the spam algos.  --Kris */
                     if (i % 100 == 0 && i > 1)
                     {
                         Wait(5, "for 100-interval ratelimit");
                     }
-                    else if (i % 25 == 0 && i > 1)
+                    else if (i % 50 == 0 && i > 1)
                     {
-                        Wait(1, "for 25-interval ratelimit");
+                        Wait(3, "for 50-interval ratelimit");
+                    }
+
+                    else if (i % 20 == 0 && i > 1)
+                    {
+                        Wait(1, "for 20-interval ratelimit");
                     }
 
                     if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
@@ -785,6 +833,12 @@ namespace FaceBERN_
 
         private bool AcceptFacebookFTBRequest(ref WebDriver webDriver)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
@@ -824,6 +878,12 @@ namespace FaceBERN_
 
         private List<Person> GetFacebookFriendsOfFriends(ref WebDriver webDriver, string stateAbbr = null, bool bernieSupportersOnly = true)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return new List<Person>();
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
@@ -869,6 +929,12 @@ namespace FaceBERN_
 
             for (int i = 1; i < resRaw.Length; i++)
             {
+                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+                {
+                    Log("Thread stop received.  Workflow aborted.");
+                    return new List<Person>();
+                }
+
                 if (resRaw[i] == null || resRaw[i].Length < 40 || resRaw[i].Substring(0, 34) != "<a href=\"https://www.facebook.com/")
                 {
                     continue;
@@ -945,6 +1011,12 @@ namespace FaceBERN_
         /* Load the Facebook event page from feelthebern.events and return whether or not the user has access to the event.  --Kris */
         private bool CheckFTBEventAccess(string stateAbbr, ref WebDriver webDriver)
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return false;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_VALIDATING);
 
@@ -972,6 +1044,12 @@ namespace FaceBERN_
         /* Load feelthebern.events in a separate browser session and attempt to get invited to the state events.  Note that it can take over an hour for the request to be processed.  --Kris */
         private void RequestFTBInvitation()
         {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_VALIDATING);
 

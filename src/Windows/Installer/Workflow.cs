@@ -85,8 +85,8 @@ namespace Installer
             }
             catch (Exception e)
             {
-                SetStatus("ERROR:  Update FAILED!");
-                //SetStatus(@"err=" + e.Message);  // Uncomment for DEBUG.  --Kris
+                //SetStatus("ERROR:  Update FAILED!");
+                SetStatus(@"err=" + e.Message);  // Uncomment for DEBUG.  --Kris
                 return;
             }
 
