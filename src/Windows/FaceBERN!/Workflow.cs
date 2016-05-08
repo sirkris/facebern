@@ -496,70 +496,91 @@ namespace FaceBERN_
             return webDriver;
         }
 
-        private bool CreateGOTVEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr)
+        private bool CreateGOTVEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr, int retry = 5)
         {
             int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            Log("Creating private GOTV event for " + stateAbbr + "....");
-
-            webDriver.GoToUrl(browser, "https://www.facebook.com/events/upcoming");
-
-            IWebDriver w = webDriver.GetDriver(browser);
-            webDriver.ClickElement(browser, w.FindElement(By.CssSelector("[data-testid=\"event-create-button\"]")));
-
-            System.Threading.Thread.Sleep(5000);  // This one's a bit slower to load and I don't trust the implicit wait in this case.  --Kris
-
-            States state = Globals.StateConfigs[stateAbbr];
-
-            string indefiniteArticle;
-            switch (state.primaryAccess.Substring(0, 1).ToUpper())
+            try
             {
-                default:
-                    indefiniteArticle = "a";
-                    break;
-                case "A":
-                case "E":
-                case "I":
-                case "O":
-                case "U":
-                    indefiniteArticle = "an";
-                    break;
+                SetExecState(Globals.STATE_EXECUTING);
+
+                Log("Creating private GOTV event for " + stateAbbr + "....");
+
+                webDriver.GoToUrl(browser, "https://www.facebook.com/events/upcoming");
+
+                IWebDriver w = webDriver.GetDriver(browser);
+                webDriver.ClickElement(browser, w.FindElement(By.CssSelector("[data-testid=\"event-create-button\"]")));
+
+                System.Threading.Thread.Sleep(5000);  // This one's a bit slower to load and I don't trust the implicit wait in this case.  --Kris
+
+                States state = Globals.StateConfigs[stateAbbr];
+
+                string indefiniteArticle;
+                switch (state.primaryAccess.Substring(0, 1).ToUpper())
+                {
+                    default:
+                        indefiniteArticle = "a";
+                        break;
+                    case "A":
+                    case "E":
+                    case "I":
+                    case "O":
+                    case "U":
+                        indefiniteArticle = "an";
+                        break;
+                }
+
+                /* Default values.  --Kris */
+                // TODO - Make these configurable for each state.  --Kris
+                // TODO - Allow state subreddit mods to specify these values in a JSON post retrieved automatically by FaceBERN!.  --Kris
+                string eventName = "Vote for Bernie in " + state.name + " on " + state.primaryDate.ToString("MMMM d, yyyy");
+                string location = state.name;
+                string description = state.name + " will be holding " + indefiniteArticle + " " + state.primaryAccess + " " + state.primaryType + " on " + state.primaryDate.ToString("MMMM d, yyyy")
+                                    + ".  For more information on how/where to vote and when polls open/close, visit http://vote.berniesanders.com/" + stateAbbr.ToUpper();
+
+                /* Enter the values into the form and create the event.  --Kris */
+                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "Include a place or address"), location);
+                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "Add a short, clear name"), eventName);
+                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
+                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
+                webDriver.TypeText(browser, webDriver.GetElementByTagNameAndAttribute(browser, "div", "title", "Tell people more about the event"), description);
+                webDriver.ClickOnXPath(browser, ".//button[.='Create']");
+
+                /* Check to see if we're on the new event page.  --Kris */
+                System.Threading.Thread.Sleep(5000);
+
+                IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
+                if (inviteButton == null)
+                {
+                    Log("ERROR:  Event creation failed!  Aborted.");
+                    return false;
+                }
+
+                Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
+
+                InviteToEvent(ref webDriver, ref friends, stateAbbr);
+
+                SetExecState(lastState);
+
+                return true;
             }
-
-            /* Default values.  --Kris */
-            // TODO - Make these configurable for each state.  --Kris
-            // TODO - Allow state subreddit mods to specify these values in a JSON post retrieved automatically by FaceBERN!.  --Kris
-            string eventName = "Vote for Bernie in " + state.name + " on " + state.primaryDate.ToString("MMMM d, yyyy");
-            string location = state.name;
-            string description = state.name + " will be holding " + indefiniteArticle + " " + state.primaryAccess + " " + state.primaryType + " on " + state.primaryDate.ToString("MMMM d, yyyy")
-                                + ".  For more information on how/where to vote and when polls open/close, visit http://vote.berniesanders.com/" + stateAbbr.ToUpper();
-
-            /* Enter the values into the form and create the event.  --Kris */
-            webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "Include a place or address"), location);
-            webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "Add a short, clear name"), eventName);
-            webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
-            webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
-            webDriver.TypeText(browser, webDriver.GetElementByTagNameAndAttribute(browser, "div", "title", "Tell people more about the event"), description);
-            webDriver.ClickOnXPath(browser, ".//button[.='Create']");
-
-            /* Check to see if we're on the new event page.  --Kris */
-            System.Threading.Thread.Sleep(5000);
-
-            IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
-            if (inviteButton == null)
+            /* Any number of random flukes can happen.  Retries will enable the workflow to proceed in the event of an intermittent or one-time error.  --Kris */
+            catch (Exception e)
             {
-                Log("Event creation failed!  Aborted.");
-                return false;
+                retry--;
+                if (retry == 0)
+                {
+                    Log("ERROR:  Retries exhausted!  Event creation aborted.");
+                    SetExecState(Globals.STATE_BROKEN);
+
+                    return false;
+                }
+
+                Log("Retrying " + (5 - retry).ToString() + @"/5 after unexpected error : " + e.Message);
+
+                SetExecState(lastState);
+
+                return CreateGOTVEvent(ref webDriver, ref friends, stateAbbr, retry);
             }
-            
-            Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
-
-            InviteToEvent(ref webDriver, ref friends, stateAbbr);
-
-            SetExecState(lastState);
-
-            return true;
         }
 
         /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
