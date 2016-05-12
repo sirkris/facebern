@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace FaceBERN_
 {
@@ -25,7 +26,7 @@ namespace FaceBERN_
         private IWebDriver _driverFirefox;
         private FirefoxProfile _profileFirefox;
         private ISelenium selenium;
-        private WebClient webClient;
+        private NHtmlUnit.WebClient webClient;
         private HtmlPage page;
         private bool documentReady;
 
@@ -34,19 +35,70 @@ namespace FaceBERN_
         public const int ERROR_BADCREDENTIALS = 2;
         public const int ERROR_UNEXPECTED = 3;
 
+        private string logName = "WebDriver";
+        public Log WebDriverLog;
+        private Form1 Main;
+
+        private int browser;
+
+        public WebDriver(Form1 Main, int browser, Log MainLog = null)
+        {
+            this.Main = Main;
+            if (MainLog == null)
+            {
+                InitLog();
+            }
+            else
+            {
+                WebDriverLog = MainLog;
+                WebDriverLog.Init("WebDriver");
+            }
+
+            this.browser = browser;
+        }
+
+        private void InitLog()
+        {
+            WebDriverLog = new Log();
+            WebDriverLog.Init(logName);
+        }
+
+        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { Log(text, show, appendW, newline, timestamp); }));
+            }
+            else
+            {
+                Main.LogW(text, show, appendW, newline, timestamp, logName, WebDriverLog);
+
+                Main.Refresh();
+            }
+        }
+
         [TestFixtureSetUp]
-        public void FixtureSetup(int browser)
+        public void FixtureSetup()
         {
             switch (browser)
             {
                 case Globals.FIREFOX_WINDOWED:
+                    Log("Opening new Firefox window....");
+
                     _driverFirefox = new FirefoxDriver();
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
-                    Maximize(browser);
+                    Maximize();
                     break;
                 case Globals.FIREFOX_HEADLESS:
-                    webClient = new WebClient(BrowserVersion.FIREFOX_38);
+                    Log("Opening new headless browser process....");
+
+                    webClient = new NHtmlUnit.WebClient(BrowserVersion.FIREFOX_38);
                     webClient.Options.JavaScriptEnabled = true;
+                    webClient.Options.RedirectEnabled = true;
+                    webClient.Options.ThrowExceptionOnFailingStatusCode = false;
+                    webClient.Options.ThrowExceptionOnScriptError = false;
                     webClient.WaitForBackgroundJavaScript(10000);
                     webClient.AjaxController = new NicelyResynchronizingAjaxController();
                     break;
@@ -54,60 +106,72 @@ namespace FaceBERN_
         }
 
         [SetUp]
-        public void TestSetUp(int browser, string URL)
+        public void TestSetUp(string URL)
         {
             switch (browser)
             {
                 case Globals.FIREFOX_WINDOWED:
+                    Log("Navigating Firefox to:  " + URL);
+
                     _driverFirefox.Navigate().GoToUrl(URL);
                     break;
                 case Globals.FIREFOX_HEADLESS:
+                    Log("Navigating headless browser to:  " + URL);
+                    Log("This may take a few minutes....");
+
+                    System.Threading.Thread.Sleep(500);
+
                     page = webClient.GetHtmlPage(URL);
+                    
                     break;
             }
         }
 
         /* Alias for TestSetUp.  --Kris */
-        public void GoToUrl(int browser, string URL)
+        public void GoToUrl(string URL)
         {
-            TestSetUp(browser, URL);
+            TestSetUp(URL);
         }
 
         [Test]
-        public string GetPageSource(int browser, int retry = 5, int aRetry = 30)
+        public string GetPageSource(int retry = 5)
         {
             dynamic driver;
 
-            driver = GetDriver(browser);
+            driver = GetDriver();
 
+            string res = null;
             switch (browser)
             {
                 default:
                 case Globals.FIREFOX_WINDOWED:
-                    if (driver.PageSource != null)
-                    {
-                        return driver.PageSource;
-                    }
-                    else
-                    {
-                        retry--;
-                        if (retry == 0)
-                        {
-                            return null;
-                        }
-                        else
-                        {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__);
-                            return GetPageSource(browser, retry);
-                        }
-                    }
+                    res = driver.PageSource;
+                    break;
                 case Globals.FIREFOX_HEADLESS:
-                    return page.AsXml();
+                    res = page.AsXml();
+                    break;
+            }
+
+            if (res != null)
+            {
+                return res;
+            }
+            else
+            {
+                retry--;
+                if (retry == 0)
+                {
+                    return null;
+                }
+
+                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__);
+
+                return GetPageSource(retry);
             }
         }
 
         [Test]
-        public dynamic GetDriver(int browser)
+        public dynamic GetDriver()
         {
             switch (browser)
             {
@@ -120,14 +184,14 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void Maximize(int browser)
+        public void Maximize()
         {
             if (browser == Globals.FIREFOX_HEADLESS)
             {
                 return;
             }
 
-            IWebDriver driver = GetDriver(browser);
+            IWebDriver driver = GetDriver();
 
             string script;
             string name;
@@ -159,7 +223,7 @@ namespace FaceBERN_
         private static extern IntPtr FindWindow(string sClassName, string sAppName);
 
         [Test]
-        public dynamic GetElementById(int browser, string elementid, bool iefix = false)
+        public dynamic GetElementById(string elementid, bool iefix = false)
         {
             try
             {
@@ -167,7 +231,7 @@ namespace FaceBERN_
                 {
                     default:
                     case Globals.FIREFOX_WINDOWED:
-                        IWebDriver driver = GetDriver(browser);
+                        IWebDriver driver = GetDriver();
                         
                         /*
                          * This is necessary to fix a bug in the IE WebDriver.
@@ -196,7 +260,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByName(int browser, string elementname, bool iefix = false)
+        public dynamic GetElementByName(string elementname, bool iefix = false)
         {
             try
             {
@@ -204,7 +268,7 @@ namespace FaceBERN_
                 {
                     default:
                     case Globals.FIREFOX_WINDOWED:
-                        IWebDriver driver = GetDriver(browser);
+                        IWebDriver driver = GetDriver();
 
                         /*
                          * This is necessary to fix a bug in the IE WebDriver.
@@ -233,7 +297,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByLinkText(int browser, string linktext, bool partial = false)
+        public dynamic GetElementByLinkText(string linktext, bool partial = false)
         {
             try
             {
@@ -241,7 +305,7 @@ namespace FaceBERN_
                 {
                     default:
                     case Globals.FIREFOX_WINDOWED:
-                        IWebDriver driver = GetDriver(browser);
+                        IWebDriver driver = GetDriver();
 
                         if (partial == true)
                         {
@@ -262,7 +326,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByXPath(int browser, string xpath, int timeout = -1)
+        public dynamic GetElementByXPath(string xpath, int timeout = -1)
         {
             dynamic res;
             IWebDriver driver;
@@ -271,7 +335,7 @@ namespace FaceBERN_
             {
                 default:
                 case Globals.FIREFOX_WINDOWED:
-                    driver = GetDriver(browser);
+                    driver = GetDriver();
 
                     if (timeout >= 0)
                     {
@@ -301,11 +365,11 @@ namespace FaceBERN_
         }
 
         [Test]
-        public List<IWebElement> GetElementsByTagName(int browser, string tagName)
+        public List<IWebElement> GetElementsByTagName(string tagName)
         {
             try
             {
-                IWebDriver driver = GetDriver(browser);
+                IWebDriver driver = GetDriver();
 
                 return new List<IWebElement>(driver.FindElements(By.TagName(tagName)));
             }
@@ -316,15 +380,15 @@ namespace FaceBERN_
         }
 
         [Test]
-        public IWebElement GetInputElementByPlaceholder(int browser, string placeholder)
+        public IWebElement GetInputElementByPlaceholder(string placeholder)
         {
-            return GetElementByTagNameAndAttribute(browser, "input", "placeholder", placeholder);
+            return GetElementByTagNameAndAttribute("input", "placeholder", placeholder);
         }
 
         [Test]
-        public IWebElement GetElementByTagNameAndAttribute(int browser, string tagName, string attributeName, string attributeValue)
+        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue)
         {
-            List<IWebElement> eles = GetElementsByTagName(browser, tagName);
+            List<IWebElement> eles = GetElementsByTagName(tagName);
             if (eles == null)
             {
                 return null;
@@ -342,9 +406,9 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClickElement(int browser, dynamic element, bool viewportfix = false, bool autoscroll = false)
+        public bool ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false)
         {
-            dynamic driver = GetDriver(browser);
+            dynamic driver = GetDriver();
 
             switch (browser)
             {
@@ -421,10 +485,10 @@ namespace FaceBERN_
 
         [Test]
         // Modified from:  http://stackoverflow.com/questions/13244225/selenium-how-to-make-the-web-driver-to-wait-for-page-to-refresh-before-executin
-        public void WaitForPageLoad(int browser, int maxWaitTimeInSeconds = 60)
+        public void WaitForPageLoad(int maxWaitTimeInSeconds = 60)
         {
             string state = string.Empty;
-            dynamic _driver = GetDriver(browser);
+            dynamic _driver = GetDriver();
             try
             {
                 WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
@@ -476,9 +540,9 @@ namespace FaceBERN_
 
         [Test]
         /* When all else fails, have JavaScript do it.  --Kris */
-        public void JavaScriptClickElementId(int browser, string elementid, bool checkbox = false)
+        public void JavaScriptClickElementId(string elementid, bool checkbox = false)
         {
-            dynamic driver = GetDriver(browser);
+            dynamic driver = GetDriver();
             string script;
 
             script = (checkbox ? "document.getElementById( '" + elementid + "' ).checked = true;" : "document.getElementById( '" + elementid + "' ).Click();");
@@ -496,7 +560,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClickOnLink(int browser, string linktext, bool partial = false, bool viewportfix = false, int retry = 2)
+        public bool ClickOnLink(string linktext, bool partial = false, bool viewportfix = false, int retry = 2)
         {
             switch (browser)
             {
@@ -504,8 +568,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementByLinkText(browser, linktext, partial);
-                        return ClickElement(browser, element, viewportfix);
+                        IWebElement element = GetElementByLinkText(linktext, partial);
+                        return ClickElement(element, viewportfix);
                     }
                     catch
                     {
@@ -513,7 +577,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClickOnLink(browser, linktext, partial, viewportfix, retry);
+                            return ClickOnLink(linktext, partial, viewportfix, retry);
                         }
                         else
                         {
@@ -527,7 +591,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClickOnXPath(int browser, string xpath, bool viewportfix = false, int retry = 2)
+        public bool ClickOnXPath(string xpath, bool viewportfix = false, int retry = 2)
         {
             switch (browser)
             {
@@ -535,8 +599,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementByXPath(browser, xpath);
-                        return ClickElement(browser, element, viewportfix);
+                        IWebElement element = GetElementByXPath(xpath);
+                        return ClickElement(element, viewportfix);
                     }
                     catch
                     {
@@ -544,7 +608,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClickOnXPath(browser, xpath, viewportfix, retry);
+                            return ClickOnXPath(xpath, viewportfix, retry);
                         }
                         else
                         {
@@ -558,9 +622,9 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool TypeText(int browser, dynamic element, string text)
+        public bool TypeText(dynamic element, string text)
         {
-            dynamic driver = GetDriver(browser);
+            dynamic driver = GetDriver();
 
             switch (browser)
             {
@@ -589,7 +653,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool TypeInXPath(int browser, string xpath, string text, int retry = 2)
+        public bool TypeInXPath(string xpath, string text, int retry = 2)
         {
             switch (browser)
             {
@@ -597,8 +661,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementByXPath(browser, xpath);
-                        return TypeText(browser, element, text);
+                        IWebElement element = GetElementByXPath(xpath);
+                        return TypeText(element, text);
                     }
                     catch
                     {
@@ -606,7 +670,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInXPath(browser, xpath, text, retry);
+                            return TypeInXPath(xpath, text, retry);
                         }
                         else
                         {
@@ -620,7 +684,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool TypeInId(int browser, string elementid, string text, bool iefix = false, int retry = 2)
+        public bool TypeInId(string elementid, string text, bool iefix = false, int retry = 2)
         {
             switch (browser)
             {
@@ -628,8 +692,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementById(browser, elementid, iefix);
-                        return TypeText(browser, element, text);
+                        IWebElement element = GetElementById(elementid, iefix);
+                        return TypeText(element, text);
                     }
                     catch
                     {
@@ -637,7 +701,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInId(browser, elementid, text, iefix, retry);
+                            return TypeInId(elementid, text, iefix, retry);
                         }
                         else
                         {
@@ -651,7 +715,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool TypeInName(int browser, string elementname, string text, bool iefix = false, int retry = 2)
+        public bool TypeInName(string elementname, string text, bool iefix = false, int retry = 2)
         {
             switch (browser)
             {
@@ -659,8 +723,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementByName(browser, elementname, iefix);
-                        return TypeText(browser, element, text);
+                        IWebElement element = GetElementByName(elementname, iefix);
+                        return TypeText(element, text);
                     }
                     catch
                     {
@@ -668,7 +732,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInName(browser, elementname, text, iefix, retry);
+                            return TypeInName(elementname, text, iefix, retry);
                         }
                         else
                         {
@@ -682,9 +746,9 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClearText(int browser, IWebElement element)
+        public bool ClearText(IWebElement element)
         {
-            dynamic driver = GetDriver(browser);
+            dynamic driver = GetDriver();
 
             switch (browser)
             {
@@ -710,7 +774,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClearXPath(int browser, string xpath, int retry = 2)
+        public bool ClearXPath(string xpath, int retry = 2)
         {
             switch (browser)
             {
@@ -718,8 +782,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementByXPath(browser, xpath);
-                        return ClearText(browser, element);
+                        IWebElement element = GetElementByXPath(xpath);
+                        return ClearText(element);
                     }
                     catch
                     {
@@ -727,7 +791,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClearXPath(browser, xpath, retry);
+                            return ClearXPath(xpath, retry);
                         }
                         else
                         {
@@ -741,7 +805,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClearId(int browser, string id, bool iefix = false, int retry = 2)
+        public bool ClearId(string id, bool iefix = false, int retry = 2)
         {
             switch (browser)
             {
@@ -749,8 +813,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementById(browser, id, iefix);
-                        return ClearText(browser, element);
+                        IWebElement element = GetElementById(id, iefix);
+                        return ClearText(element);
                     }
                     catch
                     {
@@ -758,7 +822,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClearId(browser, id, iefix, retry);
+                            return ClearId(id, iefix, retry);
                         }
                         else
                         {
@@ -772,7 +836,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClearName(int browser, string name, bool iefix = false, int retry = 2)
+        public bool ClearName(string name, bool iefix = false, int retry = 2)
         {
             switch (browser)
             {
@@ -780,8 +844,8 @@ namespace FaceBERN_
                 case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        IWebElement element = GetElementByName(browser, name, iefix);
-                        return ClearText(browser, element);
+                        IWebElement element = GetElementByName(name, iefix);
+                        return ClearText(element);
                     }
                     catch
                     {
@@ -789,7 +853,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClearName(browser, name, iefix, retry);
+                            return ClearName(name, iefix, retry);
                         }
                         else
                         {
@@ -803,9 +867,9 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void SwitchToFrame(int browser, string frame, int retry = 2)
+        public void SwitchToFrame(string frame, int retry = 2)
         {
-            dynamic driver = GetDriver(browser);
+            dynamic driver = GetDriver();
 
             switch (browser)
             {
@@ -822,7 +886,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            SwitchToFrame(browser, frame, retry);
+                            SwitchToFrame(frame, retry);
                         }
                         else
                         {
@@ -837,9 +901,9 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void SwitchToTop(int browser, int retry = 2)
+        public void SwitchToTop(int retry = 2)
         {
-            dynamic driver = GetDriver(browser);
+            dynamic driver = GetDriver();
 
             switch (browser)
             {
@@ -855,7 +919,7 @@ namespace FaceBERN_
                         if (retry > 0)
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            SwitchToTop(browser, retry);
+                            SwitchToTop(retry);
                         }
                         else
                         {
@@ -870,11 +934,11 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void CheckTextOnPage(int browser, string text, bool wait = false, long endticks = 0, int retrywait = 5)
+        public void CheckTextOnPage(string text, bool wait = false, long endticks = 0, int retrywait = 5)
         {
             dynamic driver;
 
-            driver = GetDriver(browser);
+            driver = GetDriver();
 
             switch (browser)
             {
@@ -888,13 +952,13 @@ namespace FaceBERN_
                         if (driver.PageSource.Contains(text) == true
                             || now.Ticks >= endticks)
                         {
-                            CheckTextOnPage(browser, text);
+                            CheckTextOnPage(text);
                         }
                         else
                         {
                             System.Threading.Thread.Sleep((retrywait * 1000));
 
-                            CheckTextOnPage(browser, text, wait, endticks, retrywait);
+                            CheckTextOnPage(text, wait, endticks, retrywait);
                         }
                     }
                     else
@@ -909,11 +973,11 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void CheckTextOnPageRegex(int browser, string regex)
+        public void CheckTextOnPageRegex(string regex)
         {
             dynamic driver;
 
-            driver = GetDriver(browser);
+            driver = GetDriver();
 
             switch (browser)
             {
@@ -928,7 +992,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void CheckPageTitle(int browser, string title)
+        public void CheckPageTitle(string title)
         {
             switch (browser)
             {
@@ -943,11 +1007,11 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool CheckElementExists(int browser, string text, string by)
+        public bool CheckElementExists(string text, string by)
         {
             dynamic driver;
 
-            driver = GetDriver(browser);
+            driver = GetDriver();
 
             switch (browser)
             {
@@ -957,13 +1021,13 @@ namespace FaceBERN_
                     switch (by)
                     {
                         case "linktext":
-                            element = GetElementByLinkText(browser, text);
+                            element = GetElementByLinkText(text);
                             break;
                         case "id":
-                            element = GetElementById(browser, text);
+                            element = GetElementById(text);
                             break;
                         case "name":
-                            element = GetElementById(browser, text);
+                            element = GetElementById(text);
                             break;
                         default:
                             element = null;
@@ -977,7 +1041,7 @@ namespace FaceBERN_
         }
 
         [TestFixtureTearDown]
-        public void FixtureTearDown(int browser)
+        public void FixtureTearDown()
         {
             switch (browser)
             {
