@@ -144,7 +144,7 @@ namespace FaceBERN_
             HideCaret(outBox.Handle);
 
             /* Disable invisible option until it's ready.  --Kris */
-            browserModeComboBox.SelectedIndex = 0;
+            browserModeComboBox.SelectedIndex = 1;
             browserModeComboBox.Enabled = false;
         }
 
