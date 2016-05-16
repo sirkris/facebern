@@ -355,15 +355,22 @@ namespace FaceBERN_
             SetExecState(Globals.STATE_EXECUTING);
 
             /* Initialize the Selenium WebDriver.  --Kris */
-            WebDriver webDriver = new WebDriver();
+            WebDriver webDriver = new WebDriver(Main, browser);
 
             /* Initialize the browser and navigate to Facebook.  --Kris */
-            webDriver.FixtureSetup(browser);
-            webDriver.TestSetUp(browser, "http://www.facebook.com");
+            webDriver.FixtureSetup();
+            webDriver.TestSetUp("http://www.facebook.com");
+
+            // DEBUG
+            /*File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "test.txt"), webDriver.GetPageSource(browser));
+            Log("DEBUG - " + Path.Combine(Environment.CurrentDirectory, "test.txt"));
+            webDriver.error = 1;
+
+            return null;*/
 
             /* If needed, prompt the user for username/password or use the encrypted copy in the system registry.  --Kris */
             SetExecState(Globals.STATE_VALIDATING);
-            if (webDriver.GetElementById(browser, "loginbutton") != null)
+            if (webDriver.GetElementById("loginbutton") != null)
             {
                 Credentials credentials = new Credentials();
 
@@ -409,8 +416,8 @@ namespace FaceBERN_
                     }
 
                     /* Enter the username and password into the login form on Facebook.  --Kris */
-                    webDriver.TypeInId(browser, "email", credentials.ToString(u));
-                    webDriver.TypeInId(browser, "pass", credentials.ToString(p));
+                    webDriver.TypeInId("email", credentials.ToString(u));
+                    webDriver.TypeInId("pass", credentials.ToString(p));
 
                     /* Get this sensitive data out of active memory.  --Kris */
                     if (credentials != null)
@@ -420,16 +427,16 @@ namespace FaceBERN_
                     }
 
                     /* Click the login button on Facebook.  --Kris */
-                    dynamic element = webDriver.GetElementById(browser, "u_0_y");
-                    webDriver.ClickElement(browser, element);
+                    dynamic element = webDriver.GetElementById("u_0_y");
+                    webDriver.ClickElement(element);
 
                     Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
-                    webDriver.WaitForPageLoad(browser);
+                    webDriver.WaitForPageLoad();
 
                     /* Check for successful login.  --Kris */
-                    if (webDriver.GetElementById(browser, "loginbutton") == null)
+                    if (webDriver.GetElementById("loginbutton") == null)
                     {
-                        if (webDriver.GetElementById(browser, "u_0_1") != null)  // Checks to see if the "Home" link is present.  --Kris
+                        if (webDriver.GetElementById("u_0_1") != null)  // Checks to see if the "Home" link is present.  --Kris
                         {
                             Log("Login to Facebook successful.");
                         }
@@ -458,7 +465,7 @@ namespace FaceBERN_
                 SetExecState(Globals.STATE_ERROR);
 
                 Log("Closing browser session....");
-                webDriver.FixtureTearDown(browser);
+                webDriver.FixtureTearDown();
 
                 retry--;
                 if (retry > 0)
@@ -478,7 +485,7 @@ namespace FaceBERN_
                 /* While we're here, let's grab the Facebook profile URL for this user and store it.  Login may be different so check every time.  --Kris */
                 string profileURL = null;
                 
-                IWebDriver w = webDriver.GetDriver(browser);
+                IWebDriver w = webDriver.GetDriver();
                 IWebElement ele = w.FindElement(By.CssSelector("[data-testid=\"blue_bar_profile_link\"]"));
                 if (ele != null)
                 {
@@ -541,10 +548,10 @@ namespace FaceBERN_
 
                 Log("Creating private GOTV event for " + stateAbbr + "....");
 
-                webDriver.GoToUrl(browser, "https://www.facebook.com/events/upcoming");
+                webDriver.GoToUrl("https://www.facebook.com/events/upcoming");
 
-                IWebDriver w = webDriver.GetDriver(browser);
-                webDriver.ClickElement(browser, w.FindElement(By.CssSelector("[data-testid=\"event-create-button\"]")));
+                IWebDriver w = webDriver.GetDriver();
+                webDriver.ClickElement(w.FindElement(By.CssSelector("[data-testid=\"event-create-button\"]")));
 
                 System.Threading.Thread.Sleep(5000);  // This one's a bit slower to load and I don't trust the implicit wait in this case.  --Kris
 
@@ -574,12 +581,12 @@ namespace FaceBERN_
                                     + ".  For more information on how/where to vote and when polls open/close, visit http://vote.berniesanders.com/" + stateAbbr.ToUpper();
 
                 /* Enter the values into the form and create the event.  --Kris */
-                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "Include a place or address"), location);
-                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "Add a short, clear name"), eventName);
-                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
-                webDriver.TypeText(browser, webDriver.GetInputElementByPlaceholder(browser, "mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
-                webDriver.TypeText(browser, webDriver.GetElementByTagNameAndAttribute(browser, "div", "title", "Tell people more about the event"), description);
-                webDriver.ClickOnXPath(browser, ".//button[.='Create']");
+                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Include a place or address"), location);
+                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Add a short, clear name"), eventName);
+                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
+                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
+                webDriver.TypeText(webDriver.GetElementByTagNameAndAttribute("div", "title", "Tell people more about the event"), description);
+                webDriver.ClickOnXPath(".//button[.='Create']");
 
                 /* Check to see if we're on the new event page.  --Kris */
                 System.Threading.Thread.Sleep(5000);
@@ -671,7 +678,7 @@ namespace FaceBERN_
             {
                 Log("Sending invitations....");
 
-                IWebDriver w = webDriver.GetDriver(browser);
+                IWebDriver w = webDriver.GetDriver();
                 IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
                 if (inviteButton == null)
                 {
@@ -679,10 +686,10 @@ namespace FaceBERN_
                     return;
                 }
 
-                webDriver.ClickElement(browser, inviteButton);
+                webDriver.ClickElement(inviteButton);
                 System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
 
-                IWebElement searchBox = webDriver.GetInputElementByPlaceholder(browser, "Search for people or enter their email address");
+                IWebElement searchBox = webDriver.GetInputElementByPlaceholder("Search for people or enter their email address");
                 if (searchBox == null)
                 {
                     Log("Unable to locate search box!  Invitations aborted.");
@@ -699,12 +706,12 @@ namespace FaceBERN_
                         continue;
                     }
 
-                    webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Control + "a");
-                    webDriver.TypeText(browser, searchBox, @"@" + friend.getName());
+                    webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
+                    webDriver.TypeText(searchBox, @"@" + friend.getName());
 
                     /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
-                    webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
+                    webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Tab);
                     System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
 
                     /* We don't want to trigger any false positives from the spam algos.  --Kris */
@@ -722,7 +729,7 @@ namespace FaceBERN_
                         Wait(1, "for 20-interval ratelimit");
                     }
 
-                    if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
+                    if (webDriver.GetElementByXPath(".//div[.='" + friend.getName() + "']", 1) != null)
                     {
                         Log("Added " + friend.getName() + " to invite list.");
 
@@ -738,14 +745,14 @@ namespace FaceBERN_
                     else
                     {
                         /* Try the lookup by Facebook ID before giving up.  --Kris */
-                        webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Control + "a");
-                        webDriver.TypeText(browser, searchBox, @"@" + friend.getFacebookID());
+                        webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
+                        webDriver.TypeText(searchBox, @"@" + friend.getFacebookID());
 
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
-                        webDriver.TypeText(browser, searchBox, OpenQA.Selenium.Keys.Tab);
+                        webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Tab);
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
 
-                        if (webDriver.GetElementByXPath(browser, ".//div[.='" + friend.getName() + "']", 1) != null)
+                        if (webDriver.GetElementByXPath(".//div[.='" + friend.getName() + "']", 1) != null)
                         {
                             Log("Added " + friend.getName() + " to invite list.");
 
@@ -842,12 +849,12 @@ namespace FaceBERN_
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
-            webDriver.GoToUrl(browser, "http://www.facebook.com");
+            webDriver.GoToUrl("http://www.facebook.com");
 
-            IWebDriver w = webDriver.GetDriver(browser);
-            webDriver.ClickElement(browser, w.FindElement(By.CssSelector("[data-tooltip-content=\"Friend Requests\"]")));
+            IWebDriver w = webDriver.GetDriver();
+            webDriver.ClickElement(w.FindElement(By.CssSelector("[data-tooltip-content=\"Friend Requests\"]")));
             
-            IWebElement button = webDriver.GetElementByXPath(browser, ".//button[contains(@onclick, '100001066887477')]");
+            IWebElement button = webDriver.GetElementByXPath(".//button[contains(@onclick, '100001066887477')]");
 
             if (button == null)
             {
@@ -857,7 +864,7 @@ namespace FaceBERN_
 
             Log("Facebook friend request for feelthebern.events found.");
 
-            if (webDriver.ClickElement(browser, button))
+            if (webDriver.ClickElement(button))
             {
                 Log("Facebook friend request for feelthebern.events accepted.");
                 System.Threading.Thread.Sleep(3000);
@@ -917,10 +924,10 @@ namespace FaceBERN_
             Log(logBaseMsg + logMsg + "....");
 
             /* Navigate to the search page.  --Kris */
-            webDriver.GoToUrl(browser, URL);
+            webDriver.GoToUrl(URL);
 
             /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
-            IWebDriver iWebDriver = webDriver.GetDriver(browser);
+            IWebDriver iWebDriver = webDriver.GetDriver();
             webDriver.ScrollToBottom(ref iWebDriver);
 
             /* Scrape the results from the page source.  --Kris */
@@ -1032,7 +1039,7 @@ namespace FaceBERN_
                 return false;
             }
 
-            webDriver.GoToUrl(browser, "https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
+            webDriver.GoToUrl("https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
 
             System.Threading.Thread.Sleep(3000);  // Just in case the driver doesn't wait long enough on its own.  --Kris
 
@@ -1071,19 +1078,19 @@ namespace FaceBERN_
 
                 SetExecState(Globals.STATE_EXECUTING);
 
-                WebDriver webDriver2 = new WebDriver();
+                WebDriver webDriver2 = new WebDriver(Main, browser);
 
-                webDriver2.FixtureSetup(browser);
-                webDriver2.TestSetUp(browser, "http://www.feelthebern.events");
+                webDriver2.FixtureSetup();
+                webDriver2.TestSetUp("http://www.feelthebern.events");
 
-                webDriver2.TypeInXPath(browser, @"/html/body/div[2]/input", profileURL);
-                webDriver2.ClickOnXPath(browser, @"/html/body/div[2]/button");
+                webDriver2.TypeInXPath(@"/html/body/div[2]/input", profileURL);
+                webDriver2.ClickOnXPath(@"/html/body/div[2]/button");
 
                 System.Threading.Thread.Sleep(5000);
 
                 Log("Request sent.");
 
-                webDriver2.FixtureTearDown(browser);
+                webDriver2.FixtureTearDown();
             }
             else
             {
