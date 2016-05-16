@@ -362,11 +362,11 @@ namespace FaceBERN_
             webDriver.TestSetUp("http://www.facebook.com");
 
             // DEBUG
-            File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "test.txt"), webDriver.GetPageSource(browser));
+            /*File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "test.txt"), webDriver.GetPageSource(browser));
             Log("DEBUG - " + Path.Combine(Environment.CurrentDirectory, "test.txt"));
             webDriver.error = 1;
 
-            return null;
+            return null;*/
 
             /* If needed, prompt the user for username/password or use the encrypted copy in the system registry.  --Kris */
             SetExecState(Globals.STATE_VALIDATING);
@@ -428,7 +428,7 @@ namespace FaceBERN_
 
                     /* Click the login button on Facebook.  --Kris */
                     dynamic element = webDriver.GetElementById("u_0_y");
-                    webDriver.ClickElement(browser, element);
+                    webDriver.ClickElement(element);
 
                     Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
                     webDriver.WaitForPageLoad();

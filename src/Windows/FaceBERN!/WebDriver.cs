@@ -406,7 +406,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public bool ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false)
+        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false)
         {
             dynamic driver = GetDriver();
 
@@ -446,8 +446,9 @@ namespace FaceBERN_
                     }
                     break;
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    break;
+                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                    element.RemoveAttribute("disabled");
+                    return element.Click();
             }
 
             return true;
@@ -457,8 +458,8 @@ namespace FaceBERN_
         public void ScrollToBottom(ref IWebDriver driver, int scrollLimit = 100)
         {
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
-            
-            IJavaScriptExecutor jse = (IJavaScriptExecutor) driver;
+
+            IJavaScriptExecutor jse = (IJavaScriptExecutor)driver;
             //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
             const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
             const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
@@ -484,57 +485,96 @@ namespace FaceBERN_
         }
 
         [Test]
+        public void ScrollToBottom(ref HtmlPage page, int scrollLimit = 100)
+        {
+            const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
+            const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
+
+            if (scrollLimit > 0)
+            {
+                bool done = false;
+                int i = scrollLimit;
+                do
+                {
+                    Log("Scrolling down....");
+
+                    page.ExecuteJavaScript(scrollScript);
+                    System.Threading.Thread.Sleep(3000);
+                    ScriptResult sr = page.ExecuteJavaScript(checkScript);
+                    done = (bool) sr.JavaScriptResult;
+                    i--;
+                } while (done == false && i > 0);
+            }
+            else
+            {
+                page.ExecuteJavaScript(scrollScript);
+            }
+
+            System.Threading.Thread.Sleep(3000);
+
+            Log("Scrolling complete.");
+        }
+
+        [Test]
         // Modified from:  http://stackoverflow.com/questions/13244225/selenium-how-to-make-the-web-driver-to-wait-for-page-to-refresh-before-executin
         public void WaitForPageLoad(int maxWaitTimeInSeconds = 60)
         {
             string state = string.Empty;
             dynamic _driver = GetDriver();
-            try
+            switch (browser)
             {
-                WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
-
-                //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
-                wait.Until(d =>
-                {
+                case Globals.FIREFOX_WINDOWED:
                     try
                     {
-                        state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        //Ignore
-                    }
-                    catch (NoSuchWindowException)
-                    {
-                        //when popup is closed, switch to last windows
-                        _driver.SwitchTo().Window(_driver.WindowHandles.Last());
-                    }
-                    //In IE7 there are chances we may get state as loaded instead of complete
-                    return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+                        WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
 
-                });
-            }
-            catch (TimeoutException)
-            {
-                //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
-                if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
-                    throw;
-            }
-            catch (NullReferenceException)
-            {
-                //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
-                if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
-                    throw;
-            }
-            catch (WebDriverException)
-            {
-                if (_driver.WindowHandles.Count == 1)
-                {
-                    _driver.SwitchTo().Window(_driver.WindowHandles[0]);
-                }
-                state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
-                if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
-                    throw;
+                        //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
+                        wait.Until(d =>
+                        {
+                            try
+                            {
+                                state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                //Ignore
+                            }
+                            catch (NoSuchWindowException)
+                            {
+                                //when popup is closed, switch to last windows
+                                _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+                            }
+                            //In IE7 there are chances we may get state as loaded instead of complete
+                            return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+
+                        });
+                    }
+                    catch (TimeoutException)
+                    {
+                        //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                        if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                            throw;
+                    }
+                    catch (NullReferenceException)
+                    {
+                        //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                        if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                            throw;
+                    }
+                    catch (WebDriverException)
+                    {
+                        if (_driver.WindowHandles.Count == 1)
+                        {
+                            _driver.SwitchTo().Window(_driver.WindowHandles[0]);
+                        }
+                        state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                        if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
+                            throw;
+                    }
+                    break;
+                case Globals.FIREFOX_HEADLESS:
+                    // I think this is already built-in to NHtmlUnit, somehow.  I could be wrong, but given how slow the fucker is, it's kinda moot, anyway.  --Kris
+                    break;
             }
         }
 
@@ -585,8 +625,24 @@ namespace FaceBERN_
                         }
                     }
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    try
+                    {
+                        dynamic element = GetElementByLinkText(linktext, partial);
+                        return ClickElement(element);
+                    }
+                    catch
+                    {
+                        retry--;
+                        if (retry > 0)
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            return ClickOnLink(linktext, partial, viewportfix, retry);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
             }
         }
 
@@ -616,8 +672,24 @@ namespace FaceBERN_
                         }
                     }
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    try
+                    {
+                        dynamic element = GetElementByLinkText(xpath);
+                        return ClickElement(element);
+                    }
+                    catch
+                    {
+                        retry--;
+                        if (retry > 0)
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            return ClickOnXPath(xpath, viewportfix, retry);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
             }
         }
 
@@ -647,8 +719,11 @@ namespace FaceBERN_
 
                     return true;
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                    
+                    element.Type(text);
+
+                    return true;
             }
         }
 
@@ -678,8 +753,24 @@ namespace FaceBERN_
                         }
                     }
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    try
+                    {
+                        dynamic element = GetElementByXPath(xpath);
+                        return TypeText(element, text);
+                    }
+                    catch
+                    {
+                        retry--;
+                        if (retry > 0)
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            return TypeInXPath(xpath, text, retry);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
             }
         }
 
@@ -709,8 +800,24 @@ namespace FaceBERN_
                         }
                     }
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    try
+                    {
+                        dynamic element = GetElementById(elementid);
+                        return TypeText(element, text);
+                    }
+                    catch
+                    {
+                        retry--;
+                        if (retry > 0)
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            return TypeInId(elementid, text, iefix, retry);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
             }
         }
 
@@ -740,8 +847,24 @@ namespace FaceBERN_
                         }
                     }
                 case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    try
+                    {
+                        dynamic element = GetElementByName(elementname);
+                        return TypeText(element, text);
+                    }
+                    catch
+                    {
+                        retry--;
+                        if (retry > 0)
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            return TypeInName(elementname, text, iefix, retry);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
             }
         }
 

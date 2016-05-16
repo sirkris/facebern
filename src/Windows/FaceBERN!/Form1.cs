@@ -455,6 +455,9 @@ namespace FaceBERN_
                 case Globals.STATE_EXECUTING:
                     logState = "EXECUTING";
                     break;
+                case Globals.STATE_STOPPING:
+                    logState = "STOPPING";
+                    break;
             }
 
             if (state != Globals.executionState)
