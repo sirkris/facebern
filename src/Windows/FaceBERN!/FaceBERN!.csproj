@@ -38,6 +38,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AutoItX3.Assembly">
+      <HintPath>Resources\AutoItX3.Assembly.dll</HintPath>
+    </Reference>
     <Reference Include="HtmlUnit">
       <HintPath>Resources\HtmlUnit.dll</HintPath>
     </Reference>
@@ -240,6 +243,9 @@
     <None Include="Resources\FaceBERN!.gif" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="AutoItX3.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="bernie.ico" />
     <Content Include="berniebirdie.jpg" />
     <Content Include="csINI.dll">
@@ -257,6 +263,17 @@
     <None Include="Resources\Settings.png" />
     <None Include="Resources\Close.png" />
     <None Include="Resources\flames_button_bg.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="AutoItX3Lib">
+      <Guid>{F8937E53-D444-4E71-9275-35B64210CC3B}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

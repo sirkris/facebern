@@ -65,15 +65,16 @@ namespace FaceBERN_
         public const int STATE_STOPPING = 5;  // Stop button has been clicked.
 
         /* Browser constants.  --Kris */
-        public const int FIREFOX_HEADLESS = 0;
-        public const int FIREFOX_WINDOWED = 1;
-        public const int CHROME = 2;
-        public const int IE = 3;
+        public const int FIREFOX_HEADLESS = -1;  // Open a headless browser instance using NHtmlUnit.  Not working with Facebook.
+        public const int FIREFOX_HIDDEN = 0;  // Hide using AutoIt.
+        public const int FIREFOX_WINDOWED = 1;  // Open in a visible, maximized Firefox browser window.
+        public const int CHROME = 2;  // In case we ever decide to support Chrome in the future.
+        public const int IE = 3;  // Doubtful, but what the hell.
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
 
-        /* Map log names to their respective objects.  --Kris */
+        /* Map log names to their respective objects (DEPRECATED).  --Kris */
         public static Log getLogObj(string logName)
         {
             Log log;
@@ -129,7 +130,8 @@ namespace FaceBERN_
             names[FIREFOX_WINDOWED] = "Mozilla Firefox";
             names[IE] = "Windows Internet Explorer";
             names[CHROME] = "Google Chrome";
-            names[FIREFOX_HEADLESS] = "Awesomium";
+            //names[FIREFOX_HEADLESS] = "Mozilla Firefox";
+            names[FIREFOX_HIDDEN] = "Mozilla Firefox";
 
             return names;
         }
