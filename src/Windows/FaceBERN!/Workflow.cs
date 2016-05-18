@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using AutoIt;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using System;
@@ -415,6 +416,8 @@ namespace FaceBERN_
                         }
                     }
 
+                    Log("Logging-in to Facebook....");
+
                     /* Enter the username and password into the login form on Facebook.  --Kris */
                     webDriver.TypeInId("email", credentials.ToString(u));
                     webDriver.TypeInId("pass", credentials.ToString(p));
@@ -430,8 +433,8 @@ namespace FaceBERN_
                     dynamic element = webDriver.GetElementById("u_0_y");
                     webDriver.ClickElement(element);
 
-                    Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
-                    webDriver.WaitForPageLoad();
+                    //Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
+                    //webDriver.WaitForPageLoad();
 
                     /* Check for successful login.  --Kris */
                     if (webDriver.GetElementById("loginbutton") == null)
@@ -928,7 +931,7 @@ namespace FaceBERN_
 
             /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
             IWebDriver iWebDriver = webDriver.GetDriver();
-            webDriver.ScrollToBottom(ref iWebDriver);
+            webDriver.ScrollToBottom(ref iWebDriver, "Preparing to load results....", "Loading results (set $i/$L max sets)....", "Finished loading results!");  // Each "set" is a scroll.  --Kris
 
             /* Scrape the results from the page source.  --Kris */
             string[] resRaw = new string[32767];
