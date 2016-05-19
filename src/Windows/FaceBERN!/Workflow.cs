@@ -39,6 +39,55 @@ namespace FaceBERN_
             }
         }
 
+        public Thread ExecuteShutdownThread(Thread workflowThread)
+        {
+            SetExecState(Globals.STATE_STOPPING);
+
+            Thread thread = new Thread(() => ExecuteShutdown(workflowThread));
+
+            Main.LogW("Attempting to start Shutdown thread....", false);
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("Shutdown thread started successfully.", false);
+
+            return thread;
+        }
+
+        public void ExecuteShutdown(Thread workflowThread)
+        {
+            Log("Aborting Workflow thread....");
+
+            workflowThread.Abort();
+
+            int i = 600;
+            while (workflowThread.IsAlive && i > 0)
+            {
+                System.Threading.Thread.Sleep(1000);
+
+                i--;
+                if (i > 0 && i % 30 == 0)
+                {
+                    Log("Still waiting for Workflow thread to abort....");
+                }
+            }
+
+            if (workflowThread.IsAlive)
+            {
+                Log("ERROR!  Unable to shutdown Workflow thread!");
+
+                SetExecState(Globals.STATE_BROKEN);
+            }
+            else
+            {
+                Log("Workflow thread aborted successfully!");
+
+                Main.Invoke(new MethodInvoker(delegate() { Main.buttonStart_ToStart(); }));
+                Main.Invoke(new MethodInvoker(delegate() { Main.Ready(); }));
+            }
+        }
+
         public Thread ExecuteThread()
         {
             SetExecState(Globals.STATE_VALIDATING);
