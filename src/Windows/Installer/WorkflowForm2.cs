@@ -41,7 +41,8 @@ namespace Installer
             SetLocation(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) + Path.DirectorySeparatorChar + @"FaceBERN!");
             branchName = "master";
 
-            branchComboBox.SelectedIndex = 0;
+            branchComboBox.SelectedIndex = 1;  // TODO - Set back to 0 (master) after the first production release.  --Kris
+            branchComboBox.Enabled = false;  // TODO - Get rid of this line after the first production release.  --Kris
 
             cancel = true;
         }
