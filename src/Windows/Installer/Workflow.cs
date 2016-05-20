@@ -81,7 +81,7 @@ namespace Installer
                 appKey.Close();
                 softwareKey.Close();
 
-                SetPermissions(Main.repoBaseDir);
+                SetACLPermissions(Main.repoBaseDir);
             }
             catch (Exception e)
             {
@@ -326,8 +326,9 @@ namespace Installer
         {
             if (startMenu)
             {
-                string commonSMP = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
-                string appSMP = Path.Combine(commonSMP, "Programs");
+                //string commonSMP = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);  // For all users.  May make it an option in the UI later.  --Kris
+                string userSMP = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+                string appSMP = Path.Combine(userSMP, "Programs");
 
                 if (!Directory.Exists(appSMP))
                 {
@@ -341,7 +342,7 @@ namespace Installer
 
             if (desktop)
             {
-                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);  // Use CommonDesktopDirectory for all users.  --Kris
 
                 if (!Directory.Exists(desktopPath))
                 {
@@ -366,6 +367,7 @@ namespace Installer
         }
 
         /* Recursively set permissions so that the application can run freely.  Path should be a directory.  --Kris */
+        // DEPRECATED in favor of SetACLPermissions().
         private void SetPermissions(string path)
         {
             if (!Directory.Exists(path))
