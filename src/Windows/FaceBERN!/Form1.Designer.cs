@@ -54,6 +54,7 @@
             this.alwaysOnTopCheckBox = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.labelInvitesSent = new System.Windows.Forms.Label();
+            this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -140,6 +141,7 @@
             // 
             this.helpToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.aboutToolStripMenuItem1,
+            this.checkForUpdatesToolStripMenuItem,
             this.donateToBernieToolStripMenuItem});
             this.helpToolStripMenuItem1.Name = "helpToolStripMenuItem1";
             this.helpToolStripMenuItem1.Size = new System.Drawing.Size(44, 20);
@@ -149,14 +151,14 @@
             // 
             this.aboutToolStripMenuItem1.Image = global::FaceBERN_.Properties.Resources.Info;
             this.aboutToolStripMenuItem1.Name = "aboutToolStripMenuItem1";
-            this.aboutToolStripMenuItem1.Size = new System.Drawing.Size(165, 22);
+            this.aboutToolStripMenuItem1.Size = new System.Drawing.Size(171, 22);
             this.aboutToolStripMenuItem1.Text = "About";
             this.aboutToolStripMenuItem1.Click += new System.EventHandler(this.aboutToolStripMenuItem1_Click);
             // 
             // donateToBernieToolStripMenuItem
             // 
             this.donateToBernieToolStripMenuItem.Name = "donateToBernieToolStripMenuItem";
-            this.donateToBernieToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
+            this.donateToBernieToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
             this.donateToBernieToolStripMenuItem.Text = "Donate to Bernie!";
             this.donateToBernieToolStripMenuItem.Click += new System.EventHandler(this.donateToBernieToolStripMenuItem_Click);
             // 
@@ -284,12 +286,19 @@
             this.labelInvitesSent.AutoSize = true;
             this.labelInvitesSent.BackColor = System.Drawing.Color.Transparent;
             this.labelInvitesSent.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelInvitesSent.ForeColor = System.Drawing.Color.Red;
+            this.labelInvitesSent.ForeColor = System.Drawing.Color.Green;
             this.labelInvitesSent.Location = new System.Drawing.Point(354, 543);
             this.labelInvitesSent.Name = "labelInvitesSent";
             this.labelInvitesSent.Size = new System.Drawing.Size(14, 13);
             this.labelInvitesSent.TabIndex = 32;
             this.labelInvitesSent.Text = "0";
+            // 
+            // checkForUpdatesToolStripMenuItem
+            // 
+            this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
+            this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
+            this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -351,6 +360,7 @@
         private System.Windows.Forms.CheckBox alwaysOnTopCheckBox;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label labelInvitesSent;
+        private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
     }
 }
 
