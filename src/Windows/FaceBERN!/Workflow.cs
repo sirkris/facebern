@@ -329,6 +329,11 @@ namespace FaceBERN_
                         {
                             RequestFTBInvitation();
 
+                            // TODO - Remove this temporary block of code when feelthebern.events has made the requisite updates so we can check for their friend requests.  --Kris
+                            Log("Please wait for the friend request and accept it, then re-run the GOTV for this event.");
+                            return;
+                            // End temporary code block.  --Kris
+
                             Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for retry");
 
                             /* Check for and accept friend request from feelthebern.events.  --Kris */
