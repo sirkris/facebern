@@ -137,7 +137,7 @@ namespace FaceBERN_
 
         }
 
-        private void ModWindow()
+        private void ModWindow(bool unhide = false)
         {
             switch (browser)
             {
@@ -166,7 +166,7 @@ namespace FaceBERN_
                     }
                     else
                     {
-                        AutoIt.AutoItX.WinSetState(hWnd, AutoIt.AutoItX.SW_HIDE);
+                        AutoIt.AutoItX.WinSetState(hWnd, (unhide ? AutoIt.AutoItX.SW_SHOW : AutoIt.AutoItX.SW_HIDE));
                     }
 
                     break;
@@ -1278,7 +1278,9 @@ namespace FaceBERN_
                 case Globals.FIREFOX_HIDDEN:
                     if (_driverFirefox != null)
                     {
-                        _driverFirefox.Close();
+                        ModWindow(true);
+                        System.Threading.Thread.Sleep(500);
+                        _driverFirefox.Dispose();
                     }
                     break;
                 case Globals.FIREFOX_HEADLESS:

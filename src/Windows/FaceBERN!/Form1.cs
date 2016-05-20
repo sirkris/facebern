@@ -468,7 +468,8 @@ namespace FaceBERN_
         private void buttonStart_Click(object sender, EventArgs e)
         {
             if (buttonStart.Enabled == false 
-                || Globals.executionState < Globals.STATE_READY)
+                || Globals.executionState < Globals.STATE_READY 
+                || Globals.executionState == Globals.STATE_STOPPING)
             {
                 buttonStart.Click -= buttonStart_Click;
                 return;
@@ -493,14 +494,11 @@ namespace FaceBERN_
                 SetExecState(Globals.STATE_STOPPING);
                 stop = true;
 
-                Globals.thread.Abort();
-                Globals.thread.Join(60000);
+                Workflow shutdown = new Workflow(this);
 
+                shutdown.ExecuteShutdownThread(Globals.thread);
+                
                 LogW("Execution terminated by user.");
-
-                buttonStart_ToStart();
-
-                Ready();
             }
         }
 
@@ -509,6 +507,8 @@ namespace FaceBERN_
             buttonStart.BackgroundImage = FaceBERN_.Properties.Resources.flames_button_bg;
             buttonStart.ForeColor = Color.Yellow;
             buttonStart.Text = "START";
+
+            browserModeComboBox.Enabled = true;
         }
 
         public void buttonStart_ToStop()
@@ -516,6 +516,8 @@ namespace FaceBERN_
             buttonStart.BackgroundImage = null;
             buttonStart.ForeColor = Color.Red;
             buttonStart.Text = "STOP";
+
+            browserModeComboBox.Enabled = false;
         }
 
         /* Prevents form flickering.  Taken from MSDN.  --Kris */
