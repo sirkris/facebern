@@ -507,6 +507,8 @@ namespace FaceBERN_
             buttonStart.BackgroundImage = FaceBERN_.Properties.Resources.flames_button_bg;
             buttonStart.ForeColor = Color.Yellow;
             buttonStart.Text = "START";
+
+            browserModeComboBox.Enabled = true;
         }
 
         public void buttonStart_ToStop()
@@ -514,6 +516,8 @@ namespace FaceBERN_
             buttonStart.BackgroundImage = null;
             buttonStart.ForeColor = Color.Red;
             buttonStart.Text = "STOP";
+
+            browserModeComboBox.Enabled = false;
         }
 
         /* Prevents form flickering.  Taken from MSDN.  --Kris */
