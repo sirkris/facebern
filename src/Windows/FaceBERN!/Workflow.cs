@@ -25,6 +25,8 @@ namespace FaceBERN_
 
         public long invitesSent = 0;  // Tracked for current session only.  TODO - Persist and combine stats with other users for impressive totals.  --Kris
 
+        private WebDriver webDriver = null;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             this.Main = Main;
@@ -118,37 +120,50 @@ namespace FaceBERN_
 
         public void Execute(int browser, Log WorkflowLog)
         {
-            //InitLog();
-            this.WorkflowLog = WorkflowLog;
-
-            this.browser = browser;
-
-            Log("Thread execution initialized.");
-
-            SetExecState(Globals.STATE_EXECUTING);
-
-            Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
-
-            // TEST - This will end up going into the loop below.  --Kris
-            //GOTV();
-
-
-            /* Loop until terminated by the user.  --Kris */
-            while (Globals.executionState > 0)
+            try
             {
-                /* Get-out-the-vote!  --Kris */
-                GOTV();
+                //InitLog();
+                this.WorkflowLog = WorkflowLog;
 
-                /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
-                Log("Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes....");
-                SetExecState(Globals.STATE_WAITING);
-                System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
+                this.browser = browser;
+
+                Log("Thread execution initialized.");
+
                 SetExecState(Globals.STATE_EXECUTING);
+
+                Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
+
+                // TEST - This will end up going into the loop below.  --Kris
+                //GOTV();
+
+
+                /* Loop until terminated by the user.  --Kris */
+                while (Globals.executionState > 0)
+                {
+                    /* Get-out-the-vote!  --Kris */
+                    GOTV();
+
+                    /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
+                    Log("Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes....");
+                    SetExecState(Globals.STATE_WAITING);
+                    System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
+                    SetExecState(Globals.STATE_EXECUTING);
+                }
+
+                Ready();
+
+                Main.Invoke(new MethodInvoker(delegate() { Main.MainLog = WorkflowLog; }));
             }
+            catch (ThreadAbortException e)
+            {
+                Log("Thread execution aborted.");
 
-            Ready();
-
-            Main.Invoke(new MethodInvoker(delegate() { Main.MainLog = WorkflowLog; }));
+                if (webDriver != null)
+                {
+                    webDriver.FixtureTearDown();
+                    webDriver = null;
+                }
+            }
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
@@ -184,7 +199,13 @@ namespace FaceBERN_
 
             Log("Running GOTV checklist....");
 
-            WebDriver webDriver = FacebookLogin();
+            /* Initialize the Selenium WebDriver.  --Kris */
+            webDriver = new WebDriver(Main, browser);
+
+            /* Initialize the browser.  --Kris */
+            webDriver.FixtureSetup();
+
+            webDriver = FacebookLogin();
             if (webDriver.error > 0)
             {
                 GOTVKey.Close();
@@ -231,7 +252,7 @@ namespace FaceBERN_
                         && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays <= milestone)
                     {
                         /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
-                        List<Person> friends = GetFacebookFriendsOfFriends(ref webDriver, state.Key);
+                        List<Person> friends = GetFacebookFriendsOfFriends(state.Key);
 
                         // TODO - Add direct friends who like Bernie Sanders and live in this state.  --Kris
 
@@ -241,7 +262,7 @@ namespace FaceBERN_
                         }
                         else
                         {
-                            ExecuteGOTV(ref webDriver, ref friends, ref stateKey, state.Value);
+                            ExecuteGOTV(ref friends, ref stateKey, state.Value);
                         }
 
                         dateAppropriate = true;
@@ -267,6 +288,12 @@ namespace FaceBERN_
                 Log("Warning:  Error updating last GOTV check : " + e.Message);
             }
 
+            if (webDriver != null)
+            {
+                webDriver.FixtureTearDown();
+                webDriver = null;
+            }
+
             GOTVKey.Close();
             appKey.Close();
             softwareKey.Close();
@@ -274,7 +301,7 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        private void ExecuteGOTV(ref WebDriver webDriver, ref List<Person> friends, ref RegistryKey stateKey, States state)
+        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -293,7 +320,7 @@ namespace FaceBERN_
             {
                 if (Globals.StateConfigs[state.abbr].FTBEventId != null)
                 {
-                    while (!CheckFTBEventAccess(state.abbr, ref webDriver) && retries > 0)
+                    while (!CheckFTBEventAccess(state.abbr) && retries > 0)
                     {
                         retries--;
                         Log("Access denied for state event page.");
@@ -307,7 +334,7 @@ namespace FaceBERN_
                             /* Check for and accept friend request from feelthebern.events.  --Kris */
                             if (!ftbFriended)
                             {
-                                if ((ftbFriended = AcceptFacebookFTBRequest(ref webDriver)))
+                                if ((ftbFriended = AcceptFacebookFTBRequest()))
                                 {
                                     Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for event invitations");
                                 }
@@ -329,9 +356,9 @@ namespace FaceBERN_
                     }
 
                     /* If there are no errors, proceed with the invitations.  --Kris */
-                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr, ref webDriver))
+                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr))
                     {
-                        InviteToEvent(ref webDriver, ref friends, state.abbr);
+                        InviteToEvent(ref friends, state.abbr);
                     }
                 }
                 else
@@ -353,7 +380,7 @@ namespace FaceBERN_
                     }
                     i++;
 
-                    CreateGOTVEvent(ref webDriver, ref friends, state.abbr);
+                    CreateGOTVEvent(ref friends, state.abbr);
 
                     if (c == friends.Count)
                     {
@@ -404,11 +431,7 @@ namespace FaceBERN_
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_EXECUTING);
 
-            /* Initialize the Selenium WebDriver.  --Kris */
-            WebDriver webDriver = new WebDriver(Main, browser);
-
-            /* Initialize the browser and navigate to Facebook.  --Kris */
-            webDriver.FixtureSetup();
+            /* Navigate the browser to Facebook.  --Kris */
             webDriver.TestSetUp("http://www.facebook.com");
 
             // DEBUG
@@ -585,7 +608,7 @@ namespace FaceBERN_
             return webDriver;
         }
 
-        private bool CreateGOTVEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr, int retry = 5)
+        private bool CreateGOTVEvent(ref List<Person> friends, string stateAbbr, int retry = 5)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -652,7 +675,7 @@ namespace FaceBERN_
 
                 Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
 
-                InviteToEvent(ref webDriver, ref friends, stateAbbr);
+                InviteToEvent(ref friends, stateAbbr);
 
                 SetExecState(lastState);
 
@@ -674,12 +697,12 @@ namespace FaceBERN_
 
                 SetExecState(lastState);
 
-                return CreateGOTVEvent(ref webDriver, ref friends, stateAbbr, retry);
+                return CreateGOTVEvent(ref friends, stateAbbr, retry);
             }
         }
 
         /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
-        private void InviteToEvent(ref WebDriver webDriver, ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        private void InviteToEvent(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -890,7 +913,8 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        private bool AcceptFacebookFTBRequest(ref WebDriver webDriver)
+        // TODO - This is currently broken!  The user it's looking for may not be the one who did the invite.  Need to be able to query feelthebern.events for the ID of whoever sent the invite.  --Kris
+        private bool AcceptFacebookFTBRequest()
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -935,7 +959,7 @@ namespace FaceBERN_
             }
         }
 
-        private List<Person> GetFacebookFriendsOfFriends(ref WebDriver webDriver, string stateAbbr = null, bool bernieSupportersOnly = true)
+        private List<Person> GetFacebookFriendsOfFriends(string stateAbbr = null, bool bernieSupportersOnly = true)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -1068,7 +1092,7 @@ namespace FaceBERN_
         }
 
         /* Load the Facebook event page from feelthebern.events and return whether or not the user has access to the event.  --Kris */
-        private bool CheckFTBEventAccess(string stateAbbr, ref WebDriver webDriver)
+        private bool CheckFTBEventAccess(string stateAbbr)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
