@@ -104,6 +104,8 @@ namespace Installer
 
             SetStatus("Update Complete!", 100);
 
+            System.Threading.Thread.Sleep(1000);
+
             string installerPath = Path.Combine(Main.repoBaseDir, "Installer.exe");
             try
             {
