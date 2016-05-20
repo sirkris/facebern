@@ -821,5 +821,32 @@ namespace FaceBERN_
                 buttonStart_Click(sender, e);
             }
         }
+
+        private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Globals.executionState != Globals.STATE_READY)
+            {
+                LogW("You cannot check for updates right now!  Sorry.");
+            }
+            else
+            {
+                if (CheckForUpdates() == true)
+                {
+                    DialogResult dr = MessageBox.Show("A newer version of FaceBERN! has been found!  Install now?", "Update Found!", MessageBoxButtons.YesNo);
+                    if (dr == DialogResult.Yes)
+                    {
+                        CheckForUpdates(true);
+                    }
+                    else
+                    {
+                        LogW("Update found but user chose not to install.  The stability of this software cannot be guaranteed if not promptly updated!");
+                    }
+                }
+                else
+                {
+                    LogW("You are running the most current version.  No update is required at this time.");
+                }
+            }
+        }
     }
 }
