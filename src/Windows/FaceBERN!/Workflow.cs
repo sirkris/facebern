@@ -53,8 +53,6 @@ namespace FaceBERN_
         /* This thread is designed to run continuously while the program is running.  --Kris */
         public Thread ExecuteInterComThread()
         {
-            SetExecState(Globals.STATE_STOPPING);
-
             Thread thread = new Thread(() => ExecuteInterCom());
 
             Main.LogW("Attempting to start InterCom thread....", false);
@@ -1588,7 +1586,7 @@ namespace FaceBERN_
         }
 
         /* Update local and remote total invites.  If you just want to update the total remote invites, pass 0 for x.  --Kris */
-        private void UpdateInvitationsCount(int x, int y)
+        private void UpdateInvitationsCount(int x, int y, bool hard = true)
         {
             if (Main.InvokeRequired)
             {
@@ -1598,13 +1596,22 @@ namespace FaceBERN_
             }
             else
             {
-                Main.UpdateInvitationsCount(x, y);
+                if (hard)
+                {
+                    Main.SetInvitationsCount(x, y);
+                }
+                else
+                {
+                    Main.UpdateInvitationsCount(x, y);
+                }
 
                 Main.Refresh();
             }
 
             invitesSent += x;
         }
+
+        
 
         private void SetExecState(int state)
         {

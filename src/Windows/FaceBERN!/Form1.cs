@@ -790,6 +790,27 @@ namespace FaceBERN_
             LogW("Set remote invitions count to:  " + y.ToString(), false);
         }
 
+        internal void SetInvitationsCount(int x, int y)
+        {
+            label3.Visible = true;
+            labelInvitesSent.Visible = true;
+
+            localInvitesSent = x;
+            remoteInvitesSent = y;
+
+            if (remoteInvitesSent == 0)
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString();
+            }
+            else
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString() + @" / " + remoteInvitesSent.ToString();
+            }
+
+            LogW("Set local invitations count to:  " + x.ToString(), false);
+            LogW("Set remote invitions count to:  " + y.ToString(), false);
+        }
+
         private void Form1_Resize(object sender, EventArgs e)
         {
             if (this.WindowState == FormWindowState.Minimized)
