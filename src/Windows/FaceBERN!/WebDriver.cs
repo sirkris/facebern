@@ -445,7 +445,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue)
+        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0)
         {
             List<IWebElement> eles = GetElementsByTagName(tagName);
             if (eles == null)
@@ -453,15 +453,51 @@ namespace FaceBERN_
                 return null;
             }
 
+            int i = 0;
             foreach (IWebElement ele in eles)
             {
                 if (ele.GetAttribute(attributeName).Equals(attributeValue))
                 {
-                    return ele;
+                    if (i == offset)
+                    {
+                        return ele;
+                    }
+                    else
+                    {
+                        i++;
+                    }
                 }
             }
 
             return null;
+        }
+
+        [Test]
+        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0)
+        {
+            List<IWebElement> eles = GetElementsByTagName(tagName);
+            if (eles == null)
+            {
+                return null;
+            }
+
+            int i = 0;
+            List<IWebElement> res = new List<IWebElement>();
+            foreach (IWebElement ele in eles)
+            {
+                if (ele.GetAttribute(attributeName).Equals(attributeValue))
+                {
+                    res.Add(ele);
+
+                    i++;
+                    if (i == limit)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return res;
         }
 
         [Test]

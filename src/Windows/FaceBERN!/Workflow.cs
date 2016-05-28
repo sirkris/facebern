@@ -262,7 +262,7 @@ namespace FaceBERN_
                         }
                         else
                         {
-                            ExecuteGOTV(ref friends, ref stateKey, state.Value);
+                            ExecuteGOTV(ref friends, ref stateKey, state.Value, milestone);
                         }
 
                         dateAppropriate = true;
@@ -301,7 +301,7 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state)
+        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state, int milestone)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -363,7 +363,7 @@ namespace FaceBERN_
                     /* If there are no errors, proceed with the invitations.  --Kris */
                     if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr))
                     {
-                        InviteToEvent(ref friends, state.abbr);
+                        InviteToEvent(ref friends, state.abbr, milestone.ToString());
                     }
                 }
                 else
@@ -663,9 +663,9 @@ namespace FaceBERN_
                 /* Enter the values into the form and create the event.  --Kris */
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Include a place or address"), location);
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Add a short, clear name"), eventName);
+                webDriver.TypeText(webDriver.GetElementByTagNameAndAttribute("div", "title", "Tell people more about the event"), description);
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
-                webDriver.TypeText(webDriver.GetElementByTagNameAndAttribute("div", "title", "Tell people more about the event"), description);
                 webDriver.ClickOnXPath(".//button[.='Create']");
 
                 /* Check to see if we're on the new event page.  --Kris */
@@ -706,27 +706,17 @@ namespace FaceBERN_
             }
         }
 
-        /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
-        private void InviteToEvent(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        private List<Person> GetInvitedPeople()
         {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-            
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
             List<Person> invited = new List<Person>();
-            List<string> exclude = null;
+
             try
             {
                 RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
                 RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
                 RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
-                string invitedJSON = (string) GOTVKey.GetValue("invitedJSON", null);
+                string invitedJSON = (string)GOTVKey.GetValue("invitedJSON", null);
                 if (invitedJSON != null && invitedJSON.Trim() != "")
                 {
                     invited = JsonConvert.DeserializeObject<List<Person>>(invitedJSON);
@@ -735,24 +725,56 @@ namespace FaceBERN_
                 GOTVKey.Close();
                 appKey.Close();
                 softwareKey.Close();
-
-                if (excludeDupsContactedAfterTicks != null && invited != null && invited.Count > 0)
-                {
-                    exclude = new List<string>();
-                    foreach (Person inv in invited)
-                    {
-                        if (inv.getLastGOTVInvite() != null && long.Parse(inv.getLastGOTVInvite()) > long.Parse(excludeDupsContactedAfterTicks))
-                        {
-                            exclude.Add(inv.getFacebookID());
-                        }
-                    }
-                }
             }
             catch (IOException e)
             {
                 Log("Warning:  Error reading previous invitations from registry : " + e.Message);
+
+                return null;
+            }
+
+            return invited;
+        }
+
+        private List<string> GetExclusionList(string excludeDupsContactedAfterTicks = null)
+        {
+            List<Person> invited = GetInvitedPeople();
+            if (invited == null)
+            {
+                return null;
             }
             
+            List<string> exclude = new List<string>();
+            if (excludeDupsContactedAfterTicks != null && invited != null && invited.Count > 0)
+            {
+                foreach (Person inv in invited)
+                {
+                    if (inv.getLastGOTVInvite() != null && long.Parse(inv.getLastGOTVInvite()) > long.Parse(excludeDupsContactedAfterTicks))
+                    {
+                        exclude.Add(inv.getFacebookID());
+                    }
+                }
+            }
+
+            return exclude;
+        }
+
+        /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
+        // Not currently used but may be useful later.  Please leave this function where it is.  --Kris
+        private void InviteToEvent(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
+            List<Person> invited = GetInvitedPeople();
+            List<string> exclude = GetExclusionList();
+
             /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
             if (friends.Count > 0)
             {
@@ -855,6 +877,195 @@ namespace FaceBERN_
 
                 /* Send the invitations!  --Kris */
                 //webDriver.ClickOnXPath(browser, ".//button[.='Send Invites']");  // Comment if you want to test without actually sending the invitations.  --Kris
+
+                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
+
+                UpdateInvitationsCount(i);
+
+                foreach (Person friend in oldFriends)
+                {
+                    if (invited.Contains(friend))
+                    {
+                        invited.Remove(friend);
+                    }
+                    else
+                    {
+                        Person remove = null;
+                        foreach (Person inv in invited)
+                        {
+                            if (inv.getFacebookID() == friend.getFacebookID())
+                            {
+                                remove = inv;
+                                break;
+                            }
+                        }
+
+                        if (remove != null)
+                        {
+                            invited.Remove(remove);
+                        }
+                    }
+
+                    friends.Remove(friend);
+
+                    friend.setLastGOTVInvite(DateTime.Now);
+
+                    invited.Add(friend);
+                }
+
+                string invitedJSON = JsonConvert.SerializeObject(invited);
+
+                try
+                {
+                    RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                    RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                    RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+                    GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
+
+                    GOTVKey.Flush();
+                    appKey.Flush();
+                    softwareKey.Flush();
+
+                    GOTVKey.Close();
+                    appKey.Close();
+                    softwareKey.Close();
+                }
+                catch (IOException e)
+                {
+                    Log("Warning:  Error storing updated invitations record : " + e.Message);
+                }
+            }
+
+            SetExecState(lastState);
+        }
+
+        /* Query Facebook's Graph API to see if this user has been invited to the event already by someone else.  Credit to daniel.glecker on Slack for finding it.  --Kris */
+        private bool IsInvitedAPI(string eventId, string userId)
+        {
+            /* The API only accepts numberic user ID.  --Kris */
+            int n;
+            if (!(int.TryParse(userId, out n)))
+            {
+                // Use findmyfbid.com to get the userId.  --Kris
+            }
+
+            if (userId == null)
+            {
+                return false;
+            }
+
+            // TODO - API doesn't seem to work.  Scrapped for now.  --Kris
+
+            return false;
+        }
+
+        /* Check to see if any other FaceBERN! users have invited this user.  --Kris */
+        private bool IsInvitedBySomeoneElse(string eventId, string userId)
+        {
+
+        }
+
+        /* Must already be on the event page with the invite sidebar!  --Kris */
+        private void InviteToEventSidebar(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
+            List<Person> invited = GetInvitedPeople();
+            List<string> exclude = GetExclusionList();
+
+            /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
+            if (friends.Count > 0)
+            {
+                Log("Sending invitations....");
+
+                IWebElement searchBox = webDriver.GetElementByTagNameAndAttribute("input", "aria-label", "Add friends to this event");
+                if (searchBox == null)
+                {
+                    Log("Unable to locate search box!  Invitations aborted.");
+                    return;
+                }
+
+                List<Person> newInvites = new List<Person>();
+                List<Person> oldFriends = new List<Person>();
+                int i = 0;
+                foreach (Person friend in friends)
+                {
+                    if (exclude != null && exclude.Contains(friend.getFacebookID()))
+                    {
+                        Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
+                        continue;
+                    }
+
+                    webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
+                    webDriver.TypeText(searchBox, friend.getName());
+
+                    System.Threading.Thread.Sleep(2000);
+
+                    /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
+                    List<IWebElement> res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
+
+                    if (res.Count == 0)
+                    {
+                        Log("Unable to add " + friend.getName() + " to invite list.");
+                    }
+                    else if (res.Count == 1)
+                    {
+                        res[0].Click();
+
+                        System.Threading.Thread.Sleep(3000);
+
+                        IWebElement ele = webDriver.GetElementById("event_invite_feedback");
+                        if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
+                        {
+                            Log("Added " + friend.getName() + " to invite list.");
+
+                            i++;
+                            newInvites.Add(friend);
+
+                            // TODO - Take credit for it.  --Kris
+                        }
+                        else if (ele == null)
+                        {
+                            Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
+                        }
+                        else
+                        {
+                            Log("Possible error adding " + friend.getName() + " to invite list : " + ele.Text);
+                        }
+                    }
+                    else
+                    {
+                        Log("Multiple people with the same name found.  The feature to handle that hasn't been written yet.  Skipped.");
+                    }
+
+                    oldFriends.Add(friend);
+
+                    /* We don't want to trigger any false positives from the spam algos.  --Kris */
+                    if (i % 1000 == 0 && i > 1)
+                    {
+                        Wait(15, "for 1000-interval ratelimit");
+                    }
+                    if (i % 100 == 0 && i > 1)
+                    {
+                        Wait(3, "for 100-interval ratelimit");
+                    }
+                    else if (i % 50 == 0 && i > 1)
+                    {
+                        Wait(2, "for 50-interval ratelimit");
+                    }
+                    else if (i % 25 == 0 && i > 1)
+                    {
+                        Wait(1, "for 25-interval ratelimit");
+                    }
+                }
 
                 Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
 
