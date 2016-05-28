@@ -132,6 +132,9 @@
     <Reference Include="nunit.framework">
       <HintPath>Resources\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="RestSharp">
+      <HintPath>Resources\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="Selenium.WebDriverBackedSelenium">
       <HintPath>Resources\Selenium.WebDriverBackedSelenium.dll</HintPath>
     </Reference>

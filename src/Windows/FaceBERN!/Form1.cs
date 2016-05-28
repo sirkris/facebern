@@ -44,6 +44,11 @@ namespace FaceBERN_
 
         public bool stop = false;
 
+        private Workflow workflow = null;
+
+        public int localInvitesSent = 0;
+        public int remoteInvitesSent = 0;
+
         public Form1(bool updated = false, bool logging = true)
         {
             InitializeComponent();
@@ -80,17 +85,32 @@ namespace FaceBERN_
             HideCaret(outBox.Handle);
             if (!updated)
             {
-                CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
+                if (CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1")) && !(Globals.Config["AutoUpdate"].Equals("1")))
+                {
+                    DialogResult dr = MessageBox.Show("A newer version of FaceBERN! has been found!  Install now?", "Update Found!", MessageBoxButtons.YesNo);
+                    if (dr == DialogResult.Yes)
+                    {
+                        CheckForUpdates(true);
+                    }
+                    else
+                    {
+                        LogW("Update found but user chose not to install.  The stability of this software cannot be guaranteed if not promptly updated!");
+                    }
+                }
             }
             else
             {
                 LogW("Launched by updater so no need to check for updates.");
             }
+
             Ready();
         }
 
         private void Form1_Shown(object sender, EventArgs e)
         {
+            workflow = new Workflow(this);
+            workflow.ExecuteInterComThread();
+
             int retry = 3;
             while (Application.OpenForms[this.Name] == null)
             {
@@ -475,13 +495,17 @@ namespace FaceBERN_
                 return;
             }
 
+            if (workflow == null)
+            {
+                workflow = new Workflow(this);
+            }
+
             if (Globals.executionState == Globals.STATE_READY)
             {
                 SetExecState(Globals.STATE_VALIDATING);
 
                 buttonStart_ToStop();
 
-                Workflow workflow = new Workflow(this);
                 Globals.thread = workflow.ExecuteThread();
                 //workflow.Execute(browserModeComboBox.SelectedIndex);  // Use this if you want to debug on a single thread (be sure to comment the ExecuteThread() call).  --Kris
 
@@ -494,9 +518,7 @@ namespace FaceBERN_
                 SetExecState(Globals.STATE_STOPPING);
                 stop = true;
 
-                Workflow shutdown = new Workflow(this);
-
-                shutdown.ExecuteShutdownThread(Globals.thread);
+                workflow.ExecuteShutdownThread(Globals.thread);
                 
                 LogW("Execution terminated by user.");
             }
@@ -716,16 +738,25 @@ namespace FaceBERN_
             saveLog(logName, logObj);
         }
 
-        internal void UpdateInvitationsCount(int n = 1, bool clear = false)
+        internal void UpdateInvitationsCount(int x = 1, bool clear = false)
         {
             if (!clear)
             {
                 label3.Visible = true;
                 labelInvitesSent.Visible = true;
 
-                labelInvitesSent.Text = (long.Parse(labelInvitesSent.Text) + n).ToString();
+                localInvitesSent += x;
 
-                LogW("Incremented displayed invitations count by:  " + (n >= 0 ? "+" : "-") + n.ToString(), false);
+                if (remoteInvitesSent == 0)
+                {
+                    labelInvitesSent.Text = localInvitesSent.ToString();
+                }
+                else
+                {
+                    labelInvitesSent.Text = localInvitesSent.ToString() + @" / " + remoteInvitesSent.ToString();
+                }
+
+                LogW("Incremented displayed invitations count by:  " + (x >= 0 ? "+" : "-") + x.ToString(), false);
             }
             else
             {
@@ -736,6 +767,27 @@ namespace FaceBERN_
 
                 LogW("Cleared displayed invitations count and reset to 0.", false);
             }
+        }
+
+        internal void UpdateInvitationsCount(int x, int y)
+        {
+            label3.Visible = true;
+            labelInvitesSent.Visible = true;
+
+            localInvitesSent += x;
+            remoteInvitesSent = y;
+
+            if (remoteInvitesSent == 0)
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString();
+            }
+            else
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString() + @" / " + remoteInvitesSent.ToString();
+            }
+
+            LogW("Incremented local invitations count by:  " + (x >= 0 ? "+" : "-") + x.ToString(), false);
+            LogW("Set remote invitions count to:  " + y.ToString(), false);
         }
 
         private void Form1_Resize(object sender, EventArgs e)

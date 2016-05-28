@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,9 +24,15 @@ namespace FaceBERN_
         private int browser = 0;
         private bool ftbFriended = false;
 
-        public long invitesSent = 0;  // Tracked for current session only.  TODO - Persist and combine stats with other users for impressive totals.  --Kris
+        public long invitesSent = 0;  // Tracked for current session only.  --Kris
+
+        public List<Person> invited;
 
         private WebDriver webDriver = null;
+
+        private RestClient restClient;
+
+        private int remoteInvitesSent = 0;
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
@@ -39,6 +46,118 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
+
+            invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
+        }
+
+        /* This thread is designed to run continuously while the program is running.  --Kris */
+        public Thread ExecuteInterComThread()
+        {
+            SetExecState(Globals.STATE_STOPPING);
+
+            Thread thread = new Thread(() => ExecuteInterCom());
+
+            Main.LogW("Attempting to start InterCom thread....", false);
+
+            thread.IsBackground = true;
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("InterCom thread started successfully.", false);
+
+            return thread;
+        }
+
+        /* Responsible for any background communications, such as interfacing with the Birdie API to periodically update the invited totals.  --Kris */
+        public void ExecuteInterCom()
+        {
+            /* Initialize the Birdie API client. --Kris */
+            restClient = new RestClient("http://birdie.freeddns.org");
+
+            /* The main InterCom loop.  --Kris */
+            while (true)
+            {
+                UpdateRemoteInvitesCount();
+                invited = GetInvitedPeople();
+                UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+
+                System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
+            }
+        }
+
+        /* Get the number of Facebook users invited by everyone.  --Kris */
+        private void UpdateRemoteInvitesCount()
+        {
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            queryParams.Add("return", "count");
+
+            IRestResponse res = BirdieQuery("/facebook/invited", "GET", queryParams);
+            int r;
+            if (res.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                try
+                {
+                    r = Int32.Parse(res.Content);
+                }
+                catch (Exception e)
+                {
+                    Log("Warning:  Unexpected response from Birdie API.  Unable to update remote invites count.");
+                    return;
+                }
+            }
+            else
+            {
+                Log("Warning:  Birdie API query failed.  Unable to update remote invites count.");
+                return;
+            }
+
+            remoteInvitesSent = r;
+
+            UpdateInvitationsCount(0, r);
+        }
+
+        /* Query the Birdie API and return the raw result.  --Kris */
+        private IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "")
+        {
+            Method meth;
+            switch (method.ToUpper())
+            {
+                default:
+                    Log("API ERROR:  Unsupported method '" + method + "'!");
+                    return null;
+                case "GET":
+                    meth = Method.GET;
+                    break;
+                case "POST":
+                    meth = Method.POST;
+                    break;
+                case "PUT":
+                    meth = Method.PUT;
+                    break;
+                case "DELETE":
+                    meth = Method.DELETE;
+                    break;
+            }
+
+            RestRequest req = new RestRequest(path, meth);
+
+            req.JsonSerializer.ContentType = "application/json; charset=utf-8";
+
+            if (queryParams != null && queryParams.Count > 0)
+            {
+                foreach (KeyValuePair<string, string> pair in queryParams)
+                {
+                    req.AddParameter(pair.Key, pair.Value);
+                }
+            }
+
+            if (body != null && body.Length > 0 && !(method.ToUpper().Equals("GET")))
+            {
+                req.AddBody(body);
+            }
+
+            return restClient.Execute(req);
         }
 
         public Thread ExecuteShutdownThread(Thread workflowThread)
@@ -105,6 +224,8 @@ namespace FaceBERN_
             }
 
             Thread thread = new Thread(() => Execute(browser, WorkflowLog));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
+
+            thread.IsBackground = true;
 
             Main.LogW("Attempting to start Workflow thread....", false);
 
@@ -416,6 +537,8 @@ namespace FaceBERN_
 
             Log("Waiting " + minutes.ToString() + (minutes != 1 ? " minutes" : " minute") + (reason != "" ? " " + reason : "") + "....");
 
+            System.Threading.Thread.Sleep(100);
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_WAITING);
 
@@ -706,7 +829,7 @@ namespace FaceBERN_
             }
         }
 
-        private List<Person> GetInvitedPeople()
+        public List<Person> GetInvitedPeople()
         {
             List<Person> invited = new List<Person>();
 
@@ -963,7 +1086,7 @@ namespace FaceBERN_
         /* Check to see if any other FaceBERN! users have invited this user.  --Kris */
         private bool IsInvitedBySomeoneElse(string eventId, string userId)
         {
-
+            return false;  // TODO - Placeholder
         }
 
         /* Must already be on the event page with the invite sidebar!  --Kris */
@@ -1124,6 +1247,8 @@ namespace FaceBERN_
                 {
                     Log("Warning:  Error storing updated invitations record : " + e.Message);
                 }
+
+                this.invited = GetInvitedPeople();
             }
 
             SetExecState(lastState);
@@ -1437,29 +1562,48 @@ namespace FaceBERN_
             }
         }
 
-        private void UpdateInvitationsCount(int n = 1, bool clear = false)
+        private void UpdateInvitationsCount(int x = 1, bool clear = false)
         {
             if (Main.InvokeRequired)
             {
                 Main.BeginInvoke(
                     new MethodInvoker(
-                        delegate() { UpdateInvitationsCount(n, clear); }));
+                        delegate() { UpdateInvitationsCount(x, clear); }));
             }
             else
             {
-                Main.UpdateInvitationsCount(n, clear);
+                Main.UpdateInvitationsCount(x, clear);
 
                 Main.Refresh();
             }
 
             if (!clear)
             {
-                invitesSent += n;
+                invitesSent += x;
             }
             else
             {
                 invitesSent = 0;
             }
+        }
+
+        /* Update local and remote total invites.  If you just want to update the total remote invites, pass 0 for x.  --Kris */
+        private void UpdateInvitationsCount(int x, int y)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateInvitationsCount(x, y); }));
+            }
+            else
+            {
+                Main.UpdateInvitationsCount(x, y);
+
+                Main.Refresh();
+            }
+
+            invitesSent += x;
         }
 
         private void SetExecState(int state)

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FaceBERN_
 {
-    internal class Person
+    public class Person
     {
         public string name;
         public string facebookID;
