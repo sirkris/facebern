@@ -10,18 +10,22 @@ namespace FaceBERN_
     public class Person
     {
         public string name;
+        public string facebookInternalID;
         public string facebookID;
         public string stateAbbr;
         public bool bernieSupporter;
+        public string facebookEventID;
 
         public string lastGOTVInvite;  // Ticks.  --Kris
 
-        internal Person(string name, string facebookID, string stateAbbr, bool bernieSupporter)
+        internal Person(string name, string facebookID, string stateAbbr, bool bernieSupporter, string facebookInternalID = null, string facebookEventID = null)
         {
             this.name = name;
             this.facebookID = facebookID;
             this.stateAbbr = stateAbbr;
             this.bernieSupporter = bernieSupporter;
+            this.facebookInternalID = facebookInternalID;
+            this.facebookEventID = facebookEventID;
 
             this.lastGOTVInvite = null;
         }
@@ -53,6 +57,26 @@ namespace FaceBERN_
         internal void setFacebookID(string facebookID)
         {
             this.facebookID = facebookID;
+        }
+
+        internal string getFacebookEventID()
+        {
+            return this.facebookID;
+        }
+
+        internal void setFacebookEventID(string facebookID)
+        {
+            this.facebookID = facebookID;
+        }
+
+        internal string getFacebookInternalID()
+        {
+            return this.facebookInternalID;
+        }
+
+        internal void setFacebookInternalID(string facebookInternalID)
+        {
+            this.facebookInternalID = facebookInternalID;
         }
 
         internal string getStateAbbr()

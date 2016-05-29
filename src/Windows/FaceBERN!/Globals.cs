@@ -74,6 +74,9 @@ namespace FaceBERN_
         public const int CHROME = 2;  // In case we ever decide to support Chrome in the future.
         public const int IE = 3;  // Doubtful, but what the hell.
 
+        /* Application ID.  Used for API calls.  It should be set to null here.  --Kris */
+        public static string appId = null;
+
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
 
