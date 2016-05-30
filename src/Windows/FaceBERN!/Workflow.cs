@@ -132,7 +132,7 @@ namespace FaceBERN_
                 person.setFacebookInternalID(fbUser.fbId);
                 person.setName(fbUser.name);
                 person.setStateAbbr(fbUser.stateAbbr);
-                person.setLastGOTVInvite(fbUser.lastInvited);
+                person.setLastGOTVInvite((fbUser.lastInvited != null ? fbUser.lastInvited.Value.Ticks.ToString() : null));
                 person.setFacebookEventID(fbUser.eventId);
 
                 res.Add(person);
@@ -146,6 +146,22 @@ namespace FaceBERN_
         {
             if ( remoteUpdateQueue != null && remoteUpdateQueue.Count > 0 )
             {
+                /* Do it only when in a non-executing state to avoid simultaneous access conflicts.  --Kris */
+                int i = 200;  // 10 minutes
+                while (Globals.executionState == Globals.STATE_EXECUTING
+                    || Globals.executionState == Globals.STATE_STOPPING)
+                {
+                    System.Threading.Thread.Sleep(3000);
+
+                    i--;
+                    if (i == 0)
+                    {
+                        Log("Timeout waiting to update Birdie with new invites.  Will try again later.");
+
+                        return;
+                    }
+                }
+
                 Log("Updating Birdie with " + remoteUpdateQueue.Count.ToString() + " new invitations we've sent....");
                 
                 IRestResponse res = BirdieQuery(@"/facebook/invited", "POST", null, JsonConvert.SerializeObject(PeopleToFacebookUsers(remoteUpdateQueue)));
@@ -197,8 +213,8 @@ namespace FaceBERN_
                 RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
                 RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
 
-                Globals.appId = appKey.GetValue("appId", null, RegistryValueOptions.None).ToString();
-
+                Globals.appId = (string) appKey.GetValue("appId", null, RegistryValueOptions.None);
+                
                 if (Globals.appId == null)
                 {
                     Globals.appId = GenerateAppID();
@@ -217,7 +233,7 @@ namespace FaceBERN_
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
             RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
-            remoteUpdateQueue = JsonConvert.DeserializeObject<List<Person>>((string) GOTVKey.GetValue("invitedQueue", JsonConvert.SerializeObject(new List<Person>()), RegistryValueOptions.None));
+            remoteUpdateQueue = FacebookUsersToPeople(JsonConvert.DeserializeObject<List<FacebookUser>>((string)GOTVKey.GetValue("invitedQueue", JsonConvert.SerializeObject(new List<Person>()), RegistryValueOptions.None)));
 
             GOTVKey.Close();
             appKey.Close();
@@ -327,7 +343,8 @@ namespace FaceBERN_
 
                 if (body != null && body.Length > 0 && !(method.ToUpper().Equals("GET")))
                 {
-                    req.AddBody(body);
+                    //req.AddBody(JsonConvert.DeserializeObject<Dictionary<string, string>>(body));
+                    req.AddParameter("text/json", body, ParameterType.RequestBody);
                 }
 
                 return restClient.Execute(req);
@@ -532,6 +549,12 @@ namespace FaceBERN_
                 {
                     Log("Thread stop received.  Workflow aborted.");
                     return;
+                }
+
+                // TEMP DEBUG
+                if (!(state.Key.Equals("ND")))
+                {
+                    continue;
                 }
 
                 Log("Checking GOTV for " + state.Key + "....");
@@ -809,7 +832,8 @@ namespace FaceBERN_
                     }
 
                     /* Click the login button on Facebook.  --Kris */
-                    dynamic element = webDriver.GetElementById("u_0_y");
+                    //dynamic element = webDriver.GetElementById("u_0_y");
+                    dynamic element = webDriver.GetElementByCSSSelector("input[type='submit'][value='Log In']");
                     webDriver.ClickElement(element);
 
                     //Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
@@ -854,6 +878,8 @@ namespace FaceBERN_
                 {
                     SetExecState(Globals.STATE_VALIDATING);
 
+                    webDriver.FixtureSetup();
+
                     Log("Retrying Facebook login....");
                     return FacebookLogin(retry);
                 }
@@ -867,8 +893,7 @@ namespace FaceBERN_
                 /* While we're here, let's grab the Facebook profile URL for this user and store it.  Login may be different so check every time.  --Kris */
                 string profileURL = null;
                 
-                IWebDriver w = webDriver.GetDriver();
-                IWebElement ele = w.FindElement(By.CssSelector("[data-testid=\"blue_bar_profile_link\"]"));
+                IWebElement ele = webDriver.GetElementByCSSSelector("[data-testid=\"blue_bar_profile_link\"]");
                 if (ele != null)
                 {
                     profileURL = ele.GetAttribute("href");
@@ -932,8 +957,7 @@ namespace FaceBERN_
 
                 webDriver.GoToUrl("https://www.facebook.com/events/upcoming");
 
-                IWebDriver w = webDriver.GetDriver();
-                webDriver.ClickElement(w.FindElement(By.CssSelector("[data-testid=\"event-create-button\"]")));
+                webDriver.ClickElement(webDriver.GetElementByCSSSelector("[data-testid=\"event-create-button\"]"));
 
                 System.Threading.Thread.Sleep(5000);  // This one's a bit slower to load and I don't trust the implicit wait in this case.  --Kris
 
@@ -973,14 +997,14 @@ namespace FaceBERN_
                 /* Check to see if we're on the new event page.  --Kris */
                 System.Threading.Thread.Sleep(5000);
 
-                IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
+                IWebElement inviteButton = webDriver.GetElementByCSSSelector("[data-testid=\"event_invite_button\"]");
                 if (inviteButton == null)
                 {
                     Log("ERROR:  Event creation failed!  Aborted.");
                     return false;
                 }
 
-                Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
+                Log("GOTV event for " + stateAbbr + " created at : " + webDriver.GetURL());
 
                 InviteToEventSidebar(ref friends, stateAbbr);
 

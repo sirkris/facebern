@@ -61,12 +61,12 @@ namespace FaceBERN_
 
         internal string getFacebookEventID()
         {
-            return this.facebookID;
+            return this.facebookEventID;
         }
 
-        internal void setFacebookEventID(string facebookID)
+        internal void setFacebookEventID(string facebookEventID)
         {
-            this.facebookID = facebookID;
+            this.facebookEventID = facebookEventID;
         }
 
         internal string getFacebookInternalID()
@@ -111,7 +111,14 @@ namespace FaceBERN_
 
         internal DateTime getLastGOTVInviteAsDateTime()
         {
-            return new DateTime(long.Parse(this.lastGOTVInvite));
+            if (this.lastGOTVInvite != null)
+            {
+                return new DateTime(long.Parse(this.lastGOTVInvite));
+            }
+            else
+            {
+                return new DateTime();
+            }
         }
 
         internal void setLastGOTVInvite(string ticks)

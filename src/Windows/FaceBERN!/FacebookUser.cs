@@ -11,7 +11,7 @@ namespace FaceBERN_
         public string fbUserId = null;
         public string name = null;
         public string fbId = null;
-        public DateTime lastInvited = new DateTime();
+        public DateTime? lastInvited = null;
         public string lastInvitedBy = null;
         public string stateAbbr = null;
         public string eventId = null;

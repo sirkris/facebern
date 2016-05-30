@@ -278,6 +278,22 @@ namespace FaceBERN_
         private static extern IntPtr FindWindow(string sClassName, string sAppName);
 
         [Test]
+        public string GetURL()
+        {
+            switch (browser)
+            {
+                default:
+                case Globals.FIREFOX_WINDOWED:
+                case Globals.FIREFOX_HIDDEN:
+                    IWebDriver driver = GetDriver();
+                    return driver.Url;
+                case Globals.FIREFOX_HEADLESS:
+                    // TODO
+                    return null;
+            }
+        }
+
+        [Test]
         public dynamic GetElementById(string elementid, bool iefix = false)
         {
             try
@@ -420,6 +436,47 @@ namespace FaceBERN_
                     return res;
                 case Globals.FIREFOX_HEADLESS:
                     return page.GetByXPath(xpath);
+            }
+        }
+
+        [Test]
+        public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1)
+        {
+            dynamic res;
+            IWebDriver driver;
+
+            switch (browser)
+            {
+                default:
+                case Globals.FIREFOX_WINDOWED:
+                case Globals.FIREFOX_HIDDEN:
+                    driver = GetDriver();
+                    
+                    if (timeout >= 0)
+                    {
+                        driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
+                    }
+
+                    try
+                    {
+                        res = driver.FindElement(By.CssSelector(cssSelector));
+                    }
+                    catch (NoSuchElementException e)
+                    {
+                        return null;
+                    }
+                    finally
+                    {
+                        if (timeout >= 0)
+                        {
+                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                        }
+                    }
+
+                    return res;
+                case Globals.FIREFOX_HEADLESS:
+                    // TODO
+                    return null;
             }
         }
 
