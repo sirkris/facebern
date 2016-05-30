@@ -162,6 +162,22 @@ namespace FaceBERN_
                     }
                 }
 
+                List<Person> queueNew = new List<Person>();
+                foreach (Person person in remoteUpdateQueue)
+                {
+                    if (person.getFacebookID() != null && person.getName() != null)
+                    {
+                        queueNew.Add(person);
+                    }
+                }
+                remoteUpdateQueue = queueNew;
+
+                if (remoteUpdateQueue.Count == 0)
+                {
+                    ClearLatestInvitesQueue();
+                    return;
+                }
+
                 Log("Updating Birdie with " + remoteUpdateQueue.Count.ToString() + " new invitations we've sent....");
                 
                 IRestResponse res = BirdieQuery(@"/facebook/invited", "POST", null, JsonConvert.SerializeObject(PeopleToFacebookUsers(remoteUpdateQueue)));
@@ -549,12 +565,6 @@ namespace FaceBERN_
                 {
                     Log("Thread stop received.  Workflow aborted.");
                     return;
-                }
-
-                // TEMP DEBUG
-                if (!(state.Key.Equals("SD")))
-                {
-                    continue;
                 }
 
                 Log("Checking GOTV for " + state.Key + "....");
@@ -1329,6 +1339,28 @@ namespace FaceBERN_
             return (fbUser != null && fbUser.fbUserId != null && fbUser.fbUserId.ToLower().Equals(userId));
         }
 
+        private List<IWebElement> LoadFriendInEventSearchBox(Person friend, IWebElement searchBox, int delayMultiplier = 1)
+        {
+            webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
+            webDriver.TypeText(searchBox, friend.getName());
+
+            System.Threading.Thread.Sleep(1000 * delayMultiplier);
+
+            /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
+            int i = 3;
+            List<IWebElement> res = new List<IWebElement>();
+            do
+            {
+                System.Threading.Thread.Sleep(1000 * delayMultiplier);
+
+                res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
+
+                i--;
+            } while (res.Count == 0 && i > 0);
+
+            return res;
+        }
+
         /* Must already be on the event page with the invite sidebar!  --Kris */
         private void InviteToEventSidebar(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
         {
@@ -1373,13 +1405,13 @@ namespace FaceBERN_
                         continue;
                     }
 
-                    webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
-                    webDriver.TypeText(searchBox, friend.getName());
+                    List<IWebElement> res = LoadFriendInEventSearchBox(friend, searchBox);
 
-                    System.Threading.Thread.Sleep(2000);
-
-                    /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
-                    List<IWebElement> res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
+                    if (res.Count == 0)
+                    {
+                        /* Retry once; a bit more slowly, this time.  Sometimes it just doesn't load correctly or quickly enough in the browser.  --Kris */
+                        res = LoadFriendInEventSearchBox(friend, searchBox, 2);
+                    }
 
                     if (res.Count == 0)
                     {
@@ -1389,9 +1421,17 @@ namespace FaceBERN_
                     {
                         res[0].Click();
 
-                        System.Threading.Thread.Sleep(3000);
+                        IWebElement ele;
+                        i = 3;
+                        do
+                        {
+                            System.Threading.Thread.Sleep(1000);
 
-                        IWebElement ele = webDriver.GetElementById("event_invite_feedback");
+                            ele = webDriver.GetElementById("event_invite_feedback");
+
+                            i--;
+                        } while (ele == null && i > 0);
+
                         if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
                         {
                             Log("Added " + friend.getName() + " to invite list.");
@@ -1498,6 +1538,11 @@ namespace FaceBERN_
 
                 this.invited = GetInvitedPeople();
             }
+
+            /* Allow a few seconds to update Birdie, in case it's waiting.  --Kris */
+            SetExecState(Globals.STATE_WAITING);
+
+            System.Threading.Thread.Sleep(5000);
 
             SetExecState(lastState);
         }
