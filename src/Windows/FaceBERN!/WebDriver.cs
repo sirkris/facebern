@@ -513,7 +513,7 @@ namespace FaceBERN_
             int i = 0;
             foreach (IWebElement ele in eles)
             {
-                if (ele.GetAttribute(attributeName).Equals(attributeValue))
+                if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
                 {
                     if (i == offset)
                     {
@@ -542,7 +542,7 @@ namespace FaceBERN_
             List<IWebElement> res = new List<IWebElement>();
             foreach (IWebElement ele in eles)
             {
-                if (ele.GetAttribute(attributeName).Equals(attributeValue))
+                if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
                 {
                     res.Add(ele);
 

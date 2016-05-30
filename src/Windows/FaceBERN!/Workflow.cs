@@ -552,7 +552,7 @@ namespace FaceBERN_
                 }
 
                 // TEMP DEBUG
-                if (!(state.Key.Equals("ND")))
+                if (!(state.Key.Equals("SD")))
                 {
                     continue;
                 }
@@ -684,7 +684,7 @@ namespace FaceBERN_
                     }
 
                     /* If there are no errors, proceed with the invitations.  --Kris */
-                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr))
+                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr, false))
                     {
                         InviteToEventSidebar(ref friends, state.abbr, milestone.ToString());
                     }
@@ -1298,7 +1298,11 @@ namespace FaceBERN_
         private bool IsInvitedBySomeoneElse(string userId)
         {
             IRestResponse res = BirdieQuery("/facebook/invited/" + userId);
-            if (res.StatusCode != System.Net.HttpStatusCode.OK)
+            if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            else if (res.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 Log("Warning:  Birdie query returned error response in IsInvitedBySomeoneElse().");
 
@@ -1402,7 +1406,7 @@ namespace FaceBERN_
                         }
                         else
                         {
-                            Log("Possible error adding " + friend.getName() + " to invite list : " + ele.Text);
+                            Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
                         }
                     }
                     else
@@ -1461,9 +1465,12 @@ namespace FaceBERN_
 
                     friends.Remove(friend);
 
-                    friend.setLastGOTVInvite(DateTime.Now);
+                    if (newInvites.Contains(friend))
+                    {
+                        friend.setLastGOTVInvite(DateTime.Now);
 
-                    invited.Add(friend);
+                        invited.Add(friend);
+                    }
                 }
 
                 string invitedJSON = JsonConvert.SerializeObject(invited);
@@ -1674,7 +1681,7 @@ namespace FaceBERN_
         }
 
         /* Load the Facebook event page from feelthebern.events and return whether or not the user has access to the event.  --Kris */
-        private bool CheckFTBEventAccess(string stateAbbr)
+        private bool CheckFTBEventAccess(string stateAbbr, bool navigate = true)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -1697,7 +1704,10 @@ namespace FaceBERN_
                 return false;
             }
 
-            webDriver.GoToUrl("https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
+            if (navigate == true)
+            {
+                webDriver.GoToUrl("https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
+            }
 
             System.Threading.Thread.Sleep(3000);  // Just in case the driver doesn't wait long enough on its own.  --Kris
 
