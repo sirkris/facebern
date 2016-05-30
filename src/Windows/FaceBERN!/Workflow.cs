@@ -584,6 +584,8 @@ namespace FaceBERN_
                         && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
                         && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays <= milestone)
                     {
+                        SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
+
                         /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
                         List<Person> friends = GetFacebookFriendsOfFriends(state.Key);
 
@@ -599,6 +601,8 @@ namespace FaceBERN_
                         }
 
                         dateAppropriate = true;
+
+                        SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
 
                         break;
                     }
@@ -1381,6 +1385,8 @@ namespace FaceBERN_
             {
                 Log("Sending invitations....");
 
+                SetProgressBar(Globals.PROGRESSBAR_CONTINUOUS);
+
                 IWebElement searchBox = webDriver.GetElementByTagNameAndAttribute("input", "aria-label", "Add friends to this event");
                 if (searchBox == null)
                 {
@@ -1391,8 +1397,11 @@ namespace FaceBERN_
                 List<Person> newInvites = new List<Person>();
                 List<Person> oldFriends = new List<Person>();
                 int i = 0;
+                int iteration = 0;
                 foreach (Person friend in friends)
                 {
+                    SetProgressBar((int) Math.Round((decimal) (iteration / friends.Count), 0, MidpointRounding.AwayFromZero));
+
                     if (exclude != null && exclude.Contains(friend.getFacebookID()))
                     {
                         Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
@@ -1422,15 +1431,15 @@ namespace FaceBERN_
                         res[0].Click();
 
                         IWebElement ele;
-                        i = 3;
+                        int ii = 3;
                         do
                         {
                             System.Threading.Thread.Sleep(1000);
 
                             ele = webDriver.GetElementById("event_invite_feedback");
 
-                            i--;
-                        } while (ele == null && i > 0);
+                            ii--;
+                        } while (ele == null && ii > 0);
 
                         if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
                         {
@@ -1909,11 +1918,32 @@ namespace FaceBERN_
             invitesSent += x;
         }
 
-        
-
         private void SetExecState(int state)
         {
-            Main.SetExecState(state, logName, WorkflowLog);
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { SetExecState(state); }));
+            }
+            else
+            {
+                Main.SetExecState(state, logName, WorkflowLog);
+            }
+        }
+
+        private void SetProgressBar(int percent)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { SetProgressBar(percent); }));
+            }
+            else
+            {
+                Main.SetProgressBar(percent);
+            }
         }
     }
 }

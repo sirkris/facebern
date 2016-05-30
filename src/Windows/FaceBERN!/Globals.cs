@@ -74,6 +74,11 @@ namespace FaceBERN_
         public const int CHROME = 2;  // In case we ever decide to support Chrome in the future.
         public const int IE = 3;  // Doubtful, but what the hell.
 
+        /* Progress bar function constants.  --Kris */
+        public const int PROGRESSBAR_HIDDEN = -2;
+        public const int PROGRESSBAR_MARQUEE = -1;
+        public const int PROGRESSBAR_CONTINUOUS = 0;
+
         /* Application ID.  Used for API calls.  It should be set to null here.  --Kris */
         public static string appId = null;
 

@@ -159,7 +159,8 @@ namespace FaceBERN_
 
             SetStateDefaults();
 
-            UpdateVersion();
+            UpdateVersion();  // Update the version text.  --Kris
+            SetProgressBar(Globals.PROGRESSBAR_HIDDEN);  // Hide the progress bar.  --Kris
 
             HideCaret(outBox.Handle);
 
@@ -531,6 +532,8 @@ namespace FaceBERN_
             buttonStart.Text = "START";
 
             browserModeComboBox.Enabled = true;
+
+            SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
         }
 
         public void buttonStart_ToStop()
@@ -809,6 +812,27 @@ namespace FaceBERN_
 
             LogW("Set local invitations count to:  " + x.ToString(), false);
             LogW("Set remote invitions count to:  " + y.ToString(), false);
+        }
+
+        public void SetProgressBar(int percent)
+        {
+            if (percent < -1)
+            {
+                mainProgressBar.Visible = false;
+                mainProgressBar.Value = 0;
+            }
+            else if (percent == -1)
+            {
+                mainProgressBar.Value = 0;
+                mainProgressBar.Style = ProgressBarStyle.Marquee;
+                mainProgressBar.Visible = true;
+            }
+            else
+            {
+                mainProgressBar.Value = percent;
+                mainProgressBar.Style = ProgressBarStyle.Continuous;
+                mainProgressBar.Visible = true;
+            }
         }
 
         private void Form1_Resize(object sender, EventArgs e)
