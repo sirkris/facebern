@@ -137,7 +137,7 @@ namespace FaceBERN_
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
 
             /* How long to wait between GOTV checks.  --Kris */
-            Globals.Config.Add("GOTVIntervalHours", "24");
+            Globals.Config.Add("GOTVIntervalHours", "6");
 
             /* Each comma-delineated value represents how many days prior to a state's primary/caucus to execute a GOTV for that state.  Multiple entries means multiple GOTV runs.  --Kris */
             Globals.Config.Add("DefaultGOTVDaysBack", "30,10,1");

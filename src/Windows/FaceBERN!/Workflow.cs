@@ -719,7 +719,7 @@ namespace FaceBERN_
 
             try
             {
-                stateKey.SetValue("LastGOTVDaysBack", (state.primaryDate.Subtract(DateTime.Now).TotalDays).ToString(), RegistryValueKind.String);
+                stateKey.SetValue("LastGOTVDaysBack", Math.Floor(state.primaryDate.Subtract(DateTime.Now).TotalDays).ToString(), RegistryValueKind.String);
             }
             catch (IOException e)
             {
