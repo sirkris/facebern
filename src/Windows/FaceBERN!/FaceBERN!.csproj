@@ -132,6 +132,9 @@
     <Reference Include="nunit.framework">
       <HintPath>Resources\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="RestSharp">
+      <HintPath>Resources\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="Selenium.WebDriverBackedSelenium">
       <HintPath>Resources\Selenium.WebDriverBackedSelenium.dll</HintPath>
     </Reference>
@@ -170,6 +173,7 @@
       <DependentUpon>About.cs</DependentUpon>
     </Compile>
     <Compile Include="Credentials.cs" />
+    <Compile Include="FacebookUser.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

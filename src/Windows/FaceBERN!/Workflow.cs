@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,12 +24,24 @@ namespace FaceBERN_
         private int browser = 0;
         private bool ftbFriended = false;
 
-        public long invitesSent = 0;  // Tracked for current session only.  TODO - Persist and combine stats with other users for impressive totals.  --Kris
+        public long invitesSent = 0;  // Tracked for current session only.  --Kris
+
+        public List<Person> invited;
 
         private WebDriver webDriver = null;
 
+        private RestClient restClient;
+
+        private int remoteInvitesSent = 0;
+
+        private List<Person> remoteUpdateQueue = null;
+
+        private Random rand;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
+            rand = new Random();
+
             this.Main = Main;
             if (MainLog == null)
             {
@@ -38,6 +51,324 @@ namespace FaceBERN_
             {
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
+            }
+
+            invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
+        }
+
+        /* This thread is designed to run continuously while the program is running.  --Kris */
+        public Thread ExecuteInterComThread()
+        {
+            Thread thread = new Thread(() => ExecuteInterCom());
+
+            Main.LogW("Attempting to start InterCom thread....", false);
+
+            thread.IsBackground = true;
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("InterCom thread started successfully.", false);
+
+            return thread;
+        }
+
+        /* Responsible for any background communications, such as interfacing with the Birdie API to periodically update the invited totals.  --Kris */
+        public void ExecuteInterCom()
+        {
+            /* Initialize the Birdie API client. --Kris */
+            restClient = new RestClient("http://birdie.freeddns.org");
+
+            /* Load any invitations persisted in the registry from a previous run.  --Kris */
+            LoadLatestInvitesQueue();
+
+            /* The main InterCom loop.  --Kris */
+            while (true)
+            {
+                /* Get the Application ID.  If it's not set, generate one.  --Kris */
+                GetAppID();
+                
+                /* Process the remote update queue and send it to Birdie.  --Kris */
+                PostLatestInvites();
+
+                /* Update our local invitations count for both ours and remote.  --Kris */
+                UpdateRemoteInvitesCount();
+                invited = GetInvitedPeople();
+                UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+
+                System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
+            }
+        }
+
+        private List<FacebookUser> PeopleToFacebookUsers(List<Person> people)
+        {
+            List<FacebookUser> res = new List<FacebookUser>();
+            foreach (Person person in people)
+            {
+                FacebookUser fbUser = new FacebookUser();
+
+                fbUser.fbUserId = person.getFacebookID();
+                fbUser.fbId = person.getFacebookInternalID();
+                fbUser.name = person.getName();
+                fbUser.stateAbbr = person.getStateAbbr();
+                fbUser.lastInvited = person.getLastGOTVInviteAsDateTime();
+                fbUser.lastInvitedBy = GetAppID();
+                fbUser.eventId = person.getFacebookEventID();
+
+                res.Add(fbUser);
+            }
+
+            return res;
+        }
+
+        private List<Person> FacebookUsersToPeople(List<FacebookUser> facebookUsers)
+        {
+            List<Person> res = new List<Person>();
+            foreach (FacebookUser fbUser in facebookUsers)
+            {
+                Person person = new Person();
+
+                person.setFacebookID(fbUser.fbUserId);
+                person.setFacebookInternalID(fbUser.fbId);
+                person.setName(fbUser.name);
+                person.setStateAbbr(fbUser.stateAbbr);
+                person.setLastGOTVInvite((fbUser.lastInvited != null ? fbUser.lastInvited.Value.Ticks.ToString() : null));
+                person.setFacebookEventID(fbUser.eventId);
+
+                res.Add(person);
+            }
+
+            return res;
+        }
+
+        /* Tell Birdie about the latest people we've invited.  This is queued and called periodically by the InterCom thread in order to prevent query spam.  --Kris */
+        private void PostLatestInvites()
+        {
+            if ( remoteUpdateQueue != null && remoteUpdateQueue.Count > 0 )
+            {
+                /* Do it only when in a non-executing state to avoid simultaneous access conflicts.  --Kris */
+                int i = 200;  // 10 minutes
+                while (Globals.executionState == Globals.STATE_EXECUTING
+                    || Globals.executionState == Globals.STATE_STOPPING)
+                {
+                    System.Threading.Thread.Sleep(3000);
+
+                    i--;
+                    if (i == 0)
+                    {
+                        Log("Timeout waiting to update Birdie with new invites.  Will try again later.");
+
+                        return;
+                    }
+                }
+
+                List<Person> queueNew = new List<Person>();
+                foreach (Person person in remoteUpdateQueue)
+                {
+                    if (person.getFacebookID() != null && person.getName() != null)
+                    {
+                        queueNew.Add(person);
+                    }
+                }
+                remoteUpdateQueue = queueNew;
+
+                if (remoteUpdateQueue.Count == 0)
+                {
+                    ClearLatestInvitesQueue();
+                    return;
+                }
+
+                Log("Updating Birdie with " + remoteUpdateQueue.Count.ToString() + " new invitations we've sent....");
+                
+                IRestResponse res = BirdieQuery(@"/facebook/invited", "POST", null, JsonConvert.SerializeObject(PeopleToFacebookUsers(remoteUpdateQueue)));
+                if (res == null)
+                {
+                    Log("Warning:  Error querying Birdie API with new invites.");
+                    return;
+                }
+                else
+                {
+                    if (res.StatusCode == System.Net.HttpStatusCode.Created)
+                    {
+                        Log("Birdie updated successfully.");
+
+                        ClearLatestInvitesQueue();
+                    }
+                    else
+                    {
+                        Log("Warning:  Birdie API query failed.  Unable to send latest invites queue.  Will try again later.");
+                    }
+                }
+            }
+        }
+
+        private string GenerateAppID()
+        {
+            string res = @"facebern_";
+            string salt = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+            for (int i = 1; i <= 20; i++)
+            {
+                res += salt.Substring(rand.Next(0, (salt.Length - 1)), 1);
+            }
+
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+            appKey.SetValue("appId", res, RegistryValueKind.String);
+
+            appKey.Close();
+            softwareKey.Close();
+
+            return res;
+        }
+
+        public string GetAppID()
+        {
+            if (Globals.appId == null)
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                Globals.appId = (string) appKey.GetValue("appId", null, RegistryValueOptions.None);
+                
+                if (Globals.appId == null)
+                {
+                    Globals.appId = GenerateAppID();
+                }
+
+                appKey.Close();
+                softwareKey.Close();
+            }
+
+            return Globals.appId;
+        }
+
+        private void LoadLatestInvitesQueue()
+        {
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+            remoteUpdateQueue = FacebookUsersToPeople(JsonConvert.DeserializeObject<List<FacebookUser>>((string)GOTVKey.GetValue("invitedQueue", JsonConvert.SerializeObject(new List<Person>()), RegistryValueOptions.None)));
+
+            GOTVKey.Close();
+            appKey.Close();
+            softwareKey.Close();
+        }
+
+        private void AppendLatestInvitesQueue(List<Person> invites, bool clear = false)
+        {
+            if (clear)
+            {
+                remoteUpdateQueue = new List<Person>();
+            }
+            else
+            {
+                remoteUpdateQueue.AddRange(invites);
+            }
+
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+            GOTVKey.SetValue("invitedQueue", JsonConvert.SerializeObject(remoteUpdateQueue), RegistryValueKind.String);
+
+            GOTVKey.Close();
+            appKey.Close();
+            softwareKey.Close();
+        }
+
+        private void AppendLatestInvitesQueue(Person invite)
+        {
+            AppendLatestInvitesQueue(new List<Person> { invite });
+        }
+
+        private void ClearLatestInvitesQueue()
+        {
+            AppendLatestInvitesQueue(null, true);
+        }
+
+        /* Get the number of Facebook users invited by everyone.  --Kris */
+        private void UpdateRemoteInvitesCount()
+        {
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            queryParams.Add("return", "count");
+
+            IRestResponse res = BirdieQuery("/facebook/invited", "GET", queryParams);
+            int r;
+            if (res.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                try
+                {
+                    r = Int32.Parse(res.Content);
+                }
+                catch (Exception e)
+                {
+                    Log("Warning:  Unexpected response from Birdie API.  Unable to update remote invites count.");
+                    return;
+                }
+            }
+            else
+            {
+                Log("Warning:  Birdie API query failed.  Unable to update remote invites count.");
+                return;
+            }
+
+            remoteInvitesSent = r;
+
+            UpdateInvitationsCount(0, r);
+        }
+
+        /* Query the Birdie API and return the raw result.  --Kris */
+        private IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "")
+        {
+            /* We don't ever want this to terminate program execution on failure.  --Kris */
+            try
+            {
+                Method meth;
+                switch (method.ToUpper())
+                {
+                    default:
+                        Log("API ERROR:  Unsupported method '" + method + "'!");
+                        return null;
+                    case "GET":
+                        meth = Method.GET;
+                        break;
+                    case "POST":
+                        meth = Method.POST;
+                        break;
+                    case "PUT":
+                        meth = Method.PUT;
+                        break;
+                    case "DELETE":
+                        meth = Method.DELETE;
+                        break;
+                }
+
+                RestRequest req = new RestRequest(path, meth);
+
+                req.JsonSerializer.ContentType = "application/json; charset=utf-8";
+
+                if (queryParams != null && queryParams.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string> pair in queryParams)
+                    {
+                        req.AddParameter(pair.Key, pair.Value);
+                    }
+                }
+
+                if (body != null && body.Length > 0 && !(method.ToUpper().Equals("GET")))
+                {
+                    //req.AddBody(JsonConvert.DeserializeObject<Dictionary<string, string>>(body));
+                    req.AddParameter("text/json", body, ParameterType.RequestBody);
+                }
+
+                return restClient.Execute(req);
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Birdie API query error : " + e.Message);
+                return null;
             }
         }
 
@@ -105,6 +436,8 @@ namespace FaceBERN_
             }
 
             Thread thread = new Thread(() => Execute(browser, WorkflowLog));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
+
+            thread.IsBackground = true;
 
             Main.LogW("Attempting to start Workflow thread....", false);
 
@@ -262,7 +595,7 @@ namespace FaceBERN_
                         }
                         else
                         {
-                            ExecuteGOTV(ref friends, ref stateKey, state.Value);
+                            ExecuteGOTV(ref friends, ref stateKey, state.Value, milestone);
                         }
 
                         dateAppropriate = true;
@@ -301,7 +634,7 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state)
+        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state, int milestone)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -361,9 +694,9 @@ namespace FaceBERN_
                     }
 
                     /* If there are no errors, proceed with the invitations.  --Kris */
-                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr))
+                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr, false))
                     {
-                        InviteToEvent(ref friends, state.abbr);
+                        InviteToEventSidebar(ref friends, state.abbr, milestone.ToString());
                     }
                 }
                 else
@@ -396,7 +729,7 @@ namespace FaceBERN_
 
             try
             {
-                stateKey.SetValue("LastGOTVDaysBack", (state.primaryDate.Subtract(DateTime.Now).TotalDays).ToString(), RegistryValueKind.String);
+                stateKey.SetValue("LastGOTVDaysBack", Math.Floor(state.primaryDate.Subtract(DateTime.Now).TotalDays).ToString(), RegistryValueKind.String);
             }
             catch (IOException e)
             {
@@ -415,6 +748,8 @@ namespace FaceBERN_
             }
 
             Log("Waiting " + minutes.ToString() + (minutes != 1 ? " minutes" : " minute") + (reason != "" ? " " + reason : "") + "....");
+
+            System.Threading.Thread.Sleep(100);
 
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_WAITING);
@@ -507,7 +842,8 @@ namespace FaceBERN_
                     }
 
                     /* Click the login button on Facebook.  --Kris */
-                    dynamic element = webDriver.GetElementById("u_0_y");
+                    //dynamic element = webDriver.GetElementById("u_0_y");
+                    dynamic element = webDriver.GetElementByCSSSelector("input[type='submit'][value='Log In']");
                     webDriver.ClickElement(element);
 
                     //Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
@@ -552,6 +888,8 @@ namespace FaceBERN_
                 {
                     SetExecState(Globals.STATE_VALIDATING);
 
+                    webDriver.FixtureSetup();
+
                     Log("Retrying Facebook login....");
                     return FacebookLogin(retry);
                 }
@@ -565,8 +903,7 @@ namespace FaceBERN_
                 /* While we're here, let's grab the Facebook profile URL for this user and store it.  Login may be different so check every time.  --Kris */
                 string profileURL = null;
                 
-                IWebDriver w = webDriver.GetDriver();
-                IWebElement ele = w.FindElement(By.CssSelector("[data-testid=\"blue_bar_profile_link\"]"));
+                IWebElement ele = webDriver.GetElementByCSSSelector("[data-testid=\"blue_bar_profile_link\"]");
                 if (ele != null)
                 {
                     profileURL = ele.GetAttribute("href");
@@ -630,8 +967,7 @@ namespace FaceBERN_
 
                 webDriver.GoToUrl("https://www.facebook.com/events/upcoming");
 
-                IWebDriver w = webDriver.GetDriver();
-                webDriver.ClickElement(w.FindElement(By.CssSelector("[data-testid=\"event-create-button\"]")));
+                webDriver.ClickElement(webDriver.GetElementByCSSSelector("[data-testid=\"event-create-button\"]"));
 
                 System.Threading.Thread.Sleep(5000);  // This one's a bit slower to load and I don't trust the implicit wait in this case.  --Kris
 
@@ -663,24 +999,24 @@ namespace FaceBERN_
                 /* Enter the values into the form and create the event.  --Kris */
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Include a place or address"), location);
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Add a short, clear name"), eventName);
+                webDriver.TypeText(webDriver.GetElementByTagNameAndAttribute("div", "title", "Tell people more about the event"), description);
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
                 webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
-                webDriver.TypeText(webDriver.GetElementByTagNameAndAttribute("div", "title", "Tell people more about the event"), description);
                 webDriver.ClickOnXPath(".//button[.='Create']");
 
                 /* Check to see if we're on the new event page.  --Kris */
                 System.Threading.Thread.Sleep(5000);
 
-                IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
+                IWebElement inviteButton = webDriver.GetElementByCSSSelector("[data-testid=\"event_invite_button\"]");
                 if (inviteButton == null)
                 {
                     Log("ERROR:  Event creation failed!  Aborted.");
                     return false;
                 }
 
-                Log("GOTV event for " + stateAbbr + " created at : " + w.Url);
+                Log("GOTV event for " + stateAbbr + " created at : " + webDriver.GetURL());
 
-                InviteToEvent(ref friends, stateAbbr);
+                InviteToEventSidebar(ref friends, stateAbbr);
 
                 SetExecState(lastState);
 
@@ -706,27 +1042,17 @@ namespace FaceBERN_
             }
         }
 
-        /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
-        private void InviteToEvent(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        public List<Person> GetInvitedPeople()
         {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-            
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
             List<Person> invited = new List<Person>();
-            List<string> exclude = null;
+
             try
             {
                 RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
                 RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
                 RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
-                string invitedJSON = (string) GOTVKey.GetValue("invitedJSON", null);
+                string invitedJSON = (string)GOTVKey.GetValue("invitedJSON", null);
                 if (invitedJSON != null && invitedJSON.Trim() != "")
                 {
                     invited = JsonConvert.DeserializeObject<List<Person>>(invitedJSON);
@@ -735,24 +1061,56 @@ namespace FaceBERN_
                 GOTVKey.Close();
                 appKey.Close();
                 softwareKey.Close();
-
-                if (excludeDupsContactedAfterTicks != null && invited != null && invited.Count > 0)
-                {
-                    exclude = new List<string>();
-                    foreach (Person inv in invited)
-                    {
-                        if (inv.getLastGOTVInvite() != null && long.Parse(inv.getLastGOTVInvite()) > long.Parse(excludeDupsContactedAfterTicks))
-                        {
-                            exclude.Add(inv.getFacebookID());
-                        }
-                    }
-                }
             }
             catch (IOException e)
             {
                 Log("Warning:  Error reading previous invitations from registry : " + e.Message);
+
+                return null;
+            }
+
+            return invited;
+        }
+
+        private List<string> GetExclusionList(string excludeDupsContactedAfterTicks = null)
+        {
+            List<Person> invited = GetInvitedPeople();
+            if (invited == null)
+            {
+                return null;
             }
             
+            List<string> exclude = new List<string>();
+            if (excludeDupsContactedAfterTicks != null && invited != null && invited.Count > 0)
+            {
+                foreach (Person inv in invited)
+                {
+                    if (inv.getLastGOTVInvite() != null && long.Parse(inv.getLastGOTVInvite()) > long.Parse(excludeDupsContactedAfterTicks))
+                    {
+                        exclude.Add(inv.getFacebookID());
+                    }
+                }
+            }
+
+            return exclude;
+        }
+
+        /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
+        // Not currently used but may be useful later.  Please leave this function where it is.  --Kris
+        private void InviteToEvent(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
+            List<Person> invited = GetInvitedPeople();
+            List<string> exclude = GetExclusionList();
+
             /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
             if (friends.Count > 0)
             {
@@ -783,6 +1141,12 @@ namespace FaceBERN_
                     if (exclude != null && exclude.Contains(friend.getFacebookID()))
                     {
                         Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
+                        continue;
+                    }
+
+                    if (IsInvitedBySomeoneElse(friend.getFacebookID()))
+                    {
+                        Log("This user has already been invited by another Bernie supporter.  Skipped.");
                         continue;
                     }
 
@@ -837,6 +1201,7 @@ namespace FaceBERN_
                             Log("Added " + friend.getName() + " to invite list.");
 
                             oldFriends.Add(friend);
+                            AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
 
                             i++;
                             if (i == 200)  // Leaving one open for good measure.  --Kris
@@ -914,6 +1279,270 @@ namespace FaceBERN_
                     Log("Warning:  Error storing updated invitations record : " + e.Message);
                 }
             }
+
+            SetExecState(lastState);
+        }
+
+        /* Query Facebook's Graph API to see if this user has been invited to the event already by someone else.  Credit to daniel.glecker on Slack for finding it.  --Kris */
+        private bool IsInvitedAPI(string eventId, string userId)
+        {
+            /* The API only accepts numberic user ID.  --Kris */
+            int n;
+            if (!(int.TryParse(userId, out n)))
+            {
+                // Use findmyfbid.com to get the userId.  --Kris
+            }
+
+            if (userId == null)
+            {
+                return false;
+            }
+
+            // TODO - API doesn't seem to work.  Scrapped for now.  --Kris
+
+            return false;
+        }
+
+        /* Check to see if any other FaceBERN! users have invited this user.  --Kris */
+        // TODO - Enable check for specific event ID.  --Kris
+        private bool IsInvitedBySomeoneElse(string userId)
+        {
+            IRestResponse res = BirdieQuery("/facebook/invited/" + userId);
+            if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            else if (res.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                Log("Warning:  Birdie query returned error response in IsInvitedBySomeoneElse().");
+
+                return false;
+            }
+
+            if (res.Content.Equals(""))
+            {
+                Log("Warning:  Birdie query returned empty response in IsInvitedBySomeoneElse().");
+                
+                return false;
+            }
+
+            FacebookUser fbUser = new FacebookUser();
+            try
+            {
+                fbUser = JsonConvert.DeserializeObject<FacebookUser>(res.Content);
+            }
+            catch (JsonReaderException e)
+            {
+                return false;
+            }
+
+            return (fbUser != null && fbUser.fbUserId != null && fbUser.fbUserId.ToLower().Equals(userId));
+        }
+
+        private List<IWebElement> LoadFriendInEventSearchBox(Person friend, IWebElement searchBox, int delayMultiplier = 1)
+        {
+            webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
+            webDriver.TypeText(searchBox, friend.getName());
+
+            System.Threading.Thread.Sleep(1000 * delayMultiplier);
+
+            /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
+            int i = 3;
+            List<IWebElement> res = new List<IWebElement>();
+            do
+            {
+                System.Threading.Thread.Sleep(1000 * delayMultiplier);
+
+                res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
+
+                i--;
+            } while (res.Count == 0 && i > 0);
+
+            return res;
+        }
+
+        /* Must already be on the event page with the invite sidebar!  --Kris */
+        private void InviteToEventSidebar(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        {
+            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+            {
+                Log("Thread stop received.  Workflow aborted.");
+                return;
+            }
+
+            int lastState = Globals.executionState;
+            SetExecState(Globals.STATE_EXECUTING);
+
+            List<Person> invited = GetInvitedPeople();
+            List<string> exclude = GetExclusionList();
+
+            /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
+            if (friends.Count > 0)
+            {
+                Log("Sending invitations....");
+
+                IWebElement searchBox = webDriver.GetElementByTagNameAndAttribute("input", "aria-label", "Add friends to this event");
+                if (searchBox == null)
+                {
+                    Log("Unable to locate search box!  Invitations aborted.");
+                    return;
+                }
+
+                List<Person> newInvites = new List<Person>();
+                List<Person> oldFriends = new List<Person>();
+                int i = 0;
+                foreach (Person friend in friends)
+                {
+                    if (exclude != null && exclude.Contains(friend.getFacebookID()))
+                    {
+                        Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
+                        continue;
+                    }
+
+                    if (IsInvitedBySomeoneElse(friend.getFacebookID()))
+                    {
+                        Log("This user has already been invited by another Bernie supporter.  Skipped.");
+                        continue;
+                    }
+
+                    List<IWebElement> res = LoadFriendInEventSearchBox(friend, searchBox);
+
+                    if (res.Count == 0)
+                    {
+                        /* Retry once; a bit more slowly, this time.  Sometimes it just doesn't load correctly or quickly enough in the browser.  --Kris */
+                        res = LoadFriendInEventSearchBox(friend, searchBox, 2);
+                    }
+
+                    if (res.Count == 0)
+                    {
+                        Log("Unable to add " + friend.getName() + " to invite list.");
+                    }
+                    else if (res.Count == 1)
+                    {
+                        res[0].Click();
+
+                        IWebElement ele;
+                        i = 3;
+                        do
+                        {
+                            System.Threading.Thread.Sleep(1000);
+
+                            ele = webDriver.GetElementById("event_invite_feedback");
+
+                            i--;
+                        } while (ele == null && i > 0);
+
+                        if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
+                        {
+                            Log("Added " + friend.getName() + " to invite list.");
+
+                            i++;
+                            newInvites.Add(friend);
+                            AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
+                        }
+                        else if (ele == null)
+                        {
+                            Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
+                        }
+                        else
+                        {
+                            Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
+                        }
+                    }
+                    else
+                    {
+                        Log("Multiple people with the same name found.  The feature to handle that hasn't been written yet.  Skipped.");
+                    }
+
+                    oldFriends.Add(friend);
+
+                    /* We don't want to trigger any false positives from the spam algos.  --Kris */
+                    if (i % 1000 == 0 && i > 1)
+                    {
+                        Wait(15, "for 1000-interval ratelimit");
+                    }
+                    if (i % 100 == 0 && i > 1)
+                    {
+                        Wait(3, "for 100-interval ratelimit");
+                    }
+                    else if (i % 50 == 0 && i > 1)
+                    {
+                        Wait(2, "for 50-interval ratelimit");
+                    }
+                    else if (i % 25 == 0 && i > 1)
+                    {
+                        Wait(1, "for 25-interval ratelimit");
+                    }
+                }
+
+                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
+
+                UpdateInvitationsCount(i);
+
+                foreach (Person friend in oldFriends)
+                {
+                    if (invited.Contains(friend))
+                    {
+                        invited.Remove(friend);
+                    }
+                    else
+                    {
+                        Person remove = null;
+                        foreach (Person inv in invited)
+                        {
+                            if (inv.getFacebookID() == friend.getFacebookID())
+                            {
+                                remove = inv;
+                                break;
+                            }
+                        }
+
+                        if (remove != null)
+                        {
+                            invited.Remove(remove);
+                        }
+                    }
+
+                    friends.Remove(friend);
+
+                    if (newInvites.Contains(friend))
+                    {
+                        friend.setLastGOTVInvite(DateTime.Now);
+
+                        invited.Add(friend);
+                    }
+                }
+
+                string invitedJSON = JsonConvert.SerializeObject(invited);
+
+                try
+                {
+                    RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                    RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                    RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+                    GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
+
+                    GOTVKey.Flush();
+                    appKey.Flush();
+                    softwareKey.Flush();
+
+                    GOTVKey.Close();
+                    appKey.Close();
+                    softwareKey.Close();
+                }
+                catch (IOException e)
+                {
+                    Log("Warning:  Error storing updated invitations record : " + e.Message);
+                }
+
+                this.invited = GetInvitedPeople();
+            }
+
+            /* Allow a few seconds to update Birdie, in case it's waiting.  --Kris */
+            SetExecState(Globals.STATE_WAITING);
+
+            System.Threading.Thread.Sleep(5000);
 
             SetExecState(lastState);
         }
@@ -1097,7 +1726,7 @@ namespace FaceBERN_
         }
 
         /* Load the Facebook event page from feelthebern.events and return whether or not the user has access to the event.  --Kris */
-        private bool CheckFTBEventAccess(string stateAbbr)
+        private bool CheckFTBEventAccess(string stateAbbr, bool navigate = true)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -1120,7 +1749,10 @@ namespace FaceBERN_
                 return false;
             }
 
-            webDriver.GoToUrl("https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
+            if (navigate == true)
+            {
+                webDriver.GoToUrl("https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
+            }
 
             System.Threading.Thread.Sleep(3000);  // Just in case the driver doesn't wait long enough on its own.  --Kris
 
@@ -1226,30 +1858,58 @@ namespace FaceBERN_
             }
         }
 
-        private void UpdateInvitationsCount(int n = 1, bool clear = false)
+        private void UpdateInvitationsCount(int x = 1, bool clear = false)
         {
             if (Main.InvokeRequired)
             {
                 Main.BeginInvoke(
                     new MethodInvoker(
-                        delegate() { UpdateInvitationsCount(n, clear); }));
+                        delegate() { UpdateInvitationsCount(x, clear); }));
             }
             else
             {
-                Main.UpdateInvitationsCount(n, clear);
+                Main.UpdateInvitationsCount(x, clear);
 
                 Main.Refresh();
             }
 
             if (!clear)
             {
-                invitesSent += n;
+                invitesSent += x;
             }
             else
             {
                 invitesSent = 0;
             }
         }
+
+        /* Update local and remote total invites.  If you just want to update the total remote invites, pass 0 for x.  --Kris */
+        private void UpdateInvitationsCount(int x, int y, bool hard = true)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateInvitationsCount(x, y); }));
+            }
+            else
+            {
+                if (hard)
+                {
+                    Main.SetInvitationsCount(x, y);
+                }
+                else
+                {
+                    Main.UpdateInvitationsCount(x, y);
+                }
+
+                Main.Refresh();
+            }
+
+            invitesSent += x;
+        }
+
+        
 
         private void SetExecState(int state)
         {

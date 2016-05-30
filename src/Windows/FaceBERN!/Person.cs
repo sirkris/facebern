@@ -7,21 +7,25 @@ using System.Threading.Tasks;
 
 namespace FaceBERN_
 {
-    internal class Person
+    public class Person
     {
         public string name;
+        public string facebookInternalID;
         public string facebookID;
         public string stateAbbr;
         public bool bernieSupporter;
+        public string facebookEventID;
 
         public string lastGOTVInvite;  // Ticks.  --Kris
 
-        internal Person(string name, string facebookID, string stateAbbr, bool bernieSupporter)
+        internal Person(string name, string facebookID, string stateAbbr, bool bernieSupporter, string facebookInternalID = null, string facebookEventID = null)
         {
             this.name = name;
             this.facebookID = facebookID;
             this.stateAbbr = stateAbbr;
             this.bernieSupporter = bernieSupporter;
+            this.facebookInternalID = facebookInternalID;
+            this.facebookEventID = facebookEventID;
 
             this.lastGOTVInvite = null;
         }
@@ -53,6 +57,26 @@ namespace FaceBERN_
         internal void setFacebookID(string facebookID)
         {
             this.facebookID = facebookID;
+        }
+
+        internal string getFacebookEventID()
+        {
+            return this.facebookEventID;
+        }
+
+        internal void setFacebookEventID(string facebookEventID)
+        {
+            this.facebookEventID = facebookEventID;
+        }
+
+        internal string getFacebookInternalID()
+        {
+            return this.facebookInternalID;
+        }
+
+        internal void setFacebookInternalID(string facebookInternalID)
+        {
+            this.facebookInternalID = facebookInternalID;
         }
 
         internal string getStateAbbr()
@@ -87,7 +111,14 @@ namespace FaceBERN_
 
         internal DateTime getLastGOTVInviteAsDateTime()
         {
-            return new DateTime(long.Parse(this.lastGOTVInvite));
+            if (this.lastGOTVInvite != null)
+            {
+                return new DateTime(long.Parse(this.lastGOTVInvite));
+            }
+            else
+            {
+                return new DateTime();
+            }
         }
 
         internal void setLastGOTVInvite(string ticks)

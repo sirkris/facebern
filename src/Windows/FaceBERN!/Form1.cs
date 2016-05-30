@@ -44,6 +44,11 @@ namespace FaceBERN_
 
         public bool stop = false;
 
+        private Workflow workflow = null;
+
+        public int localInvitesSent = 0;
+        public int remoteInvitesSent = 0;
+
         public Form1(bool updated = false, bool logging = true)
         {
             InitializeComponent();
@@ -80,17 +85,32 @@ namespace FaceBERN_
             HideCaret(outBox.Handle);
             if (!updated)
             {
-                CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1"));
+                if (CheckForUpdates(Globals.Config["AutoUpdate"].Equals("1")) && !(Globals.Config["AutoUpdate"].Equals("1")))
+                {
+                    DialogResult dr = MessageBox.Show("A newer version of FaceBERN! has been found!  Install now?", "Update Found!", MessageBoxButtons.YesNo);
+                    if (dr == DialogResult.Yes)
+                    {
+                        CheckForUpdates(true);
+                    }
+                    else
+                    {
+                        LogW("Update found but user chose not to install.  The stability of this software cannot be guaranteed if not promptly updated!");
+                    }
+                }
             }
             else
             {
                 LogW("Launched by updater so no need to check for updates.");
             }
+
             Ready();
         }
 
         private void Form1_Shown(object sender, EventArgs e)
         {
+            workflow = new Workflow(this);
+            workflow.ExecuteInterComThread();
+
             int retry = 3;
             while (Application.OpenForms[this.Name] == null)
             {
@@ -117,7 +137,7 @@ namespace FaceBERN_
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
 
             /* How long to wait between GOTV checks.  --Kris */
-            Globals.Config.Add("GOTVIntervalHours", "24");
+            Globals.Config.Add("GOTVIntervalHours", "6");
 
             /* Each comma-delineated value represents how many days prior to a state's primary/caucus to execute a GOTV for that state.  Multiple entries means multiple GOTV runs.  --Kris */
             Globals.Config.Add("DefaultGOTVDaysBack", "30,10,1");
@@ -176,13 +196,13 @@ namespace FaceBERN_
             states.Add("MN", new States("", "Minnesota", "2016-03-01", "Caucus", "Open", "112577505420980"));
             states.Add("MO", new States("", "Missouri", "2016-03-15", "Primary", "Open", "103118929728297"));
             states.Add("MS", new States("", "Mississippi", "2016-03-08", "Primary", "Open", "113067432040067"));
-            states.Add("MT", new States("", "Montana", "2016-06-07", "Primary", "Open", "109983559020167"));
+            states.Add("MT", new States("", "Montana", "2016-06-07", "Primary", "Open", "109983559020167", "364344583689477"));
             states.Add("NC", new States("", "North Carolina", "2016-03-15", "Primary", "Semi-Closed", "104083326294266"));
-            states.Add("ND", new States("", "North Dakota", "2016-06-07", "Caucus", "Closed", "104131666289619"));
+            states.Add("ND", new States("", "North Dakota", "2016-06-07", "Caucus", "Closed", "104131666289619", "160355097698472"));
             states.Add("NE", new States("", "Nebraska", "2016-03-05", "Caucus", "Closed", "109306932420886"));
             states.Add("NH", new States("", "New Hampshire", "2016-02-09", "Primary", "Semi-Closed", "105486989486087"));
             states.Add("NJ", new States("", "New Jersey", "2016-06-07", "Primary", "Semi-Closed", "108325505857259", "229216130762869"));
-            states.Add("NM", new States("", "New Mexico", "2016-06-07", "Primary", "Closed", "108301835856691"));
+            states.Add("NM", new States("", "New Mexico", "2016-06-07", "Primary", "Closed", "108301835856691", "279799149019906"));
             states.Add("NV", new States("", "Nevada", "2016-02-20", "Caucus", "Closed", "109176885767113"));
             states.Add("NY", new States("", "New York", "2016-04-19", "Primary", "Closed", "112825018731802", "811998435572003"));
             states.Add("OH", new States("", "Ohio", "2016-03-15", "Primary", "Semi-Open", "104024609634842"));
@@ -191,7 +211,7 @@ namespace FaceBERN_
             states.Add("PA", new States("", "Pennsylvania", "2016-04-26", "Primary", "Closed", "105528489480786", "1721567841460557"));
             states.Add("RI", new States("", "Rhode Island", "2016-04-26", "Primary", "Semi-Closed", "108295552526163", "1776422845918803"));
             states.Add("SC", new States("", "South Carolina", "2016-02-27", "Primary", "Open", "108635949160808"));
-            states.Add("SD", new States("", "South Dakota", "2016-06-07", "Primary", "Semi-Closed", "112283278784694"));
+            states.Add("SD", new States("", "South Dakota", "2016-06-07", "Primary", "Semi-Closed", "112283278784694", "502120086651398"));
             states.Add("TN", new States("", "Tennessee", "2016-03-01", "Primary", "Open", "108545005836236"));
             states.Add("TX", new States("", "Texas", "2016-03-01", "Primary", "Open", "108337852519784"));
             states.Add("UT", new States("", "Utah", "2016-03-22", "Caucus", "Semi-Open", "104164412953145"));
@@ -201,12 +221,12 @@ namespace FaceBERN_
             states.Add("WI", new States("", "Wisconsin", "2016-04-05", "Primary", "Open", "109146809103536"));
             states.Add("WV", new States("", "West Virginia", "2016-05-10", "Primary", "Semi-Closed", "112083625475436", "1582995155349064"));
             states.Add("WY", new States("", "Wyoming", "2016-04-09", "Caucus", "Closed", "104039182964473"));
-            states.Add("DC", new States("", "District of Columbia", "2016-06-14", "Primary", "Closed", "110184922344060"));
+            states.Add("DC", new States("", "District of Columbia", "2016-06-14", "Primary", "Closed", "110184922344060", "273158089687943"));
             states.Add("AS", new States("", "American Samoa", "2016-03-01", "Caucus", "Closed", "112481292099977"));
             states.Add("GU", new States("", "Guam", "2016-05-07", "Caucus", "Closed", "112565748760314", "1703259566578785"));
             states.Add("MP", new States("", "Northern Mariana Islands", "2016-03-12", "Caucus", "Closed", "105540149479841"));
             states.Add("PR", new States("", "Puerto Rico", "2016-06-05", "Caucus", "Open", "108461009175078", "496254420561306"));
-            states.Add("VI", new States("", "U.S. Virgin Islands", "2016-06-04", "Caucus", "Open", "111110385577198"));
+            states.Add("VI", new States("", "U.S. Virgin Islands", "2016-06-04", "Caucus", "Open", "111110385577198", "700380050102161"));
             states.Add("DA", new States("", "Democrats Abroad", "2016-03-08", "Primary", "Closed", ""));
 
             foreach (KeyValuePair<string, States> state in states)
@@ -475,13 +495,17 @@ namespace FaceBERN_
                 return;
             }
 
+            if (workflow == null)
+            {
+                workflow = new Workflow(this);
+            }
+
             if (Globals.executionState == Globals.STATE_READY)
             {
                 SetExecState(Globals.STATE_VALIDATING);
 
                 buttonStart_ToStop();
 
-                Workflow workflow = new Workflow(this);
                 Globals.thread = workflow.ExecuteThread();
                 //workflow.Execute(browserModeComboBox.SelectedIndex);  // Use this if you want to debug on a single thread (be sure to comment the ExecuteThread() call).  --Kris
 
@@ -494,9 +518,7 @@ namespace FaceBERN_
                 SetExecState(Globals.STATE_STOPPING);
                 stop = true;
 
-                Workflow shutdown = new Workflow(this);
-
-                shutdown.ExecuteShutdownThread(Globals.thread);
+                workflow.ExecuteShutdownThread(Globals.thread);
                 
                 LogW("Execution terminated by user.");
             }
@@ -716,16 +738,25 @@ namespace FaceBERN_
             saveLog(logName, logObj);
         }
 
-        internal void UpdateInvitationsCount(int n = 1, bool clear = false)
+        internal void UpdateInvitationsCount(int x = 1, bool clear = false)
         {
             if (!clear)
             {
                 label3.Visible = true;
                 labelInvitesSent.Visible = true;
 
-                labelInvitesSent.Text = (long.Parse(labelInvitesSent.Text) + n).ToString();
+                localInvitesSent += x;
 
-                LogW("Incremented displayed invitations count by:  " + (n >= 0 ? "+" : "-") + n.ToString(), false);
+                if (remoteInvitesSent == 0)
+                {
+                    labelInvitesSent.Text = localInvitesSent.ToString();
+                }
+                else
+                {
+                    labelInvitesSent.Text = localInvitesSent.ToString() + @" / " + remoteInvitesSent.ToString();
+                }
+
+                LogW("Incremented displayed invitations count by:  " + (x >= 0 ? "+" : "-") + x.ToString(), false);
             }
             else
             {
@@ -736,6 +767,48 @@ namespace FaceBERN_
 
                 LogW("Cleared displayed invitations count and reset to 0.", false);
             }
+        }
+
+        internal void UpdateInvitationsCount(int x, int y)
+        {
+            label3.Visible = true;
+            labelInvitesSent.Visible = true;
+
+            localInvitesSent += x;
+            remoteInvitesSent = y;
+
+            if (remoteInvitesSent == 0)
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString();
+            }
+            else
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString() + @" / " + remoteInvitesSent.ToString();
+            }
+
+            LogW("Incremented local invitations count by:  " + (x >= 0 ? "+" : "-") + x.ToString(), false);
+            LogW("Set remote invitions count to:  " + y.ToString(), false);
+        }
+
+        internal void SetInvitationsCount(int x, int y)
+        {
+            label3.Visible = true;
+            labelInvitesSent.Visible = true;
+
+            localInvitesSent = x;
+            remoteInvitesSent = y;
+
+            if (remoteInvitesSent == 0)
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString();
+            }
+            else
+            {
+                labelInvitesSent.Text = localInvitesSent.ToString() + @" / " + remoteInvitesSent.ToString();
+            }
+
+            LogW("Set local invitations count to:  " + x.ToString(), false);
+            LogW("Set remote invitions count to:  " + y.ToString(), false);
         }
 
         private void Form1_Resize(object sender, EventArgs e)

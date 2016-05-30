@@ -31,8 +31,11 @@ namespace FaceBERN_
         /* How long to wait between checks for having received the feelthebern.events friend request.  --Kris */
         public static int __FTB_REQUEST_ACCESS_WAIT_INTERVAL__ = 60;  // Minutes
 
-        /* How long to wait between each iteration of the main workflow loop.  Note that notifications and everything else will be subject to this wait period so don't set it too high.  --Kris */
+        /* How long to wait between each iteration of the main workflow loop.  --Kris */
         public static int __WORKFLOW_WAIT_INTERVAL__ = 5;  // Minutes
+
+        /* How long to wait between each iteration fo the main InterCom loop.  --Kris */
+        public static int __INTERCOM_WAIT_INTERVAL__ = 5;  // Minutes
 
         /*
          * -- END GLOBAL SETTINGS --
@@ -70,6 +73,9 @@ namespace FaceBERN_
         public const int FIREFOX_WINDOWED = 1;  // Open in a visible, maximized Firefox browser window.
         public const int CHROME = 2;  // In case we ever decide to support Chrome in the future.
         public const int IE = 3;  // Doubtful, but what the hell.
+
+        /* Application ID.  Used for API calls.  It should be set to null here.  --Kris */
+        public static string appId = null;
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();

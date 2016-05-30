@@ -278,6 +278,22 @@ namespace FaceBERN_
         private static extern IntPtr FindWindow(string sClassName, string sAppName);
 
         [Test]
+        public string GetURL()
+        {
+            switch (browser)
+            {
+                default:
+                case Globals.FIREFOX_WINDOWED:
+                case Globals.FIREFOX_HIDDEN:
+                    IWebDriver driver = GetDriver();
+                    return driver.Url;
+                case Globals.FIREFOX_HEADLESS:
+                    // TODO
+                    return null;
+            }
+        }
+
+        [Test]
         public dynamic GetElementById(string elementid, bool iefix = false)
         {
             try
@@ -424,6 +440,47 @@ namespace FaceBERN_
         }
 
         [Test]
+        public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1)
+        {
+            dynamic res;
+            IWebDriver driver;
+
+            switch (browser)
+            {
+                default:
+                case Globals.FIREFOX_WINDOWED:
+                case Globals.FIREFOX_HIDDEN:
+                    driver = GetDriver();
+                    
+                    if (timeout >= 0)
+                    {
+                        driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
+                    }
+
+                    try
+                    {
+                        res = driver.FindElement(By.CssSelector(cssSelector));
+                    }
+                    catch (NoSuchElementException e)
+                    {
+                        return null;
+                    }
+                    finally
+                    {
+                        if (timeout >= 0)
+                        {
+                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                        }
+                    }
+
+                    return res;
+                case Globals.FIREFOX_HEADLESS:
+                    // TODO
+                    return null;
+            }
+        }
+
+        [Test]
         public List<IWebElement> GetElementsByTagName(string tagName)
         {
             try
@@ -445,7 +502,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue)
+        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0)
         {
             List<IWebElement> eles = GetElementsByTagName(tagName);
             if (eles == null)
@@ -453,15 +510,51 @@ namespace FaceBERN_
                 return null;
             }
 
+            int i = 0;
             foreach (IWebElement ele in eles)
             {
-                if (ele.GetAttribute(attributeName).Equals(attributeValue))
+                if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
                 {
-                    return ele;
+                    if (i == offset)
+                    {
+                        return ele;
+                    }
+                    else
+                    {
+                        i++;
+                    }
                 }
             }
 
             return null;
+        }
+
+        [Test]
+        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0)
+        {
+            List<IWebElement> eles = GetElementsByTagName(tagName);
+            if (eles == null)
+            {
+                return null;
+            }
+
+            int i = 0;
+            List<IWebElement> res = new List<IWebElement>();
+            foreach (IWebElement ele in eles)
+            {
+                if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                {
+                    res.Add(ele);
+
+                    i++;
+                    if (i == limit)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return res;
         }
 
         [Test]
