@@ -196,13 +196,13 @@ namespace FaceBERN_
             states.Add("MN", new States("", "Minnesota", "2016-03-01", "Caucus", "Open", "112577505420980"));
             states.Add("MO", new States("", "Missouri", "2016-03-15", "Primary", "Open", "103118929728297"));
             states.Add("MS", new States("", "Mississippi", "2016-03-08", "Primary", "Open", "113067432040067"));
-            states.Add("MT", new States("", "Montana", "2016-06-07", "Primary", "Open", "109983559020167"));
+            states.Add("MT", new States("", "Montana", "2016-06-07", "Primary", "Open", "109983559020167", "364344583689477"));
             states.Add("NC", new States("", "North Carolina", "2016-03-15", "Primary", "Semi-Closed", "104083326294266"));
-            states.Add("ND", new States("", "North Dakota", "2016-06-07", "Caucus", "Closed", "104131666289619"));
+            states.Add("ND", new States("", "North Dakota", "2016-06-07", "Caucus", "Closed", "104131666289619", "160355097698472"));
             states.Add("NE", new States("", "Nebraska", "2016-03-05", "Caucus", "Closed", "109306932420886"));
             states.Add("NH", new States("", "New Hampshire", "2016-02-09", "Primary", "Semi-Closed", "105486989486087"));
             states.Add("NJ", new States("", "New Jersey", "2016-06-07", "Primary", "Semi-Closed", "108325505857259", "229216130762869"));
-            states.Add("NM", new States("", "New Mexico", "2016-06-07", "Primary", "Closed", "108301835856691"));
+            states.Add("NM", new States("", "New Mexico", "2016-06-07", "Primary", "Closed", "108301835856691", "279799149019906"));
             states.Add("NV", new States("", "Nevada", "2016-02-20", "Caucus", "Closed", "109176885767113"));
             states.Add("NY", new States("", "New York", "2016-04-19", "Primary", "Closed", "112825018731802", "811998435572003"));
             states.Add("OH", new States("", "Ohio", "2016-03-15", "Primary", "Semi-Open", "104024609634842"));
@@ -211,7 +211,7 @@ namespace FaceBERN_
             states.Add("PA", new States("", "Pennsylvania", "2016-04-26", "Primary", "Closed", "105528489480786", "1721567841460557"));
             states.Add("RI", new States("", "Rhode Island", "2016-04-26", "Primary", "Semi-Closed", "108295552526163", "1776422845918803"));
             states.Add("SC", new States("", "South Carolina", "2016-02-27", "Primary", "Open", "108635949160808"));
-            states.Add("SD", new States("", "South Dakota", "2016-06-07", "Primary", "Semi-Closed", "112283278784694"));
+            states.Add("SD", new States("", "South Dakota", "2016-06-07", "Primary", "Semi-Closed", "112283278784694", "502120086651398"));
             states.Add("TN", new States("", "Tennessee", "2016-03-01", "Primary", "Open", "108545005836236"));
             states.Add("TX", new States("", "Texas", "2016-03-01", "Primary", "Open", "108337852519784"));
             states.Add("UT", new States("", "Utah", "2016-03-22", "Caucus", "Semi-Open", "104164412953145"));
@@ -221,12 +221,12 @@ namespace FaceBERN_
             states.Add("WI", new States("", "Wisconsin", "2016-04-05", "Primary", "Open", "109146809103536"));
             states.Add("WV", new States("", "West Virginia", "2016-05-10", "Primary", "Semi-Closed", "112083625475436", "1582995155349064"));
             states.Add("WY", new States("", "Wyoming", "2016-04-09", "Caucus", "Closed", "104039182964473"));
-            states.Add("DC", new States("", "District of Columbia", "2016-06-14", "Primary", "Closed", "110184922344060"));
+            states.Add("DC", new States("", "District of Columbia", "2016-06-14", "Primary", "Closed", "110184922344060", "273158089687943"));
             states.Add("AS", new States("", "American Samoa", "2016-03-01", "Caucus", "Closed", "112481292099977"));
             states.Add("GU", new States("", "Guam", "2016-05-07", "Caucus", "Closed", "112565748760314", "1703259566578785"));
             states.Add("MP", new States("", "Northern Mariana Islands", "2016-03-12", "Caucus", "Closed", "105540149479841"));
             states.Add("PR", new States("", "Puerto Rico", "2016-06-05", "Caucus", "Open", "108461009175078", "496254420561306"));
-            states.Add("VI", new States("", "U.S. Virgin Islands", "2016-06-04", "Caucus", "Open", "111110385577198"));
+            states.Add("VI", new States("", "U.S. Virgin Islands", "2016-06-04", "Caucus", "Open", "111110385577198", "700380050102161"));
             states.Add("DA", new States("", "Democrats Abroad", "2016-03-08", "Primary", "Closed", ""));
 
             foreach (KeyValuePair<string, States> state in states)
