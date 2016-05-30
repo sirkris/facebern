@@ -40,6 +40,7 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.donateToBernieToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outBox = new System.Windows.Forms.RichTextBox();
             this.buttonStart = new System.Windows.Forms.Button();
@@ -54,7 +55,7 @@
             this.alwaysOnTopCheckBox = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.labelInvitesSent = new System.Windows.Forms.Label();
-            this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mainProgressBar = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -154,6 +155,13 @@
             this.aboutToolStripMenuItem1.Size = new System.Drawing.Size(171, 22);
             this.aboutToolStripMenuItem1.Text = "About";
             this.aboutToolStripMenuItem1.Click += new System.EventHandler(this.aboutToolStripMenuItem1_Click);
+            // 
+            // checkForUpdatesToolStripMenuItem
+            // 
+            this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
+            this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
+            this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
             // 
             // donateToBernieToolStripMenuItem
             // 
@@ -293,12 +301,13 @@
             this.labelInvitesSent.TabIndex = 32;
             this.labelInvitesSent.Text = "0";
             // 
-            // checkForUpdatesToolStripMenuItem
+            // mainProgressBar
             // 
-            this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
-            this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
+            this.mainProgressBar.Location = new System.Drawing.Point(90, 284);
+            this.mainProgressBar.Name = "mainProgressBar";
+            this.mainProgressBar.Size = new System.Drawing.Size(496, 10);
+            this.mainProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.mainProgressBar.TabIndex = 33;
             // 
             // Form1
             // 
@@ -306,6 +315,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.mainProgressBar);
             this.Controls.Add(this.labelInvitesSent);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.alwaysOnTopCheckBox);
@@ -361,6 +371,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label labelInvitesSent;
         private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
+        private System.Windows.Forms.ProgressBar mainProgressBar;
     }
 }
 
