@@ -1428,34 +1428,43 @@ namespace FaceBERN_
                     }
                     else if (res.Count == 1)
                     {
-                        res[0].Click();
-
-                        IWebElement ele;
-                        int ii = 3;
-                        do
+                        if (res[0].GetAttribute("class") != null && res[0].GetAttribute("class").Contains("nonInvitable"))
                         {
+                            Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
+
                             System.Threading.Thread.Sleep(1000);
-
-                            ele = webDriver.GetElementById("event_invite_feedback");
-
-                            ii--;
-                        } while (ele == null && ii > 0);
-
-                        if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
-                        {
-                            Log("Added " + friend.getName() + " to invite list.");
-
-                            i++;
-                            newInvites.Add(friend);
-                            AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
-                        }
-                        else if (ele == null)
-                        {
-                            Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
                         }
                         else
                         {
-                            Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
+                            res[0].Click();
+
+                            IWebElement ele;
+                            int ii = 5;
+                            do
+                            {
+                                System.Threading.Thread.Sleep(1000);
+
+                                ele = webDriver.GetElementById("event_invite_feedback");
+
+                                ii--;
+                            } while (ele == null && ii > 0);
+
+                            if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
+                            {
+                                Log("Added " + friend.getName() + " to invite list.");
+
+                                i++;
+                                newInvites.Add(friend);
+                                AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
+                            }
+                            else if (ele == null)
+                            {
+                                Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
+                            }
+                            else
+                            {
+                                Log("Facebook user " + friend.getName() + " may not have been invited.  Skipped.");
+                            }
                         }
                     }
                     else
