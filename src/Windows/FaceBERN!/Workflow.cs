@@ -83,13 +83,14 @@ namespace FaceBERN_
             LoadLatestInvitesQueue();
 
             /* The main InterCom loop.  --Kris */
+            int i = 0;
             while (true)
             {
                 /* Get the Application ID.  If it's not set, generate one.  --Kris */
                 GetAppID();
                 
                 /* Process the remote update queue and send it to Birdie.  --Kris */
-                PostLatestInvites();
+                PostLatestInvites((i == 0));
 
                 /* Update our local invitations count for both ours and remote.  --Kris */
                 UpdateRemoteInvitesCount();
@@ -97,6 +98,8 @@ namespace FaceBERN_
                 UpdateInvitationsCount(invited.Count, remoteInvitesSent);
 
                 System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
+
+                i++;
             }
         }
 
@@ -142,7 +145,7 @@ namespace FaceBERN_
         }
 
         /* Tell Birdie about the latest people we've invited.  This is queued and called periodically by the InterCom thread in order to prevent query spam.  --Kris */
-        private void PostLatestInvites()
+        private void PostLatestInvites(bool firstRun = false)
         {
             if ( remoteUpdateQueue != null && remoteUpdateQueue.Count > 0 )
             {
@@ -162,20 +165,23 @@ namespace FaceBERN_
                     }
                 }
 
-                List<Person> queueNew = new List<Person>();
-                foreach (Person person in remoteUpdateQueue)
+                if (!firstRun)
                 {
-                    if (person.getFacebookID() != null && person.getName() != null)
+                    List<Person> queueNew = new List<Person>();
+                    foreach (Person person in remoteUpdateQueue)
                     {
-                        queueNew.Add(person);
+                        if (person.getFacebookID() != null && person.getName() != null)
+                        {
+                            queueNew.Add(person);
+                        }
                     }
-                }
-                remoteUpdateQueue = queueNew;
+                    remoteUpdateQueue = queueNew;
 
-                if (remoteUpdateQueue.Count == 0)
-                {
-                    ClearLatestInvitesQueue();
-                    return;
+                    if (remoteUpdateQueue.Count == 0)
+                    {
+                        ClearLatestInvitesQueue();
+                        return;
+                    }
                 }
 
                 Log("Updating Birdie with " + remoteUpdateQueue.Count.ToString() + " new invitations we've sent....");
@@ -249,7 +255,7 @@ namespace FaceBERN_
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
             RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
-            remoteUpdateQueue = FacebookUsersToPeople(JsonConvert.DeserializeObject<List<FacebookUser>>((string)GOTVKey.GetValue("invitedQueue", JsonConvert.SerializeObject(new List<Person>()), RegistryValueOptions.None)));
+            remoteUpdateQueue = JsonConvert.DeserializeObject<List<Person>>((string) GOTVKey.GetValue("invitedQueue", JsonConvert.SerializeObject(new List<Person>()), RegistryValueOptions.None));
 
             GOTVKey.Close();
             appKey.Close();
@@ -570,7 +576,7 @@ namespace FaceBERN_
 
                 // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
 
-                if (!(state.Key.Equals("MT")))
+                if (!(state.Key.Equals("NM")))
                 {
                     continue;
                 }
@@ -749,6 +755,8 @@ namespace FaceBERN_
             {
                 Log("Warning:  Error updating last GOTV for " + state.name + " : " + e.Message);
             }
+
+            Log("GOTV for " + state.abbr + " complete!");
 
             SetExecState(lastState);
         }
@@ -1335,7 +1343,7 @@ namespace FaceBERN_
 
         /* Check to see if any other FaceBERN! users have invited this user.  --Kris */
         // TODO - Enable check for specific event ID.  --Kris
-        private bool IsInvitedBySomeoneElse(string userId)
+        private bool IsInvitedBySomeoneElse(string userId, int retry = 2)
         {
             IRestResponse res = BirdieQuery("/facebook/invited/" + userId);
             if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -1360,6 +1368,18 @@ namespace FaceBERN_
             try
             {
                 fbUser = JsonConvert.DeserializeObject<FacebookUser>(res.Content);
+            }
+            catch (JsonSerializationException e)
+            {
+                retry--;
+                if (retry == 0)
+                {
+                    return false;
+                }
+
+                System.Threading.Thread.Sleep(3);
+
+                return IsInvitedBySomeoneElse(userId, retry);
             }
             catch (JsonReaderException e)
             {
@@ -1474,7 +1494,13 @@ namespace FaceBERN_
                                 ii--;
                             } while (ele == null && ii > 0);
 
-                            if (ele != null && ele.Text.Equals(friend.getName() + " was invited."))
+                            string msg = ele.Text;
+                            if (ele != null && ele.Text == null && ele.GetAttribute("innerHTML") != null)
+                            {
+                                msg = ele.GetAttribute("innerHTML");
+                            }
+
+                            if (ele != null && msg.Contains(" was invited."))
                             {
                                 Log("Added " + friend.getName() + " to invite list.");
 
@@ -1494,7 +1520,7 @@ namespace FaceBERN_
                             }
                             else
                             {
-                                Log("Facebook user " + friend.getName() + " may not have been invited (msg=" + ele.Text + ").");
+                                Log("Facebook user " + friend.getName() + " may not have been invited (msg=" + msg + ").");
                             }
                         }
                     }
