@@ -1394,8 +1394,6 @@ namespace FaceBERN_
                     return;
                 }
 
-                List<Person> newInvites = new List<Person>();
-                List<Person> oldFriends = new List<Person>();
                 int i = 0;
                 int iteration = 0;
                 foreach (Person friend in friends)
@@ -1454,9 +1452,14 @@ namespace FaceBERN_
                                 Log("Added " + friend.getName() + " to invite list.");
 
                                 i++;
-                                newInvites.Add(friend);
+
+                                friend.setLastGOTVInvite(DateTime.Now);
                                 AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
                                 UpdateInvitationsCount();
+
+                                invited.Add(friend);
+
+                                PersistInvited(invited);
                             }
                             else if (ele == null)
                             {
@@ -1472,8 +1475,6 @@ namespace FaceBERN_
                     {
                         Log("Multiple people with the same name found.  The feature to handle that hasn't been written yet.  Skipped.");
                     }
-
-                    oldFriends.Add(friend);
 
                     /* We don't want to trigger any false positives from the spam algos.  --Kris */
                     if (i % 1000 == 0 && i > 1)
@@ -1494,67 +1495,6 @@ namespace FaceBERN_
                     }
                 }
 
-                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
-
-                //UpdateInvitationsCount(i);
-
-                foreach (Person friend in oldFriends)
-                {
-                    if (invited.Contains(friend))
-                    {
-                        invited.Remove(friend);
-                    }
-                    else
-                    {
-                        Person remove = null;
-                        foreach (Person inv in invited)
-                        {
-                            if (inv.getFacebookID() == friend.getFacebookID())
-                            {
-                                remove = inv;
-                                break;
-                            }
-                        }
-
-                        if (remove != null)
-                        {
-                            invited.Remove(remove);
-                        }
-                    }
-
-                    friends.Remove(friend);
-
-                    if (newInvites.Contains(friend))
-                    {
-                        friend.setLastGOTVInvite(DateTime.Now);
-
-                        invited.Add(friend);
-                    }
-                }
-
-                string invitedJSON = JsonConvert.SerializeObject(invited);
-
-                try
-                {
-                    RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                    RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                    RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
-
-                    GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
-
-                    GOTVKey.Flush();
-                    appKey.Flush();
-                    softwareKey.Flush();
-
-                    GOTVKey.Close();
-                    appKey.Close();
-                    softwareKey.Close();
-                }
-                catch (IOException e)
-                {
-                    Log("Warning:  Error storing updated invitations record : " + e.Message);
-                }
-
                 this.invited = GetInvitedPeople();
             }
 
@@ -1564,6 +1504,32 @@ namespace FaceBERN_
             System.Threading.Thread.Sleep(5000);
 
             SetExecState(lastState);
+        }
+
+        private void PersistInvited(List<Person> invited)
+        {
+            string invitedJSON = JsonConvert.SerializeObject(invited);
+
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+                GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
+
+                GOTVKey.Flush();
+                appKey.Flush();
+                softwareKey.Flush();
+
+                GOTVKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (IOException e)
+            {
+                Log("Warning:  Error storing updated invitations record : " + e.Message);
+            }
         }
 
         // TODO - This is currently broken!  The user it's looking for may not be the one who did the invite.  Need to be able to query feelthebern.events for the ID of whoever sent the invite.  --Kris
