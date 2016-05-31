@@ -530,31 +530,49 @@ namespace FaceBERN_
         }
 
         [Test]
-        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0)
+        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0, int retry = 5)
         {
-            List<IWebElement> eles = GetElementsByTagName(tagName);
-            if (eles == null)
+            try
             {
-                return null;
-            }
-
-            int i = 0;
-            List<IWebElement> res = new List<IWebElement>();
-            foreach (IWebElement ele in eles)
-            {
-                if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                List<IWebElement> eles = GetElementsByTagName(tagName);
+                if (eles == null)
                 {
-                    res.Add(ele);
+                    return null;
+                }
 
-                    i++;
-                    if (i == limit)
+                int i = 0;
+                List<IWebElement> res = new List<IWebElement>();
+                foreach (IWebElement ele in eles)
+                {
+                    if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
                     {
-                        break;
+                        res.Add(ele);
+
+                        i++;
+                        if (i == limit)
+                        {
+                            break;
+                        }
                     }
                 }
-            }
 
-            return res;
+                return res;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                /* This is an edge case where an element reference disappears from the DOM.  The prescribed solution is to re-locate the element and try again.  --Kris */
+                retry--;
+                if (retry == 0)
+                {
+                    Log("Warning:  Lookup failed in GetElementsByTagNameAndAttribute( " + tagName + ", " + attributeName + ", " + attributeValue + " ).");
+
+                    return new List<IWebElement>();
+                }
+
+                System.Threading.Thread.Sleep(3000);
+
+                return GetElementsByTagNameAndAttribute(tagName, attributeName, attributeValue, limit, retry);
+            }
         }
 
         [Test]
