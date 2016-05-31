@@ -547,7 +547,7 @@ namespace FaceBERN_
 
                 SetExecState(lastState);
 
-                Log("Error logging into Facebook.  GOTV aborted.");
+                Log("Error " + webDriver.error + " logging into Facebook.  GOTV aborted.");
                 return;
             }
 
@@ -908,7 +908,7 @@ namespace FaceBERN_
             {
                 SetExecState(Globals.STATE_ERROR);
 
-                Log("Closing browser session....");
+                Log("Error detected:  " + webDriver.error.ToString() + ".  Closing browser session....");
                 webDriver.FixtureTearDown();
 
                 retry--;
@@ -1423,6 +1423,7 @@ namespace FaceBERN_
                 foreach (Person friend in friends)
                 {
                     SetProgressBar((int) Math.Round((decimal) (iteration / friends.Count), 0, MidpointRounding.AwayFromZero));
+                    iteration++;
 
                     if (exclude != null && exclude.Contains(friend.getFacebookID()))
                     {
@@ -1525,6 +1526,8 @@ namespace FaceBERN_
 
                 this.invited = GetInvitedPeople();
             }
+
+            SetProgressBar(100);
 
             /* Allow a few seconds to update Birdie, in case it's waiting.  --Kris */
             SetExecState(Globals.STATE_WAITING);
