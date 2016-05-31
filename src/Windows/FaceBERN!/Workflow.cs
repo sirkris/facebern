@@ -1422,7 +1422,7 @@ namespace FaceBERN_
                 int iteration = 0;
                 foreach (Person friend in friends)
                 {
-                    SetProgressBar((int) Math.Round((decimal) (iteration / friends.Count), 0, MidpointRounding.AwayFromZero));
+                    SetProgressBar((int) Math.Round((decimal) ((double) iteration / friends.Count), 0, MidpointRounding.AwayFromZero));
                     iteration++;
 
                     if (exclude != null && exclude.Contains(friend.getFacebookID()))
