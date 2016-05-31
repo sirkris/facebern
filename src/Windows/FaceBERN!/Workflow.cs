@@ -567,6 +567,14 @@ namespace FaceBERN_
                     return;
                 }
 
+                // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
+
+                if (!(state.Key.Equals("SD")))
+                {
+                    continue;
+                }
+
+
                 Log("Checking GOTV for " + state.Key + "....");
 
                 /* Determine if it's time for GOTV in this state.  --Kris */
@@ -743,7 +751,7 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        private void Wait(int minutes, string reason = "")
+        private void Wait(int duration, string reason = "", string unit = "minute")
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -751,14 +759,30 @@ namespace FaceBERN_
                 return;
             }
 
-            Log("Waiting " + minutes.ToString() + (minutes != 1 ? " minutes" : " minute") + (reason != "" ? " " + reason : "") + "....");
+            Log("Waiting " + duration.ToString() + (duration != 1 ? " " + unit + "s" : " " + unit) + (reason != "" ? " " + reason : "") + "....");
 
             System.Threading.Thread.Sleep(100);
 
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_WAITING);
 
-            System.Threading.Thread.Sleep(minutes * 60 * 1000);
+            int ms = duration * 1000;
+            switch (unit.ToLower())
+            {
+                default:
+                    Log("Warning:  Unrecognized unit '" + unit + "' in Wait().  Assuming seconds.");
+                    break;
+                case "second":
+                    break;
+                case "minute":
+                    ms *= 60;
+                    break;
+                case "hour":
+                    ms *= (int) Math.Pow(60, 2);
+                    break;
+            }
+
+            System.Threading.Thread.Sleep(ms);
 
             SetExecState(lastState);
         }
@@ -1355,7 +1379,7 @@ namespace FaceBERN_
             List<IWebElement> res = new List<IWebElement>();
             do
             {
-                System.Threading.Thread.Sleep(1000 * delayMultiplier);
+                System.Threading.Thread.Sleep(500 * delayMultiplier);
 
                 res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
 
@@ -1430,17 +1454,17 @@ namespace FaceBERN_
                         {
                             Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
 
-                            System.Threading.Thread.Sleep(1000);
+                            System.Threading.Thread.Sleep(500);
                         }
                         else
                         {
                             res[0].Click();
 
                             IWebElement ele;
-                            int ii = 5;
+                            int ii = 10;
                             do
                             {
-                                System.Threading.Thread.Sleep(1000);
+                                System.Threading.Thread.Sleep(500);
 
                                 ele = webDriver.GetElementById("event_invite_feedback");
 
@@ -1492,6 +1516,10 @@ namespace FaceBERN_
                     else if (i % 25 == 0 && i > 1)
                     {
                         Wait(1, "for 25-interval ratelimit");
+                    }
+                    else if (i % 5 == 0 && i > 1)
+                    {
+                        Wait(3, "for 5-interval ratelimit", "second");
                     }
                 }
 
