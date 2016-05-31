@@ -1372,7 +1372,7 @@ namespace FaceBERN_
             webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
             webDriver.TypeText(searchBox, friend.getName());
 
-            System.Threading.Thread.Sleep(1000 * delayMultiplier);
+            System.Threading.Thread.Sleep(500 * delayMultiplier);
 
             /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
             int i = 3;
@@ -1455,7 +1455,7 @@ namespace FaceBERN_
                         {
                             Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
 
-                            System.Threading.Thread.Sleep(500);
+                            System.Threading.Thread.Sleep(250);
                         }
                         else
                         {
@@ -1465,7 +1465,7 @@ namespace FaceBERN_
                             int ii = 10;
                             do
                             {
-                                System.Threading.Thread.Sleep(500);
+                                System.Threading.Thread.Sleep(250);
 
                                 ele = webDriver.GetElementById("event_invite_feedback");
 
