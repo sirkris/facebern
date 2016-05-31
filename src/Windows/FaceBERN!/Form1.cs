@@ -496,6 +496,14 @@ namespace FaceBERN_
                 return;
             }
 
+            Globals.devOverride = false;
+            if (Control.ModifierKeys == Keys.Shift)
+            {
+                Globals.devOverride = true;
+
+                LogW("** DEV OVERRIDE MODE ENGAGED! **");
+            }
+
             if (workflow == null)
             {
                 workflow = new Workflow(this);
@@ -518,6 +526,8 @@ namespace FaceBERN_
 
                 SetExecState(Globals.STATE_STOPPING);
                 stop = true;
+
+                Globals.devOverride = false;
 
                 workflow.ExecuteShutdownThread(Globals.thread);
                 

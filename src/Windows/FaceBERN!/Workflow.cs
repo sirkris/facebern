@@ -516,7 +516,8 @@ namespace FaceBERN_
             RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
             string lastCheck;
-            if ((lastCheck = GOTVKey.GetValue("LastCheck", "", RegistryValueOptions.None).ToString()) != "")
+            if ((lastCheck = GOTVKey.GetValue("LastCheck", "", RegistryValueOptions.None).ToString()) != "" 
+                && Globals.devOverride != true)
             {
                 if (DateTime.Now.Subtract(new DateTime(long.Parse(lastCheck))).TotalHours < Int32.Parse(Globals.Config["GOTVIntervalHours"]))
                 {
@@ -569,7 +570,7 @@ namespace FaceBERN_
 
                 // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
 
-                if (!(state.Key.Equals("SD")))
+                if (!(state.Key.Equals("MT")))
                 {
                     continue;
                 }
@@ -588,9 +589,10 @@ namespace FaceBERN_
                 foreach (string entry in defaultGOTVDaysBack)
                 {
                     int milestone = Int32.Parse(entry);
-                    if ((last == -1 || last > milestone)
-                        && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
-                        && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays <= milestone)
+                    if (((last == -1 || last > milestone)
+                          && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
+                          && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays <= milestone)
+                        || Globals.devOverride == true)
                     {
                         SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
 
@@ -1492,7 +1494,7 @@ namespace FaceBERN_
                             }
                             else
                             {
-                                Log("Facebook user " + friend.getName() + " may not have been invited.  Skipped.");
+                                Log("Facebook user " + friend.getName() + " may not have been invited (msg=" + ele.Text + ").");
                             }
                         }
                     }

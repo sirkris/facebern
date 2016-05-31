@@ -47,6 +47,7 @@ namespace FaceBERN_
         public static Thread thread = null;
         public static int executionState = -2;
         public static List<string> bernieFacebookIDs;
+        public static bool devOverride = false;  // Enable by holding down the Shift key while clicking Start.  This will force GOTV for all states, regardless of dates or recent prior checks.  --Kris
 
         /* Global state configs container.  Individual states setup in Form1.SetStateDefaults.  --Kris */
         public static Dictionary<string, States> StateConfigs;
