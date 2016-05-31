@@ -575,12 +575,12 @@ namespace FaceBERN_
                 }
 
                 // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
-
+                /*
                 if (!(state.Key.Equals("NM")))
                 {
                     continue;
                 }
-
+                */
 
                 Log("Checking GOTV for " + state.Key + "....");
 
@@ -884,8 +884,8 @@ namespace FaceBERN_
                     dynamic element = webDriver.GetElementByCSSSelector("input[type='submit'][value='Log In']");
                     webDriver.ClickElement(element);
 
-                    //Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
-                    //webDriver.WaitForPageLoad();
+                    Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
+                    webDriver.WaitForPageLoad();
 
                     /* Check for successful login.  --Kris */
                     if (webDriver.GetElementById("loginbutton") == null)
@@ -1494,33 +1494,66 @@ namespace FaceBERN_
                                 ii--;
                             } while (ele == null && ii > 0);
 
-                            string msg = ele.Text;
-                            if (ele != null && ele.Text == null && ele.GetAttribute("innerHTML") != null)
+                            /* To prevent stale element exceptions.  --Kris */
+                            bool stale = false;
+                            string msg = null;
+                            try
                             {
-                                msg = ele.GetAttribute("innerHTML");
+                                msg = ele.Text;
+                            }
+                            catch (StaleElementReferenceException e)
+                            {
+                                stale = true;
                             }
 
-                            if (ele != null && msg.Contains(" was invited."))
+                            if (stale)
                             {
-                                Log("Added " + friend.getName() + " to invite list.");
+                                System.Threading.Thread.Sleep(3000);
 
-                                i++;
+                                ele = webDriver.GetElementById("event_invite_feedback");
 
-                                friend.setLastGOTVInvite(DateTime.Now);
-                                AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
-                                UpdateInvitationsCount();
+                                stale = false;
+                                try
+                                {
+                                    msg = ele.Text;
+                                }
+                                catch (StaleElementReferenceException e)
+                                {
+                                    Log("Unable to determine whether " + friend.getName() + " was added to invite list.");
 
-                                invited.Add(friend);
-
-                                PersistInvited(invited);
+                                    stale = true;
+                                }
                             }
-                            else if (ele == null)
+
+                            if (!stale)
                             {
-                                Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
-                            }
-                            else
-                            {
-                                Log("Facebook user " + friend.getName() + " may not have been invited (msg=" + msg + ").");
+                                if (ele != null && ele.Text == null && ele.GetAttribute("innerHTML") != null)
+                                {
+                                    msg = ele.GetAttribute("innerHTML");
+                                }
+
+                                if (ele != null && msg.Contains(" was invited."))
+                                {
+                                    Log("Added " + friend.getName() + " to invite list.");
+
+                                    i++;
+
+                                    friend.setLastGOTVInvite(DateTime.Now);
+                                    AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
+                                    UpdateInvitationsCount();
+
+                                    invited.Add(friend);
+
+                                    PersistInvited(invited);
+                                }
+                                else if (ele == null)
+                                {
+                                    Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
+                                }
+                                else
+                                {
+                                    Log("Facebook user " + friend.getName() + " may not have been invited (msg=" + msg + ").");
+                                }
                             }
                         }
                     }
