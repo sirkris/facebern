@@ -1456,6 +1456,7 @@ namespace FaceBERN_
                                 i++;
                                 newInvites.Add(friend);
                                 AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
+                                UpdateInvitationsCount();
                             }
                             else if (ele == null)
                             {
@@ -1495,7 +1496,7 @@ namespace FaceBERN_
 
                 Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
 
-                UpdateInvitationsCount(i);
+                //UpdateInvitationsCount(i);
 
                 foreach (Person friend in oldFriends)
                 {
