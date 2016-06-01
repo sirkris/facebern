@@ -52,6 +52,41 @@ namespace Installer
             SetStatus("Done!");
         }
 
+        public Thread ExecuteUninstallThread(string installPath)
+        {
+            Thread thread = new Thread(() => ExecuteUninstall(installPath));
+            thread.Start();
+            while (!thread.IsAlive) { }
+
+            return thread;
+        }
+
+        public void ExecuteUninstall(string installPath)
+        {
+            SetStatus("Performing uninstall....");
+
+            if (Directory.Exists(installPath))
+            {
+                try
+                {
+                    System.IO.Directory.Delete(installPath, true);
+                }
+                catch (Exception e)
+                {
+                    SetStatus("ERROR!  Unable to delete application directory!");
+                    return;
+                }
+            }
+
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+
+            softwareKey.DeleteSubKeyTree("FaceBERN!", false);
+
+            softwareKey.Close();
+
+            SetStatus("Done!");
+        }
+
         public Thread ExecuteUpdateThread()
         {
             Thread thread = new Thread(() => ExecuteUpdate());
@@ -172,6 +207,19 @@ namespace Installer
 
             if (installPath != null && branchName != null)
             {
+                /* Check for existing installation and overwrite.  --Kris */
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                if (appKey != null)
+                {
+                    /* We're NOT checking for/deleting the installedPath because the user might want that preserved.  We'll just clear the registry and make sure the destination directory's clean.  --Kris */
+                    appKey.Close();
+
+                    Thread uninstallThread = ExecuteUninstallThread(installPath);
+                    while (uninstallThread.IsAlive) { }
+                }
+
                 /* Perform the installation.  --Kris */
                 SetStatus("Creating installation directory....", 0);
 
@@ -251,8 +299,7 @@ namespace Installer
 
                 SetStatus("Updating system registry....", 90);
 
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                appKey = softwareKey.CreateSubKey("FaceBERN!");
 
                 appKey.SetValue("Installed", installPath, RegistryValueKind.String);
                 appKey.SetValue("BranchName", branchName, RegistryValueKind.String);
