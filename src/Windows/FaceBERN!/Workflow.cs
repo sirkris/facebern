@@ -1808,7 +1808,7 @@ namespace FaceBERN_
             if (res.Count < Globals.StateConfigs[stateAbbr].facebookFriendSearchTarget
                 && pass < Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses)
             {
-                Log("Results target not met.  Re-performing search to supplement results (pass " + pass.ToString() + @" / " + Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses + ")....");
+                Log("Results target not met.  Re-performing search to supplement results (pass " + (pass + 1).ToString() + @" / " + Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses + ")....");
 
                 res.AddRange(GetFacebookFriendsOfFriends(stateAbbr, bernieSupportersOnly, (pass + 1)));
                 res = res.Distinct<Person>().ToList<Person>();
