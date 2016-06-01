@@ -1811,7 +1811,27 @@ namespace FaceBERN_
                 Log("Results target not met.  Re-performing search to supplement results (pass " + (pass + 1).ToString() + @" / " + Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses + ")....");
 
                 res.AddRange(GetFacebookFriendsOfFriends(stateAbbr, bernieSupportersOnly, (pass + 1)));
-                res = res.Distinct<Person>().ToList<Person>();
+                //res = res.Distinct<Person>().ToList<Person>();
+
+                List<Person> resClean = new List<Person>();
+                foreach (Person person in res)
+                {
+                    bool dup = false;
+                    foreach (Person person2 in resClean)
+                    {
+                        if (person2.facebookID.Equals(person.facebookID))
+                        {
+                            dup = true;
+                            break;
+                        }
+                    }
+
+                    if (!dup)
+                    {
+                        resClean.Add(person);
+                    }
+                }
+                res = resClean;
             }
 
             SetExecState(lastState);
