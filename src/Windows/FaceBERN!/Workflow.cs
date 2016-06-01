@@ -1534,9 +1534,16 @@ namespace FaceBERN_
 
                             if (!stale)
                             {
-                                if (ele != null && ele.Text == null && ele.GetAttribute("innerHTML") != null)
+                                try
                                 {
-                                    msg = ele.GetAttribute("innerHTML");
+                                    if (ele != null && ele.Text == null && ele.GetAttribute("innerHTML") != null)
+                                    {
+                                        msg = ele.GetAttribute("innerHTML");
+                                    }
+                                }
+                                catch (StaleElementReferenceException e)
+                                {
+                                    ele = null;
                                 }
 
                                 // Facebook keeps switching-up the attribute on us, so we'll just assume it's good for now if the message can't be found (i.e. is null).  --Kris
