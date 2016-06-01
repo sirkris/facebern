@@ -1377,7 +1377,7 @@ namespace FaceBERN_
                     return false;
                 }
 
-                System.Threading.Thread.Sleep(3);
+                System.Threading.Thread.Sleep(250);
 
                 return IsInvitedBySomeoneElse(userId, retry);
             }
@@ -1394,14 +1394,14 @@ namespace FaceBERN_
             webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
             webDriver.TypeText(searchBox, friend.getName());
 
-            System.Threading.Thread.Sleep(500 * delayMultiplier);
+            System.Threading.Thread.Sleep(250 * delayMultiplier);
 
             /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
-            int i = 3;
+            int i = 30;
             List<IWebElement> res = new List<IWebElement>();
             do
             {
-                System.Threading.Thread.Sleep(500 * delayMultiplier);
+                System.Threading.Thread.Sleep(100 * delayMultiplier);
 
                 res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
 
@@ -1508,7 +1508,7 @@ namespace FaceBERN_
 
                             if (stale)
                             {
-                                System.Threading.Thread.Sleep(3000);
+                                System.Threading.Thread.Sleep(500);
 
                                 ele = webDriver.GetElementById("event_invite_feedback");
 
@@ -1532,7 +1532,8 @@ namespace FaceBERN_
                                     msg = ele.GetAttribute("innerHTML");
                                 }
 
-                                if (ele != null && msg.Contains(" was invited."))
+                                // Facebook keeps switching-up the attribute on us, so we'll just assume it's good for now if the message can't be found (i.e. is null).  --Kris
+                                if (ele != null && (msg == null || msg.Contains(" was invited.")))
                                 {
                                     Log("Added " + friend.getName() + " to invite list.");
 
