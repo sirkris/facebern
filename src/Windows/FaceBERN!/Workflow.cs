@@ -1434,6 +1434,7 @@ namespace FaceBERN_
             List<string> exclude = GetExclusionList();
 
             /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
+            int ratelimitCount = 0;
             if (friends.Count > 0)
             {
                 Log("Sending invitations....");
@@ -1552,6 +1553,7 @@ namespace FaceBERN_
                                     Log("Added " + friend.getName() + " to invite list.");
 
                                     i++;
+                                    ratelimitCount++;
 
                                     friend.setLastGOTVInvite(DateTime.Now);
                                     AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
@@ -1578,25 +1580,30 @@ namespace FaceBERN_
                     }
 
                     /* We don't want to trigger any false positives from the spam algos.  --Kris */
-                    if (i % 1000 == 0 && i > 1)
+                    if (ratelimitCount % 1000 == 0 && ratelimitCount > 1)
                     {
                         Wait(15, "for 1000-interval ratelimit");
+                        ratelimitCount++;
                     }
-                    if (i % 100 == 0 && i > 1)
+                    if (ratelimitCount % 100 == 0 && ratelimitCount > 1)
                     {
                         Wait(3, "for 100-interval ratelimit");
+                        ratelimitCount++;
                     }
-                    else if (i % 50 == 0 && i > 1)
+                    else if (ratelimitCount % 50 == 0 && ratelimitCount > 1)
                     {
                         Wait(2, "for 50-interval ratelimit");
+                        ratelimitCount++;
                     }
-                    else if (i % 25 == 0 && i > 1)
+                    else if (ratelimitCount % 25 == 0 && ratelimitCount > 1)
                     {
                         Wait(1, "for 25-interval ratelimit");
+                        ratelimitCount++;
                     }
-                    else if (i % 5 == 0 && i > 1)
+                    else if (ratelimitCount % 5 == 0 && ratelimitCount > 1)
                     {
                         Wait(3, "for 5-interval ratelimit", "second");
+                        ratelimitCount++;
                     }
                 }
 
