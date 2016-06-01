@@ -566,12 +566,19 @@ namespace FaceBERN_
             
             /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
             string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-            foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
+            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderByDescending(s => s.Value.primaryDate))
             {
                 if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
                 {
                     Log("Thread stop received.  Workflow aborted.");
                     return;
+                }
+
+                /* Skip states that already held their primaries.  --Kris */
+                // TODO - Replace with more sophisticated logic for the general election and beyond.  --Kris
+                if (state.Value.primaryDate < DateTime.Now)
+                {
+                    continue;
                 }
 
                 // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
@@ -1671,7 +1678,7 @@ namespace FaceBERN_
             }
         }
 
-        private List<Person> GetFacebookFriendsOfFriends(string stateAbbr = null, bool bernieSupportersOnly = true)
+        private List<Person> GetFacebookFriendsOfFriends(string stateAbbr = null, bool bernieSupportersOnly = true, int pass = 1)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -1796,6 +1803,15 @@ namespace FaceBERN_
             else
             {
                 Log("No results found.");
+            }
+
+            if (res.Count < Globals.StateConfigs[stateAbbr].facebookFriendSearchTarget
+                && pass < Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses)
+            {
+                Log("Results target not met.  Re-performing search to supplement results (pass " + pass.ToString() + @" / " + Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses + ")....");
+
+                res.AddRange(GetFacebookFriendsOfFriends(stateAbbr, bernieSupportersOnly, (pass + 1)));
+                res = res.Distinct<Person>().ToList<Person>();
             }
 
             SetExecState(lastState);
