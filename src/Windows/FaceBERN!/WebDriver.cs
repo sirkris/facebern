@@ -656,8 +656,17 @@ namespace FaceBERN_
                     
                     // Do the scroll.  --Kris
                     jse.ExecuteScript(scrollScript);
-                    System.Threading.Thread.Sleep(3000);
-                    done = (bool) jse.ExecuteScript(checkScript);
+
+                    // Check to see if the page expands.  If it doesn't after 6 seconds, assume we're done.  --Kris
+                    int ii = 12;
+                    do
+                    {
+                        System.Threading.Thread.Sleep(500);
+                        
+                        done = (bool) jse.ExecuteScript(checkScript);
+
+                        ii--;
+                    } while (done == true && ii > 0);
                     i--;
                 } while (done == false && i > 0);
             }
