@@ -566,7 +566,7 @@ namespace FaceBERN_
             
             /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
             string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderByDescending(s => s.Value.primaryDate))
+            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderBy(s => s.Value.primaryDate))
             {
                 if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
                 {
