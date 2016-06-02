@@ -12,6 +12,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Text;
@@ -41,6 +43,8 @@ namespace FaceBERN_
         private Form1 Main;
 
         private int browser;
+
+        private int staleRetry = 0;
 
         public WebDriver(Form1 Main, int browser, Log MainLog = null)
         {
@@ -293,6 +297,98 @@ namespace FaceBERN_
             }
         }
 
+        /* This exception is so common with Facebook, it makes sense to create a separate handler for retries, instead of doing it in every single function that touches elements.  --Kris */
+        public dynamic StaleElementReferenceException_Handler(string callerName, object[] parameters)
+        {
+            staleRetry++;
+            if (staleRetry >= 5)
+            {
+                /* Let's make the error message as helpful as possible for triage purposes.  There are no security considerations since we're just dealing with identifying HTML elements.  --Kris */
+                string args = "";
+                foreach (object param in parameters)
+                {
+                    args += (args != "" ? @", " : "");
+
+                    try
+                    {
+                        dynamic j;
+                        switch (Type.GetTypeCode(param.GetType()))
+                        {
+                            default:
+                                args += @"<" + param.GetType().ToString() + @">";
+                                break;
+                            case TypeCode.Boolean:
+                                args += ((bool) param == true ? "true" : "false");
+                                break;
+                            case TypeCode.Char:
+                                args += ((char) param).ToString();
+                                break;
+                            case TypeCode.String:
+                                args += param;
+                                break;
+                            case TypeCode.Decimal:
+                                args += ((double) param).ToString();
+                                break;
+                            case TypeCode.Double:
+                                args += ((decimal) param).ToString();
+                                break;
+                            case TypeCode.Int16:
+                                args += ((Int16) param).ToString();
+                                break;
+                            case TypeCode.Int32:
+                                args += ((Int32) param).ToString();
+                                break;
+                            case TypeCode.Int64:
+                                args += ((Int64) param).ToString();
+                                break;
+                            case TypeCode.UInt16:
+                                args += ((UInt16) param).ToString();
+                                break;
+                            case TypeCode.UInt32:
+                                args += ((UInt32) param).ToString();
+                                break;
+                            case TypeCode.UInt64:
+                                args += ((UInt64) param).ToString();
+                                break;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log("Warning:  Error parsing parameter for message arguments list : " + e.Message);
+
+                        args += @"????";
+                    }
+                }
+
+                Log("WebDriver ERROR:  Unable to handle stale element in : " + callerName + "( " + args + " ).");
+
+                return null;
+            }
+            
+            System.Threading.Thread.Sleep(100);
+
+            Type thisType = this.GetType();
+            MethodInfo staleMeth = thisType.GetMethod(callerName);
+
+            return staleMeth.Invoke(this, parameters);
+        }
+
+        public dynamic StaleReturn(object[] parameters, [CallerMemberName] string callerName = "")
+        {
+            dynamic staleReturn = StaleElementReferenceException_Handler(callerName, parameters);
+            if (staleReturn != null)
+            {
+                staleRetry = 0;
+            }
+
+            return staleReturn;
+        }
+
+        private object[] GetParams(params object[] parameters)
+        {
+            return parameters;
+        }
+
         [Test]
         public dynamic GetElementById(string elementid, bool iefix = false)
         {
@@ -304,7 +400,7 @@ namespace FaceBERN_
                     case Globals.FIREFOX_WINDOWED:
                     case Globals.FIREFOX_HIDDEN:
                         IWebDriver driver = GetDriver();
-                        
+
                         /*
                          * This is necessary to fix a bug in the IE WebDriver.
                          * Basically, what this does is "click" on a parent element in 
@@ -319,7 +415,7 @@ namespace FaceBERN_
                         {
                             driver.FindElement(By.Id(elementid)).FindElement(By.XPath("..")).Click();
                         }
-
+                        
                         return driver.FindElement(By.Id(elementid));
                     case Globals.FIREFOX_HEADLESS:
                         return page.GetElementById(elementid);
@@ -328,6 +424,10 @@ namespace FaceBERN_
             catch (NoSuchElementException e)
             {
                 return null;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(elementid, iefix));
             }
         }
 
@@ -367,6 +467,10 @@ namespace FaceBERN_
             {
                 return null;
             }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(elementname, iefix));
+            }
         }
 
         [Test]
@@ -397,86 +501,104 @@ namespace FaceBERN_
             {
                 return null;
             }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(linktext, partial));
+            }
         }
 
         [Test]
         public dynamic GetElementByXPath(string xpath, int timeout = -1)
         {
-            dynamic res;
-            IWebDriver driver;
-
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    driver = GetDriver();
+                dynamic res;
+                IWebDriver driver;
 
-                    if (timeout >= 0)
-                    {
-                        driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
-                    }
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        driver = GetDriver();
 
-                    try
-                    {
-                        res = driver.FindElement(By.XPath(xpath));
-                    }
-                    catch (NoSuchElementException e)
-                    {
-                        return null;
-                    }
-                    finally
-                    {
                         if (timeout >= 0)
                         {
-                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
                         }
-                    }
 
-                    return res;
-                case Globals.FIREFOX_HEADLESS:
-                    return page.GetByXPath(xpath);
+                        try
+                        {
+                            res = driver.FindElement(By.XPath(xpath));
+                        }
+                        catch (NoSuchElementException e)
+                        {
+                            return null;
+                        }
+                        finally
+                        {
+                            if (timeout >= 0)
+                            {
+                                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                            }
+                        }
+
+                        return res;
+                    case Globals.FIREFOX_HEADLESS:
+                        return page.GetByXPath(xpath);
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(xpath, timeout));
             }
         }
 
         [Test]
         public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1)
         {
-            dynamic res;
-            IWebDriver driver;
-
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    driver = GetDriver();
-                    
-                    if (timeout >= 0)
-                    {
-                        driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
-                    }
+                dynamic res;
+                IWebDriver driver;
 
-                    try
-                    {
-                        res = driver.FindElement(By.CssSelector(cssSelector));
-                    }
-                    catch (NoSuchElementException e)
-                    {
-                        return null;
-                    }
-                    finally
-                    {
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        driver = GetDriver();
+
                         if (timeout >= 0)
                         {
-                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
                         }
-                    }
 
-                    return res;
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return null;
+                        try
+                        {
+                            res = driver.FindElement(By.CssSelector(cssSelector));
+                        }
+                        catch (NoSuchElementException e)
+                        {
+                            return null;
+                        }
+                        finally
+                        {
+                            if (timeout >= 0)
+                            {
+                                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                            }
+                        }
+
+                        return res;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        return null;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(cssSelector, timeout));
             }
         }
 
@@ -493,6 +615,10 @@ namespace FaceBERN_
             {
                 return null;
             }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(tagName));
+            }
         }
 
         [Test]
@@ -504,33 +630,40 @@ namespace FaceBERN_
         [Test]
         public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0)
         {
-            List<IWebElement> eles = GetElementsByTagName(tagName);
-            if (eles == null)
+            try
             {
-                return null;
-            }
-
-            int i = 0;
-            foreach (IWebElement ele in eles)
-            {
-                if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                List<IWebElement> eles = GetElementsByTagName(tagName);
+                if (eles == null)
                 {
-                    if (i == offset)
+                    return null;
+                }
+
+                int i = 0;
+                foreach (IWebElement ele in eles)
+                {
+                    if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
                     {
-                        return ele;
-                    }
-                    else
-                    {
-                        i++;
+                        if (i == offset)
+                        {
+                            return ele;
+                        }
+                        else
+                        {
+                            i++;
+                        }
                     }
                 }
-            }
 
-            return null;
+                return null;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(tagName, attributeName, attributeValue, offset));
+            }
         }
 
         [Test]
-        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0, int retry = 5)
+        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0)
         {
             try
             {
@@ -560,71 +693,67 @@ namespace FaceBERN_
             }
             catch (StaleElementReferenceException e)
             {
-                /* This is an edge case where an element reference disappears from the DOM.  The prescribed solution is to re-locate the element and try again.  --Kris */
-                retry--;
-                if (retry == 0)
-                {
-                    Log("Warning:  Lookup failed in GetElementsByTagNameAndAttribute( " + tagName + ", " + attributeName + ", " + attributeValue + " ).");
-
-                    return new List<IWebElement>();
-                }
-
-                System.Threading.Thread.Sleep(3000);
-
-                return GetElementsByTagNameAndAttribute(tagName, attributeName, attributeValue, limit, retry);
+                return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
             }
         }
 
         [Test]
         public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false)
         {
-            dynamic driver = GetDriver();
-
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
-                        //wait.Until(d => d.FindElement(By.Id(element.GetAttribute("id"))));
+                dynamic driver = GetDriver();
 
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
+                        {
+                            //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                            //wait.Until(d => d.FindElement(By.Id(element.GetAttribute("id"))));
+
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            Assert.IsTrue(element.Displayed);
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+
+                        if (autoscroll == true)
+                        {
+                            string script;
+
+                            script = "arguments[0].scrollIntoView(true);";
+
+                            ((IJavaScriptExecutor)driver).ExecuteScript(script, element);
+                        }
+
+                        if (viewportfix == true)
+                        {
+                            element.SendKeys(" ");
+                        }
+                        else
+                        {
+                            element.Click();
+                        }
+
+                        WaitForPageLoad();
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                        Assert.IsTrue(element.Displayed);
-                    }
-                    catch
-                    {
-                        return false;
-                    }
+                        element.RemoveAttribute("disabled");
+                        return element.Click();
+                }
 
-                    if (autoscroll == true)
-                    {
-                        string script;
-
-                        script = "arguments[0].scrollIntoView(true);";
-
-                        ((IJavaScriptExecutor)driver).ExecuteScript(script, element);
-                    }
-
-                    if (viewportfix == true)
-                    {
-                        element.SendKeys(" ");
-                    }
-                    else
-                    {
-                        element.Click();
-                    }
-
-                    WaitForPageLoad();
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                    element.RemoveAttribute("disabled");
-                    return element.Click();
+                return true;
             }
-
-            return true;
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element, viewportfix, autoscroll));
+            }
         }
 
         [Test]
@@ -812,400 +941,470 @@ namespace FaceBERN_
         [Test]
         public bool ClickOnLink(string linktext, bool partial = false, bool viewportfix = false, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementByLinkText(linktext, partial);
-                        return ClickElement(element, viewportfix);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClickOnLink(linktext, partial, viewportfix, retry);
+                            IWebElement element = GetElementByLinkText(linktext, partial);
+                            return ClickElement(element, viewportfix);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClickOnLink(linktext, partial, viewportfix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    try
-                    {
-                        dynamic element = GetElementByLinkText(linktext, partial);
-                        return ClickElement(element);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                    case Globals.FIREFOX_HEADLESS:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClickOnLink(linktext, partial, viewportfix, retry);
+                            dynamic element = GetElementByLinkText(linktext, partial);
+                            return ClickElement(element);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClickOnLink(linktext, partial, viewportfix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(linktext, partial, viewportfix, retry));
             }
         }
 
         [Test]
         public bool ClickOnXPath(string xpath, bool viewportfix = false, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementByXPath(xpath);
-                        return ClickElement(element, viewportfix);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClickOnXPath(xpath, viewportfix, retry);
+                            IWebElement element = GetElementByXPath(xpath);
+                            return ClickElement(element, viewportfix);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClickOnXPath(xpath, viewportfix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    try
-                    {
-                        dynamic element = GetElementByLinkText(xpath);
-                        return ClickElement(element);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                    case Globals.FIREFOX_HEADLESS:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClickOnXPath(xpath, viewportfix, retry);
+                            dynamic element = GetElementByLinkText(xpath);
+                            return ClickElement(element);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClickOnXPath(xpath, viewportfix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(xpath, viewportfix, retry));
             }
         }
 
         [Test]
         public bool TypeText(dynamic element, string text)
         {
-            dynamic driver = GetDriver();
-
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
-                        //wait.Until(d => d.FindElement(By.Id(element.GetAttribute("id"))));
+                dynamic driver = GetDriver();
 
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
+                        {
+                            //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                            //wait.Until(d => d.FindElement(By.Id(element.GetAttribute("id"))));
+
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            Assert.IsTrue(element.Displayed);
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+
+                        element.SendKeys(text);
+
+                        return true;
+                    case Globals.FIREFOX_HEADLESS:
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                        Assert.IsTrue(element.Displayed);
-                    }
-                    catch
-                    {
-                        return false;
-                    }
 
-                    element.SendKeys(text);
+                        element.Type(text);
 
-                    return true;
-                case Globals.FIREFOX_HEADLESS:
-                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                    
-                    element.Type(text);
-
-                    return true;
+                        return true;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element, text));
             }
         }
 
         [Test]
         public bool TypeInXPath(string xpath, string text, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementByXPath(xpath);
-                        return TypeText(element, text);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInXPath(xpath, text, retry);
+                            IWebElement element = GetElementByXPath(xpath);
+                            return TypeText(element, text);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return TypeInXPath(xpath, text, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    try
-                    {
-                        dynamic element = GetElementByXPath(xpath);
-                        return TypeText(element, text);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                    case Globals.FIREFOX_HEADLESS:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInXPath(xpath, text, retry);
+                            dynamic element = GetElementByXPath(xpath);
+                            return TypeText(element, text);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return TypeInXPath(xpath, text, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(xpath, text, retry));
             }
         }
 
         [Test]
         public bool TypeInId(string elementid, string text, bool iefix = false, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementById(elementid, iefix);
-                        return TypeText(element, text);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInId(elementid, text, iefix, retry);
+                            IWebElement element = GetElementById(elementid, iefix);
+                            return TypeText(element, text);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return TypeInId(elementid, text, iefix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    try
-                    {
-                        dynamic element = GetElementById(elementid);
-                        return TypeText(element, text);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                    case Globals.FIREFOX_HEADLESS:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInId(elementid, text, iefix, retry);
+                            dynamic element = GetElementById(elementid);
+                            return TypeText(element, text);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return TypeInId(elementid, text, iefix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(elementid, text, iefix, retry));
             }
         }
 
         [Test]
         public bool TypeInName(string elementname, string text, bool iefix = false, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementByName(elementname, iefix);
-                        return TypeText(element, text);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInName(elementname, text, iefix, retry);
+                            IWebElement element = GetElementByName(elementname, iefix);
+                            return TypeText(element, text);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return TypeInName(elementname, text, iefix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    try
-                    {
-                        dynamic element = GetElementByName(elementname);
-                        return TypeText(element, text);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                    case Globals.FIREFOX_HEADLESS:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return TypeInName(elementname, text, iefix, retry);
+                            dynamic element = GetElementByName(elementname);
+                            return TypeText(element, text);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return TypeInName(elementname, text, iefix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(elementname, text, iefix, retry));
             }
         }
 
         [Test]
         public bool ClearText(IWebElement element)
         {
-            dynamic driver = GetDriver();
-
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                        Assert.IsTrue(element.Displayed);
-                    }
-                    catch
-                    {
+                dynamic driver = GetDriver();
+
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
+                        {
+                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                            Assert.IsTrue(element.Displayed);
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+
+                        element.Clear();
+
+                        return true;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
                         return false;
-                    }
-
-                    element.Clear();
-
-                    return true;
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element));
             }
         }
 
         [Test]
         public bool ClearXPath(string xpath, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementByXPath(xpath);
-                        return ClearText(element);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClearXPath(xpath, retry);
+                            IWebElement element = GetElementByXPath(xpath);
+                            return ClearText(element);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClearXPath(xpath, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        return false;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(xpath, retry));
             }
         }
 
         [Test]
         public bool ClearId(string id, bool iefix = false, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementById(id, iefix);
-                        return ClearText(element);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClearId(id, iefix, retry);
+                            IWebElement element = GetElementById(id, iefix);
+                            return ClearText(element);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClearId(id, iefix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        return false;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(id, iefix, retry));
             }
         }
 
         [Test]
         public bool ClearName(string name, bool iefix = false, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    try
-                    {
-                        IWebElement element = GetElementByName(name, iefix);
-                        return ClearText(element);
-                    }
-                    catch
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            return ClearName(name, iefix, retry);
+                            IWebElement element = GetElementByName(name, iefix);
+                            return ClearText(element);
                         }
-                        else
+                        catch
                         {
-                            return false;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                return ClearName(name, iefix, retry);
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
-                    }
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        return false;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(name, iefix, retry));
             }
         }
 
@@ -1357,35 +1556,42 @@ namespace FaceBERN_
         [Test]
         public bool CheckElementExists(string text, string by)
         {
-            dynamic driver;
-
-            driver = GetDriver();
-
-            switch (browser)
+            try
             {
-                default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    IWebElement element;
-                    switch (by)
-                    {
-                        case "linktext":
-                            element = GetElementByLinkText(text);
-                            break;
-                        case "id":
-                            element = GetElementById(text);
-                            break;
-                        case "name":
-                            element = GetElementById(text);
-                            break;
-                        default:
-                            element = null;
-                            break;
-                    }
-                    return (!(element.Size.IsEmpty));
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return false;
+                dynamic driver;
+
+                driver = GetDriver();
+
+                switch (browser)
+                {
+                    default:
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        IWebElement element;
+                        switch (by)
+                        {
+                            case "linktext":
+                                element = GetElementByLinkText(text);
+                                break;
+                            case "id":
+                                element = GetElementById(text);
+                                break;
+                            case "name":
+                                element = GetElementById(text);
+                                break;
+                            default:
+                                element = null;
+                                break;
+                        }
+                        return (!(element.Size.IsEmpty));
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        return false;
+                }
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(text, by));
             }
         }
 
