@@ -808,7 +808,10 @@ namespace FaceBERN_
             label3.Visible = true;
             labelInvitesSent.Visible = true;
 
-            localInvitesSent = x;
+            if (x != -1)
+            {
+                localInvitesSent = x;
+            }
             remoteInvitesSent = y;
 
             if (remoteInvitesSent == 0)

@@ -322,7 +322,7 @@ namespace FaceBERN_
 
             remoteInvitesSent = r;
 
-            UpdateInvitationsCount(0, r);
+            UpdateInvitationsCount(-1, r);
         }
 
         /* Query the Birdie API and return the raw result.  --Kris */
