@@ -132,8 +132,8 @@ namespace FaceBERN_
 
             //Globals.Config.Add("CurrentDirectory", Environment.CurrentDirectory);
             Globals.Config.Add("AutoUpdate", "1");
-            Globals.Config.Add("UseFTBEvents", "0");  // TODO - Re-enable by default once I've synced with feelthebern.events on how to establish a usable cross-app workflow for this.  --Kris
-            Globals.Config.Add("UseCustomEvents", "1");
+            Globals.Config.Add("UseFTBEvents", "1");
+            Globals.Config.Add("UseCustomEvents", "0");
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
 
             /* How long to wait between GOTV checks.  --Kris */

@@ -429,6 +429,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(elementid, iefix));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(elementid, iefix));
+            }
         }
 
         [Test]
@@ -471,6 +475,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(elementname, iefix));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(elementname, iefix));
+            }
         }
 
         [Test]
@@ -502,6 +510,10 @@ namespace FaceBERN_
                 return null;
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(linktext, partial));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(linktext, partial));
             }
@@ -549,6 +561,10 @@ namespace FaceBERN_
                 }
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(xpath, timeout));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(xpath, timeout));
             }
@@ -600,6 +616,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(cssSelector, timeout));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(cssSelector, timeout));
+            }
         }
 
         [Test]
@@ -616,6 +636,10 @@ namespace FaceBERN_
                 return null;
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(tagName));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(tagName));
             }
@@ -660,6 +684,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(tagName, attributeName, attributeValue, offset));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(tagName, attributeName, attributeValue, offset));
+            }
         }
 
         [Test]
@@ -692,6 +720,10 @@ namespace FaceBERN_
                 return res;
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
             }
@@ -753,6 +785,42 @@ namespace FaceBERN_
             catch (StaleElementReferenceException e)
             {
                 return StaleReturn(GetParams(element, viewportfix, autoscroll));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(element, viewportfix, autoscroll));
+            }
+        }
+
+        public string GetAttribute(IWebElement element, string attr)
+        {
+            try
+            {
+                return element.GetAttribute(attr);
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element, attr));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(element, attr));
+            }
+        }
+
+        public string GetText(IWebElement element)
+        {
+            try
+            {
+                return element.Text;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(element));
             }
         }
 
@@ -991,6 +1059,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(linktext, partial, viewportfix, retry));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(linktext, partial, viewportfix, retry));
+            }
         }
 
         [Test]
@@ -1046,6 +1118,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(xpath, viewportfix, retry));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(xpath, viewportfix, retry));
+            }
         }
 
         [Test]
@@ -1085,6 +1161,10 @@ namespace FaceBERN_
                 }
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element, text));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(element, text));
             }
@@ -1143,6 +1223,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(xpath, text, retry));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(xpath, text, retry));
+            }
         }
 
         [Test]
@@ -1195,6 +1279,10 @@ namespace FaceBERN_
                 }
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(elementid, text, iefix, retry));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(elementid, text, iefix, retry));
             }
@@ -1253,6 +1341,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(elementname, text, iefix, retry));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(elementname, text, iefix, retry));
+            }
         }
 
         [Test]
@@ -1286,6 +1378,10 @@ namespace FaceBERN_
                 }
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(element));
             }
@@ -1328,6 +1424,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(xpath, retry));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(xpath, retry));
+            }
         }
 
         [Test]
@@ -1367,6 +1467,10 @@ namespace FaceBERN_
             {
                 return StaleReturn(GetParams(id, iefix, retry));
             }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(id, iefix, retry));
+            }
         }
 
         [Test]
@@ -1403,6 +1507,10 @@ namespace FaceBERN_
                 }
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(name, iefix, retry));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(name, iefix, retry));
             }
@@ -1590,6 +1698,10 @@ namespace FaceBERN_
                 }
             }
             catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(text, by));
+            }
+            catch (Exception e)
             {
                 return StaleReturn(GetParams(text, by));
             }
