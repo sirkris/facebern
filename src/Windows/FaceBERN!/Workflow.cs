@@ -591,6 +591,13 @@ namespace FaceBERN_
 
                 Log("Checking GOTV for " + state.Key + "....");
 
+                if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
+                {
+                    Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
+
+                    continue;
+                }
+
                 /* Determine if it's time for GOTV in this state.  --Kris */
                 // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
                 RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
