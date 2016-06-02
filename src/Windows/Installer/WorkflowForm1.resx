@@ -130,7 +130,7 @@ Microsoft Windows (tested/built on Windows 7)
 .NET Framework 4.5 or newer
 Mozilla Firefox
 
-WARNING: THIS IS A LATE ALPHA BUILD! USE AT YOUR OWN RISK!</value>
+WARNING: THIS IS AN EARLY BETA BUILD! USE AT YOUR OWN RISK!</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
