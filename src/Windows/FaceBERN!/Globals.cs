@@ -15,7 +15,7 @@ namespace FaceBERN_
          */
 
         /* The version.  Please adhere to Git versioning procedures.  --Kris */
-        public static string __VERSION__        = @"1.0.0.a";
+        public static string __VERSION__        = @"1.0.0.b";
 
         /* File paths.  --Kris */
         public static string ConfigDir          = @"config";
