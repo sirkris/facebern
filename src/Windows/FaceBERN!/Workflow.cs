@@ -951,7 +951,7 @@ namespace FaceBERN_
                 IWebElement ele = webDriver.GetElementByCSSSelector("[data-testid=\"blue_bar_profile_link\"]");
                 if (ele != null)
                 {
-                    profileURL = ele.GetAttribute("href");
+                    profileURL = webDriver.GetAttribute(ele, "href");
                     if (profileURL != null && profileURL.Length > 0)
                     {
                         try
@@ -1481,7 +1481,7 @@ namespace FaceBERN_
                     }
                     else if (res.Count == 1)
                     {
-                        if (res[0].GetAttribute("class") != null && res[0].GetAttribute("class").Contains("nonInvitable"))
+                        if (webDriver.GetAttribute(res[0], "class") != null && webDriver.GetAttribute(res[0], "class").Contains("nonInvitable"))
                         {
                             Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
 
@@ -1489,7 +1489,7 @@ namespace FaceBERN_
                         }
                         else
                         {
-                            res[0].Click();
+                            webDriver.ClickElement(res[0]);
 
                             IWebElement ele;
                             int ii = 10;
@@ -1507,7 +1507,7 @@ namespace FaceBERN_
                             string msg = null;
                             try
                             {
-                                msg = ele.Text;
+                                msg = webDriver.GetText(ele);
                             }
                             catch (StaleElementReferenceException e)
                             {
@@ -1523,7 +1523,7 @@ namespace FaceBERN_
                                 stale = false;
                                 try
                                 {
-                                    msg = ele.Text;
+                                    msg = webDriver.GetText(ele);
                                 }
                                 catch (StaleElementReferenceException e)
                                 {
@@ -1537,9 +1537,9 @@ namespace FaceBERN_
                             {
                                 try
                                 {
-                                    if (ele != null && ele.Text == null && ele.GetAttribute("innerHTML") != null)
+                                    if (ele != null && webDriver.GetText(ele) == null && webDriver.GetAttribute(ele, "innerHTML") != null)
                                     {
-                                        msg = ele.GetAttribute("innerHTML");
+                                        msg = webDriver.GetAttribute(ele, "innerHTML");
                                     }
                                 }
                                 catch (StaleElementReferenceException e)

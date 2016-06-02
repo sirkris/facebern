@@ -792,6 +792,38 @@ namespace FaceBERN_
             }
         }
 
+        public string GetAttribute(IWebElement element, string attr)
+        {
+            try
+            {
+                return element.GetAttribute(attr);
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element, attr));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(element, attr));
+            }
+        }
+
+        public string GetText(IWebElement element)
+        {
+            try
+            {
+                return element.Text;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(element));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(element));
+            }
+        }
+
         [Test]
         public void ScrollToBottom(ref IWebDriver driver, string logFirstMsg = null, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000)
         {
