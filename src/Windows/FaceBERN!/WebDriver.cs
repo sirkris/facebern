@@ -825,8 +825,10 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void ScrollToBottom(ref IWebDriver driver, string logFirstMsg = null, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000)
+        public void ScrollToBottom(string logFirstMsg = null, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000)
         {
+            IWebDriver driver = GetDriver();
+
             driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
 
             IJavaScriptExecutor jse = (IJavaScriptExecutor)driver;
@@ -865,6 +867,14 @@ namespace FaceBERN_
                         ii--;
                     } while (done == true && ii > 0);
                     i--;
+                    // Uncomment below for DEBUG.  --Kris
+                    /*
+                    if (i == (scrollLimit - 5))
+                    {
+                        i = i;  // In case you need a convenient breakpoint.  --Kris
+                        break;
+                    }
+                    */
                 } while (done == false && i > 0);
             }
             else
@@ -882,7 +892,7 @@ namespace FaceBERN_
 
         public void ScrollToBottom(ref IWebDriver driver, int scrollLimit)
         {
-            ScrollToBottom(ref driver, null, null, null, scrollLimit);
+            ScrollToBottom(null, null, null, scrollLimit);
         }
 
         [Test]
