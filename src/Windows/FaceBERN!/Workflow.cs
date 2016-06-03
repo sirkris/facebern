@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -617,6 +618,7 @@ namespace FaceBERN_
                         SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
 
                         /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
+                        //GetFacebookBernieSupporters("124955570892789");  // DEBUG
                         List<Person> friends = GetFacebookFriendsOfFriends(state.Key);
 
                         // TODO - Add direct friends who like Bernie Sanders and live in this state.  --Kris
@@ -1699,6 +1701,157 @@ namespace FaceBERN_
             }
         }
 
+        /* Graph search disappeared but I'm not about to be deterred.  Game on, motherfuckers.  --Kris */
+        private Dictionary<string, List<Person>> GetFacebookBernieSupporters(string bernieFacebookId = null)
+        {
+            Dictionary<string, List<Person>> res = new Dictionary<string, List<Person>>();  // People without known states are listed under "GA" (Earth); will use "US" if we know they're in this country.  --Kris
+
+            if (bernieFacebookId == null)
+            {
+                // TODO - Cycle through both Bernie Facebook IDs simultaneously; i.e. open each set in a separate window via a separate thread, then join them together when done.  --Kris
+                Log("Multi-ID search not yet implemented.  Search cancelled.");
+
+                return res;
+            }
+
+            Log("Searching for Bernie Sanders supporters and gathering results (this will take a long time)....");
+
+            SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
+
+            string URL = "https://www.facebook.com/search";
+
+            URL += "/" + bernieFacebookId + "/likers";
+
+            /* Navigate to the search page.  --Kris */
+            webDriver.GoToUrl(URL);
+
+            /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
+            webDriver.ScrollToBottom("Preparing to load results....", "Loading results (set $i/$L max sets)....", "Finished loading results!", 100000);  // Each "set" is a scroll.  --Kris
+
+            /* Scrape the results from the page source.  Seems to average just under a second for processing each result set.  --Kris */
+            string[] resRaw = new string[999999];
+            resRaw = webDriver.GetPageSource(browser).Split(new string[] { "<div class=\"_glj\">" }, StringSplitOptions.RemoveEmptyEntries);
+
+            Log("Parsing search results....  This will probably take awhile....");
+
+            SetProgressBar(Globals.PROGRESSBAR_CONTINUOUS);
+
+            int increment = 10;
+            if (resRaw.Length >= 500)
+            {
+                increment = 100;
+            }
+
+            int i = 0;
+            int r = 0;
+            foreach (string entry in resRaw)
+            {
+                if (i == 0)
+                {
+                    i++;
+                    continue;
+                }
+
+                SetProgressBar((int) Math.Round((decimal) (((double) i / resRaw.Length) * 100), 0, MidpointRounding.AwayFromZero));
+
+                if (i % increment == 0)
+                {
+                    Log("Processed " + i.ToString() + " Facebook search results....");
+                    System.Threading.Thread.Sleep(100);
+                }
+
+                i++;
+                
+                // TODO - Find a more comprehensive HTML parsing library (NOT RegEx!) when I have more time.  This sloppy solution will work, for now.  --Kris
+                string livesInLine = null;
+                string nameLine = null;
+                foreach (string subEntry in entry.Split(new string[] { "</a></div></div>" }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (subEntry.IndexOf("Lives in") != -1)
+                    {
+                        livesInLine = subEntry;
+                    }
+                    else if (subEntry.IndexOf("https://www.facebook.com/") != -1 
+                        && nameLine == null)
+                    {
+                        nameLine = subEntry;
+                    }
+                }
+
+                if (nameLine == null)
+                {
+                    continue;
+                }
+
+                /* Parse the Facebook User ID.  --Kris */
+                string link = nameLine.Substring((nameLine.IndexOf("https://www.facebook.com/") + "https://www.facebook.com/".Length));
+
+                string userId = link.Substring(0, link.IndexOf(@">"));
+                if (userId == null || userId.ToLower().Equals("profile.php"))
+                {
+                    continue;
+                }
+                
+                string name = nameLine.Substring((nameLine.IndexOf(userId) + userId.Length));
+
+                if (userId.IndexOf(@"?") != -1)
+                {
+                    userId = userId.Substring(0, userId.IndexOf(@"?"));
+                }
+
+                /* Parse the person's name.  --Kris */
+                name = Regex.Replace(name.Substring(name.IndexOf("<div")), @"<[^>]+>", "").Trim();  // Fuck it, it's gotta be RegEx for this part, at least.  --Kris
+
+                /* Parse the person's state, if specified.  --Kris */
+                string livesIn = null;
+                if (livesInLine != null)
+                {
+                    livesIn = Regex.Replace(livesInLine, @"<[^>]+>", "").Trim();
+
+                    livesIn = livesIn.Substring(livesIn.LastIndexOf(" ") + 1).Trim();
+                }
+
+                /* Attempt to match the state with one of our State entries.  --Kris */
+                string stateAbbr = "GA";  // Code I made-up for Earth since ISO doesn't seem to have an one (EA is taken already).  Not all search results are U.S.-based.  --Kris
+                if (livesIn != null)
+                {
+                    foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
+                    {
+                        if (state.Value.name.ToLower().Equals(livesIn.ToLower()))
+                        {
+                            stateAbbr = state.Key;
+                            break;
+                        }
+                    }
+                }
+
+                /* Append the result set.  --Kris */
+                Person person = new Person();
+                person.setBernieSupporter(true);
+                person.setFacebookID(userId);
+                person.setName(name);
+                person.setStateAbbr(stateAbbr);
+
+                if (!(res.ContainsKey(stateAbbr)))
+                {
+                    res.Add(stateAbbr, new List<Person>());
+                }
+                res[stateAbbr].Add(person);
+
+                r++;
+            }
+
+            Log("Search processing complete!  Retrieved " + r.ToString() + " Facebook users who like Bernie Sanders.");
+
+            SetProgressBar(100);
+
+            System.Threading.Thread.Sleep(5000);
+
+            SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
+
+            return res;
+        }
+
         private List<Person> GetFacebookFriendsOfFriends(string stateAbbr = null, bool bernieSupportersOnly = true, int pass = 1)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
@@ -1737,14 +1890,19 @@ namespace FaceBERN_
 
             URL += "/present/me/friends/friends/intersect";
 
+            // Temporary override URL; the intersect one has stopped working.  --Kris
+            URL = @"https://www.facebook.com/search/people/?q=friends%20of%20my%20friends%20who%20live%20in%20";
+            URL += Globals.StateConfigs[stateAbbr].name.ToLower();
+            URL += @"%20and%20like%20bernie%20sanders";
+            // End override.  --Kris
+
             Log(logBaseMsg + logMsg + "....");
 
             /* Navigate to the search page.  --Kris */
             webDriver.GoToUrl(URL);
 
             /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
-            IWebDriver iWebDriver = webDriver.GetDriver();
-            webDriver.ScrollToBottom(ref iWebDriver, "Preparing to load results....", "Loading results (set $i/$L max sets)....", "Finished loading results!");  // Each "set" is a scroll.  --Kris
+            webDriver.ScrollToBottom("Preparing to load results....", "Loading results (set $i/$L max sets)....", "Finished loading results!");  // Each "set" is a scroll.  --Kris
 
             /* Scrape the results from the page source.  --Kris */
             string[] resRaw = new string[32767];
