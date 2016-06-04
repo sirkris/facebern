@@ -532,6 +532,8 @@ namespace FaceBERN_
                     webDriver = null;
                 }
 
+                System.Threading.Thread.Sleep(3000);
+
                 if (Globals.executionState != Globals.STATE_BROKEN)
                 {
                     System.Threading.Thread.Sleep(5000);
