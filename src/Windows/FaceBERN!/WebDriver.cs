@@ -84,6 +84,20 @@ namespace FaceBERN_
             }
         }
 
+        private void SetExecState(int state)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { SetExecState(state); }));
+            }
+            else
+            {
+                Main.SetExecState(state, logName, WebDriverLog);
+            }
+        }
+
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
@@ -1720,21 +1734,30 @@ namespace FaceBERN_
         [TestFixtureTearDown]
         public void FixtureTearDown()
         {
-            switch (browser)
+            try
             {
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    if (_driverFirefox != null)
-                    {
-                        ModWindow(true);
-                        System.Threading.Thread.Sleep(500);
-                        _driverFirefox.Dispose();
-                    }
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    page.CleanUp();
-                    webClient.Close();
-                    break;
+                switch (browser)
+                {
+                    case Globals.FIREFOX_WINDOWED:
+                    case Globals.FIREFOX_HIDDEN:
+                        if (_driverFirefox != null)
+                        {
+                            ModWindow(true);
+                            System.Threading.Thread.Sleep(500);
+                            _driverFirefox.Dispose();
+                        }
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        page.CleanUp();
+                        webClient.Close();
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Log("FATAL ERROR:  Unable to close browser!  Please restart FaceBERN! and try again.");
+
+                SetExecState(Globals.STATE_BROKEN);
             }
         }
     }
