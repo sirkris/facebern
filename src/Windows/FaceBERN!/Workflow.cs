@@ -532,13 +532,20 @@ namespace FaceBERN_
                     webDriver = null;
                 }
 
-                System.Threading.Thread.Sleep(5000);
+                if (Globals.executionState != Globals.STATE_BROKEN)
+                {
+                    System.Threading.Thread.Sleep(5000);
 
-                Log("Spawning new workflow thread....");
+                    Log("Spawning new workflow thread....");
 
-                SetExecState(Globals.STATE_RESTARTING);
+                    SetExecState(Globals.STATE_RESTARTING);
 
-                Globals.thread = ExecuteThread();
+                    Globals.thread = ExecuteThread();
+                }
+                else
+                {
+                    Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                }
             }
         }
 
