@@ -128,6 +128,9 @@ namespace Installer
             SetStatus("Copying executables....", 80);
             CopyExecutables(Main.repoBaseDir);
 
+            SetStatus("Copying dependencies....", 85);
+            CopyDependencies(Main.repoBaseDir);
+
             if (!keepSrc)
             {
                 SetStatus("Cleaning-up the corrupt campagin finance system....", 90);
@@ -253,24 +256,7 @@ namespace Installer
                 CopyExecutables(installPath);
 
                 /* Copy all dependencies.  --Kris */
-                string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
-                if (Directory.Exists(Path.Combine(installPath, resourceDir)))
-                {
-                    string[] files = Directory.GetFiles(Path.Combine(installPath, resourceDir));
-                    
-                    foreach (string s in files)
-                    {
-                        if (Path.GetExtension(s).ToLower().Equals(".dll"))
-                        {
-                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
-                        }
-                    }
-                }
-                else
-                {
-                    SetStatus("ERROR!  Resources dir not found!");
-                    return;
-                }
+                CopyDependencies(installPath);
 
                 /* Set the directory and file permissions.  --Kris */
                 //SetPermissions(installPath);  // The built-in ACL libraries are terrible and wholly unreliable.  Resorting to Plan B.  --Kris
@@ -323,6 +309,28 @@ namespace Installer
                 }
 
                 Exit();
+            }
+        }
+
+        private void CopyDependencies(string installPath)
+        {
+            string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
+            if (Directory.Exists(Path.Combine(installPath, resourceDir)))
+            {
+                string[] files = Directory.GetFiles(Path.Combine(installPath, resourceDir));
+
+                foreach (string s in files)
+                {
+                    if (Path.GetExtension(s).ToLower().Equals(".dll"))
+                    {
+                        System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
+                    }
+                }
+            }
+            else
+            {
+                SetStatus("ERROR!  Resources dir not found!");
+                return;
             }
         }
 
