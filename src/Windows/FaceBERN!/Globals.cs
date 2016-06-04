@@ -67,6 +67,7 @@ namespace FaceBERN_
         public const int STATE_SLEEPING = 3;  // Sitting idle because the end-user restricted execution to another timeframe (then switches to waiting state).
         public const int STATE_EXECUTING = 4;  // Doing the actual work.
         public const int STATE_STOPPING = 5;  // Stop button has been clicked.
+        public const int STATE_RESTARTING = 6;  // Workflow thread is being re-created, most likely due to an error.
 
         /* Browser constants.  --Kris */
         public const int FIREFOX_HEADLESS = -1;  // Open a headless browser instance using NHtmlUnit.  Not working with Facebook.

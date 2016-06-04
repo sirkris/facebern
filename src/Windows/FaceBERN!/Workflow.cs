@@ -504,6 +504,28 @@ namespace FaceBERN_
                     webDriver = null;
                 }
             }
+            catch (Exception e)
+            {
+                Log("ERROR:  Unhandled Exception : " + e.ToString());
+
+                SetExecState(Globals.STATE_ERROR);
+
+                Log("Aborting broken workflow....");
+
+                if (webDriver != null)
+                {
+                    webDriver.FixtureTearDown();
+                    webDriver = null;
+                }
+
+                System.Threading.Thread.Sleep(5000);
+
+                Log("Spawning new workflow thread....");
+
+                SetExecState(Globals.STATE_RESTARTING);
+
+                Globals.thread = ExecuteThread();
+            }
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
@@ -545,7 +567,7 @@ namespace FaceBERN_
 
             /* Initialize the browser.  --Kris */
             webDriver.FixtureSetup();
-
+            
             webDriver = FacebookLogin();
             if (webDriver.error > 0)
             {
@@ -1891,9 +1913,11 @@ namespace FaceBERN_
             URL += "/present/me/friends/friends/intersect";
 
             // Temporary override URL; the intersect one has stopped working.  --Kris
+            /*
             URL = @"https://www.facebook.com/search/people/?q=friends%20of%20my%20friends%20who%20live%20in%20";
             URL += Globals.StateConfigs[stateAbbr].name.ToLower();
             URL += @"%20and%20like%20bernie%20sanders";
+             * */
             // End override.  --Kris
 
             Log(logBaseMsg + logMsg + "....");
