@@ -477,6 +477,9 @@ namespace FaceBERN_
                 case Globals.STATE_STOPPING:
                     logState = "STOPPING";
                     break;
+                case Globals.STATE_RESTARTING:
+                    logState = "RESTARTING";
+                    break;
             }
 
             if (state != Globals.executionState)
@@ -489,7 +492,7 @@ namespace FaceBERN_
         private void buttonStart_Click(object sender, EventArgs e)
         {
             if (buttonStart.Enabled == false 
-                || Globals.executionState < Globals.STATE_READY 
+                || Globals.executionState == Globals.STATE_BROKEN 
                 || Globals.executionState == Globals.STATE_STOPPING)
             {
                 buttonStart.Click -= buttonStart_Click;
@@ -532,6 +535,12 @@ namespace FaceBERN_
                 workflow.ExecuteShutdownThread(Globals.thread);
                 
                 LogW("Execution terminated by user.");
+
+                // Use STATE_BROKEN if you want the error state to persist and prevent re-execution.  --Kris
+                if (Globals.executionState == Globals.STATE_ERROR)
+                {
+                    Ready();
+                }
             }
         }
 
