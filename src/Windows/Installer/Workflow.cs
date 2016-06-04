@@ -323,7 +323,18 @@ namespace Installer
                 {
                     if (Path.GetExtension(s).ToLower().Equals(".dll"))
                     {
-                        System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
+                        try
+                        {
+                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
+                        }
+                        catch (Exception e)
+                        {
+                            DialogResult dr = MessageBox.Show("ERROR copying dependency '" + Path.GetFileName(s) + "' : " + e.ToString(), "ERROR!", MessageBoxButtons.OK);
+                            if (dr == DialogResult.Yes)
+                            {
+                                continue;
+                            }
+                        }
                     }
                 }
             }
