@@ -40,25 +40,26 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabStates = new System.Windows.Forms.TabPage();
+            this.FTBEventIdTextBox = new System.Windows.Forms.TextBox();
+            this.facebookIDTextBox = new System.Windows.Forms.TextBox();
+            this.primaryAccessTextBox = new System.Windows.Forms.TextBox();
+            this.primaryTypeTextBox = new System.Windows.Forms.TextBox();
+            this.primaryDateTextBox = new System.Windows.Forms.TextBox();
+            this.nameTextBox = new System.Windows.Forms.TextBox();
+            this.abbreviationTextBox = new System.Windows.Forms.TextBox();
+            this.labelFTBEventID = new System.Windows.Forms.Label();
+            this.labelFacebookID = new System.Windows.Forms.Label();
+            this.labelPrimaryAccess = new System.Windows.Forms.Label();
+            this.labelPrimaryType = new System.Windows.Forms.Label();
+            this.labelPrimaryDate = new System.Windows.Forms.Label();
+            this.labelName = new System.Windows.Forms.Label();
+            this.labelAbbreviation = new System.Windows.Forms.Label();
             this.statesComboBox = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
             this.buttonApply = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
-            this.labelAbbreviation = new System.Windows.Forms.Label();
-            this.labelName = new System.Windows.Forms.Label();
-            this.labelPrimaryDate = new System.Windows.Forms.Label();
-            this.labelPrimaryType = new System.Windows.Forms.Label();
-            this.labelPrimaryAccess = new System.Windows.Forms.Label();
-            this.labelFacebookID = new System.Windows.Forms.Label();
-            this.labelFTBEventID = new System.Windows.Forms.Label();
-            this.abbreviationTextBox = new System.Windows.Forms.TextBox();
-            this.nameTextBox = new System.Windows.Forms.TextBox();
-            this.primaryDateTextBox = new System.Windows.Forms.TextBox();
-            this.primaryTypeTextBox = new System.Windows.Forms.TextBox();
-            this.primaryAccessTextBox = new System.Windows.Forms.TextBox();
-            this.facebookIDTextBox = new System.Windows.Forms.TextBox();
-            this.FTBEventIdTextBox = new System.Windows.Forms.TextBox();
+            this.button1 = new System.Windows.Forms.Button();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
@@ -76,6 +77,7 @@
             // 
             // tabGeneral
             // 
+            this.tabGeneral.Controls.Add(this.button1);
             this.tabGeneral.Controls.Add(this.autoUpdateCheckbox);
             this.tabGeneral.Controls.Add(this.checkRememberPasswordByDefaultCheckbox);
             this.tabGeneral.Controls.Add(this.useCustomEventsCheckbox);
@@ -208,6 +210,147 @@
             this.tabStates.UseVisualStyleBackColor = true;
             this.tabStates.Enter += new System.EventHandler(this.tabStates_Load);
             // 
+            // FTBEventIdTextBox
+            // 
+            this.FTBEventIdTextBox.Location = new System.Drawing.Point(306, 225);
+            this.FTBEventIdTextBox.Name = "FTBEventIdTextBox";
+            this.FTBEventIdTextBox.Size = new System.Drawing.Size(284, 20);
+            this.FTBEventIdTextBox.TabIndex = 16;
+            this.FTBEventIdTextBox.TextChanged += new System.EventHandler(this.StateFields_TextChanged);
+            // 
+            // facebookIDTextBox
+            // 
+            this.facebookIDTextBox.Location = new System.Drawing.Point(306, 200);
+            this.facebookIDTextBox.Name = "facebookIDTextBox";
+            this.facebookIDTextBox.Size = new System.Drawing.Size(284, 20);
+            this.facebookIDTextBox.TabIndex = 15;
+            this.facebookIDTextBox.TextChanged += new System.EventHandler(this.StateFields_TextChanged);
+            // 
+            // primaryAccessTextBox
+            // 
+            this.primaryAccessTextBox.Cursor = System.Windows.Forms.Cursors.No;
+            this.primaryAccessTextBox.Enabled = false;
+            this.primaryAccessTextBox.Location = new System.Drawing.Point(306, 175);
+            this.primaryAccessTextBox.Name = "primaryAccessTextBox";
+            this.primaryAccessTextBox.ReadOnly = true;
+            this.primaryAccessTextBox.Size = new System.Drawing.Size(284, 20);
+            this.primaryAccessTextBox.TabIndex = 14;
+            this.primaryAccessTextBox.TabStop = false;
+            // 
+            // primaryTypeTextBox
+            // 
+            this.primaryTypeTextBox.Cursor = System.Windows.Forms.Cursors.No;
+            this.primaryTypeTextBox.Enabled = false;
+            this.primaryTypeTextBox.Location = new System.Drawing.Point(306, 150);
+            this.primaryTypeTextBox.Name = "primaryTypeTextBox";
+            this.primaryTypeTextBox.ReadOnly = true;
+            this.primaryTypeTextBox.Size = new System.Drawing.Size(284, 20);
+            this.primaryTypeTextBox.TabIndex = 13;
+            this.primaryTypeTextBox.TabStop = false;
+            // 
+            // primaryDateTextBox
+            // 
+            this.primaryDateTextBox.Cursor = System.Windows.Forms.Cursors.No;
+            this.primaryDateTextBox.Enabled = false;
+            this.primaryDateTextBox.Location = new System.Drawing.Point(306, 125);
+            this.primaryDateTextBox.Name = "primaryDateTextBox";
+            this.primaryDateTextBox.ReadOnly = true;
+            this.primaryDateTextBox.Size = new System.Drawing.Size(284, 20);
+            this.primaryDateTextBox.TabIndex = 12;
+            this.primaryDateTextBox.TabStop = false;
+            // 
+            // nameTextBox
+            // 
+            this.nameTextBox.Cursor = System.Windows.Forms.Cursors.No;
+            this.nameTextBox.Enabled = false;
+            this.nameTextBox.Location = new System.Drawing.Point(306, 100);
+            this.nameTextBox.Name = "nameTextBox";
+            this.nameTextBox.ReadOnly = true;
+            this.nameTextBox.Size = new System.Drawing.Size(284, 20);
+            this.nameTextBox.TabIndex = 11;
+            this.nameTextBox.TabStop = false;
+            // 
+            // abbreviationTextBox
+            // 
+            this.abbreviationTextBox.Cursor = System.Windows.Forms.Cursors.No;
+            this.abbreviationTextBox.Enabled = false;
+            this.abbreviationTextBox.Location = new System.Drawing.Point(306, 75);
+            this.abbreviationTextBox.Name = "abbreviationTextBox";
+            this.abbreviationTextBox.ReadOnly = true;
+            this.abbreviationTextBox.Size = new System.Drawing.Size(62, 20);
+            this.abbreviationTextBox.TabIndex = 10;
+            this.abbreviationTextBox.TabStop = false;
+            // 
+            // labelFTBEventID
+            // 
+            this.labelFTBEventID.AutoSize = true;
+            this.labelFTBEventID.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelFTBEventID.Location = new System.Drawing.Point(8, 226);
+            this.labelFTBEventID.Name = "labelFTBEventID";
+            this.labelFTBEventID.Size = new System.Drawing.Size(292, 16);
+            this.labelFTBEventID.TabIndex = 9;
+            this.labelFTBEventID.Text = "Facebook Event ID for feelthebern.events:";
+            // 
+            // labelFacebookID
+            // 
+            this.labelFacebookID.AutoSize = true;
+            this.labelFacebookID.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelFacebookID.Location = new System.Drawing.Point(204, 201);
+            this.labelFacebookID.Name = "labelFacebookID";
+            this.labelFacebookID.Size = new System.Drawing.Size(96, 16);
+            this.labelFacebookID.TabIndex = 8;
+            this.labelFacebookID.Text = "Facebook ID:";
+            // 
+            // labelPrimaryAccess
+            // 
+            this.labelPrimaryAccess.AutoSize = true;
+            this.labelPrimaryAccess.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelPrimaryAccess.Location = new System.Drawing.Point(186, 176);
+            this.labelPrimaryAccess.Name = "labelPrimaryAccess";
+            this.labelPrimaryAccess.Size = new System.Drawing.Size(114, 16);
+            this.labelPrimaryAccess.TabIndex = 7;
+            this.labelPrimaryAccess.Text = "Primary Access:";
+            // 
+            // labelPrimaryType
+            // 
+            this.labelPrimaryType.AutoSize = true;
+            this.labelPrimaryType.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelPrimaryType.Location = new System.Drawing.Point(200, 151);
+            this.labelPrimaryType.Name = "labelPrimaryType";
+            this.labelPrimaryType.Size = new System.Drawing.Size(100, 16);
+            this.labelPrimaryType.TabIndex = 6;
+            this.labelPrimaryType.Text = "Primary Type:";
+            // 
+            // labelPrimaryDate
+            // 
+            this.labelPrimaryDate.AutoSize = true;
+            this.labelPrimaryDate.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelPrimaryDate.Location = new System.Drawing.Point(202, 126);
+            this.labelPrimaryDate.Name = "labelPrimaryDate";
+            this.labelPrimaryDate.Size = new System.Drawing.Size(98, 16);
+            this.labelPrimaryDate.TabIndex = 5;
+            this.labelPrimaryDate.Text = "Primary Date:";
+            // 
+            // labelName
+            // 
+            this.labelName.AutoSize = true;
+            this.labelName.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelName.Location = new System.Drawing.Point(250, 101);
+            this.labelName.Name = "labelName";
+            this.labelName.Size = new System.Drawing.Size(50, 16);
+            this.labelName.TabIndex = 4;
+            this.labelName.Text = "Name:";
+            // 
+            // labelAbbreviation
+            // 
+            this.labelAbbreviation.AutoSize = true;
+            this.labelAbbreviation.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelAbbreviation.Location = new System.Drawing.Point(204, 76);
+            this.labelAbbreviation.Name = "labelAbbreviation";
+            this.labelAbbreviation.Size = new System.Drawing.Size(96, 16);
+            this.labelAbbreviation.TabIndex = 3;
+            this.labelAbbreviation.Text = "Abbreviation:";
+            // 
             // statesComboBox
             // 
             this.statesComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -260,146 +403,15 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // labelAbbreviation
+            // button1
             // 
-            this.labelAbbreviation.AutoSize = true;
-            this.labelAbbreviation.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelAbbreviation.Location = new System.Drawing.Point(204, 76);
-            this.labelAbbreviation.Name = "labelAbbreviation";
-            this.labelAbbreviation.Size = new System.Drawing.Size(96, 16);
-            this.labelAbbreviation.TabIndex = 3;
-            this.labelAbbreviation.Text = "Abbreviation:";
-            // 
-            // labelName
-            // 
-            this.labelName.AutoSize = true;
-            this.labelName.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelName.Location = new System.Drawing.Point(250, 101);
-            this.labelName.Name = "labelName";
-            this.labelName.Size = new System.Drawing.Size(50, 16);
-            this.labelName.TabIndex = 4;
-            this.labelName.Text = "Name:";
-            // 
-            // labelPrimaryDate
-            // 
-            this.labelPrimaryDate.AutoSize = true;
-            this.labelPrimaryDate.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPrimaryDate.Location = new System.Drawing.Point(202, 126);
-            this.labelPrimaryDate.Name = "labelPrimaryDate";
-            this.labelPrimaryDate.Size = new System.Drawing.Size(98, 16);
-            this.labelPrimaryDate.TabIndex = 5;
-            this.labelPrimaryDate.Text = "Primary Date:";
-            // 
-            // labelPrimaryType
-            // 
-            this.labelPrimaryType.AutoSize = true;
-            this.labelPrimaryType.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPrimaryType.Location = new System.Drawing.Point(200, 151);
-            this.labelPrimaryType.Name = "labelPrimaryType";
-            this.labelPrimaryType.Size = new System.Drawing.Size(100, 16);
-            this.labelPrimaryType.TabIndex = 6;
-            this.labelPrimaryType.Text = "Primary Type:";
-            // 
-            // labelPrimaryAccess
-            // 
-            this.labelPrimaryAccess.AutoSize = true;
-            this.labelPrimaryAccess.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPrimaryAccess.Location = new System.Drawing.Point(186, 176);
-            this.labelPrimaryAccess.Name = "labelPrimaryAccess";
-            this.labelPrimaryAccess.Size = new System.Drawing.Size(114, 16);
-            this.labelPrimaryAccess.TabIndex = 7;
-            this.labelPrimaryAccess.Text = "Primary Access:";
-            // 
-            // labelFacebookID
-            // 
-            this.labelFacebookID.AutoSize = true;
-            this.labelFacebookID.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelFacebookID.Location = new System.Drawing.Point(204, 201);
-            this.labelFacebookID.Name = "labelFacebookID";
-            this.labelFacebookID.Size = new System.Drawing.Size(96, 16);
-            this.labelFacebookID.TabIndex = 8;
-            this.labelFacebookID.Text = "Facebook ID:";
-            // 
-            // labelFTBEventID
-            // 
-            this.labelFTBEventID.AutoSize = true;
-            this.labelFTBEventID.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelFTBEventID.Location = new System.Drawing.Point(8, 226);
-            this.labelFTBEventID.Name = "labelFTBEventID";
-            this.labelFTBEventID.Size = new System.Drawing.Size(292, 16);
-            this.labelFTBEventID.TabIndex = 9;
-            this.labelFTBEventID.Text = "Facebook Event ID for feelthebern.events:";
-            // 
-            // abbreviationTextBox
-            // 
-            this.abbreviationTextBox.Cursor = System.Windows.Forms.Cursors.No;
-            this.abbreviationTextBox.Enabled = false;
-            this.abbreviationTextBox.Location = new System.Drawing.Point(306, 75);
-            this.abbreviationTextBox.Name = "abbreviationTextBox";
-            this.abbreviationTextBox.ReadOnly = true;
-            this.abbreviationTextBox.Size = new System.Drawing.Size(62, 20);
-            this.abbreviationTextBox.TabIndex = 10;
-            this.abbreviationTextBox.TabStop = false;
-            // 
-            // nameTextBox
-            // 
-            this.nameTextBox.Cursor = System.Windows.Forms.Cursors.No;
-            this.nameTextBox.Enabled = false;
-            this.nameTextBox.Location = new System.Drawing.Point(306, 100);
-            this.nameTextBox.Name = "nameTextBox";
-            this.nameTextBox.ReadOnly = true;
-            this.nameTextBox.Size = new System.Drawing.Size(284, 20);
-            this.nameTextBox.TabIndex = 11;
-            this.nameTextBox.TabStop = false;
-            // 
-            // primaryDateTextBox
-            // 
-            this.primaryDateTextBox.Cursor = System.Windows.Forms.Cursors.No;
-            this.primaryDateTextBox.Enabled = false;
-            this.primaryDateTextBox.Location = new System.Drawing.Point(306, 125);
-            this.primaryDateTextBox.Name = "primaryDateTextBox";
-            this.primaryDateTextBox.ReadOnly = true;
-            this.primaryDateTextBox.Size = new System.Drawing.Size(284, 20);
-            this.primaryDateTextBox.TabIndex = 12;
-            this.primaryDateTextBox.TabStop = false;
-            // 
-            // primaryTypeTextBox
-            // 
-            this.primaryTypeTextBox.Cursor = System.Windows.Forms.Cursors.No;
-            this.primaryTypeTextBox.Enabled = false;
-            this.primaryTypeTextBox.Location = new System.Drawing.Point(306, 150);
-            this.primaryTypeTextBox.Name = "primaryTypeTextBox";
-            this.primaryTypeTextBox.ReadOnly = true;
-            this.primaryTypeTextBox.Size = new System.Drawing.Size(284, 20);
-            this.primaryTypeTextBox.TabIndex = 13;
-            this.primaryTypeTextBox.TabStop = false;
-            // 
-            // primaryAccessTextBox
-            // 
-            this.primaryAccessTextBox.Cursor = System.Windows.Forms.Cursors.No;
-            this.primaryAccessTextBox.Enabled = false;
-            this.primaryAccessTextBox.Location = new System.Drawing.Point(306, 175);
-            this.primaryAccessTextBox.Name = "primaryAccessTextBox";
-            this.primaryAccessTextBox.ReadOnly = true;
-            this.primaryAccessTextBox.Size = new System.Drawing.Size(284, 20);
-            this.primaryAccessTextBox.TabIndex = 14;
-            this.primaryAccessTextBox.TabStop = false;
-            // 
-            // facebookIDTextBox
-            // 
-            this.facebookIDTextBox.Location = new System.Drawing.Point(306, 200);
-            this.facebookIDTextBox.Name = "facebookIDTextBox";
-            this.facebookIDTextBox.Size = new System.Drawing.Size(284, 20);
-            this.facebookIDTextBox.TabIndex = 15;
-            this.facebookIDTextBox.TextChanged += new System.EventHandler(this.StateFields_TextChanged);
-            // 
-            // FTBEventIdTextBox
-            // 
-            this.FTBEventIdTextBox.Location = new System.Drawing.Point(306, 225);
-            this.FTBEventIdTextBox.Name = "FTBEventIdTextBox";
-            this.FTBEventIdTextBox.Size = new System.Drawing.Size(284, 20);
-            this.FTBEventIdTextBox.TabIndex = 16;
-            this.FTBEventIdTextBox.TextChanged += new System.EventHandler(this.StateFields_TextChanged);
+            this.button1.Location = new System.Drawing.Point(249, 126);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(157, 23);
+            this.button1.TabIndex = 8;
+            this.button1.Text = "Clear Stored Credentials";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // FormSettings
             // 
@@ -459,5 +471,6 @@
         private System.Windows.Forms.TextBox primaryDateTextBox;
         private System.Windows.Forms.TextBox nameTextBox;
         private System.Windows.Forms.TextBox abbreviationTextBox;
+        private System.Windows.Forms.Button button1;
     }
 }

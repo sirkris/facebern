@@ -235,5 +235,18 @@ namespace FaceBERN_
         {
             buttonApply.Enabled = true;
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to forget your Facebook username/password?", "Confirm Deletion", MessageBoxButtons.YesNo);
+            if (dr == DialogResult.Yes)
+            {
+                Credentials c = new Credentials();
+                c.Destroy(true);
+                c = null;
+
+                MessageBox.Show("Stored credentials deleted successfully!", "Success!", MessageBoxButtons.OK);
+            }
+        }
     }
 }
