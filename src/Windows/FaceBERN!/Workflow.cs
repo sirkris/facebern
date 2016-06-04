@@ -77,6 +77,8 @@ namespace FaceBERN_
         /* Responsible for any background communications, such as interfacing with the Birdie API to periodically update the invited totals.  --Kris */
         public void ExecuteInterCom()
         {
+            DateTime start = DateTime.Now;
+
             /* Initialize the Birdie API client. --Kris */
             restClient = new RestClient("http://birdie.freeddns.org");
 
@@ -467,6 +469,9 @@ namespace FaceBERN_
 
                 this.browser = browser;
 
+                DateTime start = DateTime.Now;
+                DateTime lastUpdate = start;
+
                 Log("Thread execution initialized.");
 
                 SetExecState(Globals.STATE_EXECUTING);
@@ -482,6 +487,15 @@ namespace FaceBERN_
                 {
                     /* Get-out-the-vote!  --Kris */
                     GOTV();
+
+                    /* Check for updates every 24 hours if auto-update is enabled.  --Kris */
+                    if (Globals.Config["AutoUpdate"].Equals("1")
+                        && DateTime.Now.Subtract(lastUpdate).TotalDays >= 1)
+                    {
+                        lastUpdate = DateTime.Now;
+                        Main.Invoke(new MethodInvoker(delegate() { Main.CheckForUpdates(true); }));
+                        System.Threading.Thread.Sleep(5000);
+                    }
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
                     Log("Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes....");
