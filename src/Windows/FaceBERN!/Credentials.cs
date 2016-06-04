@@ -106,7 +106,7 @@ namespace FaceBERN_
             return true;
         }
 
-        internal void Destroy()
+        internal void Destroy(bool clearRegistry = false)
         {
             if (facebookUsername != null)
             {
@@ -115,6 +115,13 @@ namespace FaceBERN_
             if (facebookPassword != null)
             {
                 facebookPassword.Dispose();
+            }
+
+            if (clearRegistry)
+            {
+                facebookKey.DeleteValue("entropy", false);
+                facebookKey.DeleteValue("cU", false);
+                facebookKey.DeleteValue("cP", false);
             }
 
             facebookKey.Close();
