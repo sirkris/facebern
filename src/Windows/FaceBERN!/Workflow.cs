@@ -1452,8 +1452,21 @@ namespace FaceBERN_
 
         private List<IWebElement> LoadFriendInEventSearchBox(Person friend, IWebElement searchBox, int delayMultiplier = 1)
         {
-            webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
-            webDriver.TypeText(searchBox, friend.getName());
+            if (searchBox == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
+                webDriver.TypeText(searchBox, friend.getName());
+            }
+            catch (Exception e)
+            {
+                // Whatever the problem is, just refresh and try again.  StaleElementReferenceExceptions are handled in the WebDriver class.  --Kris
+                return null;
+            }
 
             System.Threading.Thread.Sleep(250 * delayMultiplier);
 
@@ -1467,7 +1480,7 @@ namespace FaceBERN_
                 res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
 
                 i--;
-            } while (res.Count == 0 && i > 0);
+            } while ((res == null || res.Count == 0) && i > 0);
 
             return res;
         }
@@ -1521,15 +1534,28 @@ namespace FaceBERN_
                         continue;
                     }
 
-                    List<IWebElement> res = LoadFriendInEventSearchBox(friend, searchBox);
+                    int r = 3;
+                    List<IWebElement> res;
+                    do
+                    {
+                        res = LoadFriendInEventSearchBox(friend, searchBox);
+                        if (res == null)
+                        {
+                            webDriver.Refresh();
+                            System.Threading.Thread.Sleep(3000);
+                            searchBox = webDriver.GetElementByTagNameAndAttribute("input", "aria-label", "Add friends to this event");
+                        }
 
-                    if (res.Count == 0)
+                        r--;
+                    } while (res == null && r > 0);
+
+                    if (res == null || res.Count == 0)
                     {
                         /* Retry once; a bit more slowly, this time.  Sometimes it just doesn't load correctly or quickly enough in the browser.  --Kris */
                         res = LoadFriendInEventSearchBox(friend, searchBox, 2);
                     }
 
-                    if (res.Count == 0)
+                    if (res == null || res.Count == 0)
                     {
                         Log("Unable to add " + friend.getName() + " to invite list.");
                     }
