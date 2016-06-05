@@ -311,11 +311,26 @@ namespace FaceBERN_
             }
         }
 
+        [Test]
+        public void Refresh()
+        {
+            IWebDriver driver = GetDriver();
+
+            driver.Navigate().Refresh();
+
+            WaitForPageLoad();
+        }
+
         /* This exception is so common with Facebook, it makes sense to create a separate handler for retries, instead of doing it in every single function that touches elements.  --Kris */
         public dynamic StaleElementReferenceException_Handler(string callerName, object[] parameters)
         {
             staleRetry++;
-            if (staleRetry >= 5)
+            if (staleRetry % 3 == 0 && staleRetry > 0)
+            {
+                /* Try refreshing the page to shake the element loose.  --Kris */
+                Refresh();
+            }
+            else if (staleRetry >= 10)
             {
                 /* Let's make the error message as helpful as possible for triage purposes.  There are no security considerations since we're just dealing with identifying HTML elements.  --Kris */
                 string args = "";
