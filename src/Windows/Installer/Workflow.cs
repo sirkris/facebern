@@ -88,6 +88,8 @@ namespace Installer
             softwareKey.Close();
 
             SetStatus("Done!");
+
+            Main.Close();
         }
 
         public Thread ExecuteUpdateThread(bool startAfter)
