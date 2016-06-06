@@ -41,9 +41,9 @@
             this.label5 = new System.Windows.Forms.Label();
             this.updateRadioButton = new System.Windows.Forms.RadioButton();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.uninstallRadioButton = new System.Windows.Forms.RadioButton();
-            this.label6 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.uninstallRadioButton = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).BeginInit();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
@@ -56,6 +56,7 @@
             this.button2.TabIndex = 15;
             this.button2.Text = "Next >";
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // button1
             // 
@@ -65,6 +66,7 @@
             this.button1.TabIndex = 14;
             this.button1.Text = "Cancel";
             this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // labelVersion
             // 
@@ -163,16 +165,14 @@
             this.panel1.Size = new System.Drawing.Size(456, 210);
             this.panel1.TabIndex = 20;
             // 
-            // uninstallRadioButton
+            // label7
             // 
-            this.uninstallRadioButton.AutoSize = true;
-            this.uninstallRadioButton.ForeColor = System.Drawing.Color.Red;
-            this.uninstallRadioButton.Location = new System.Drawing.Point(0, 85);
-            this.uninstallRadioButton.Name = "uninstallRadioButton";
-            this.uninstallRadioButton.Size = new System.Drawing.Size(125, 17);
-            this.uninstallRadioButton.TabIndex = 20;
-            this.uninstallRadioButton.Text = "Uninstall FaceBERN!";
-            this.uninstallRadioButton.UseVisualStyleBackColor = true;
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(16, 108);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(191, 13);
+            this.label7.TabIndex = 22;
+            this.label7.Text = "Remove FaceBERN! from your system.";
             // 
             // label6
             // 
@@ -183,14 +183,16 @@
             this.label6.TabIndex = 21;
             this.label6.Text = "Check for a newer version of FaceBERN!  If one is available, perform the update.";
             // 
-            // label7
+            // uninstallRadioButton
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(16, 108);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(191, 13);
-            this.label7.TabIndex = 22;
-            this.label7.Text = "Remove FaceBERN! from your system.";
+            this.uninstallRadioButton.AutoSize = true;
+            this.uninstallRadioButton.ForeColor = System.Drawing.Color.Red;
+            this.uninstallRadioButton.Location = new System.Drawing.Point(0, 85);
+            this.uninstallRadioButton.Name = "uninstallRadioButton";
+            this.uninstallRadioButton.Size = new System.Drawing.Size(125, 17);
+            this.uninstallRadioButton.TabIndex = 20;
+            this.uninstallRadioButton.Text = "Uninstall FaceBERN!";
+            this.uninstallRadioButton.UseVisualStyleBackColor = true;
             // 
             // UserPromptForm
             // 
