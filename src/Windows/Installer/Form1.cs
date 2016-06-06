@@ -250,6 +250,8 @@ namespace Installer
                 {
                     SetStatus("Preparing to launch uninstaller....");
 
+                    repoBaseDir = installed;
+
                     string updaterPath = Path.Combine(repoBaseDir, uninstallerName);
                     try
                     {
