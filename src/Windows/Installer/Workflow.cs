@@ -68,19 +68,7 @@ namespace Installer
         {
             SetStatus("Performing uninstall....");
 
-            if (Directory.Exists(installPath))
-            {
-                try
-                {
-                    System.IO.Directory.Delete(installPath, true);
-                }
-                catch (Exception e)
-                {
-                    SetStatus("ERROR!  Unable to delete application directory!");
-                    return;
-                }
-            }
-
+            DeleteApplicationDir(installPath);
             DeleteShortcuts();
 
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
@@ -92,6 +80,36 @@ namespace Installer
             SetStatus("Done!");
 
             Main.Close();
+        }
+
+        private void DeleteApplicationDir(string installPath)
+        {
+            if (Directory.Exists(installPath))
+            {
+                try
+                {
+                    using (Repository repo = new Repository(installPath))
+                    {
+                        repo.Dispose();
+                    }
+                }
+                catch (Exception e)
+                {
+                    SetStatus("Unable to dispose of repository.  Maybe it's not there?");
+                }
+
+                try
+                {
+                    System.IO.Directory.Delete(installPath, true);
+                }
+                catch (Exception e)
+                {
+                    SetStatus("ERROR!  Unable to delete application directory!");
+                    return;
+                }
+
+                System.Threading.Thread.Sleep(1000);
+            }
         }
 
         public Thread ExecuteUpdateThread(bool startAfter)
@@ -235,11 +253,7 @@ namespace Installer
 
                 try
                 {
-                    if (Directory.Exists(installPath))
-                    {
-                        Directory.Delete(installPath, true);
-                        System.Threading.Thread.Sleep(3000);
-                    }
+                    DeleteApplicationDir(installPath);
 
                     Directory.CreateDirectory(installPath);
                 }
