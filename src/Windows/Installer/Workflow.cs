@@ -312,7 +312,7 @@ namespace Installer
             }
         }
 
-        private void CopyDependencies(string installPath)
+        private void CopyDependencies(string installPath, int retry = 3)
         {
             string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
             if (Directory.Exists(Path.Combine(installPath, resourceDir)))
@@ -325,14 +325,29 @@ namespace Installer
                     {
                         try
                         {
-                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)), true);
+                            if (System.IO.File.Exists(s))
+                            {
+                                System.Threading.Thread.Sleep(100);
+
+                                System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)), true);
+                            }
                         }
                         catch (Exception e)
                         {
-                            DialogResult dr = MessageBox.Show("ERROR copying dependency '" + Path.GetFileName(s) + "' : " + e.ToString(), "ERROR!", MessageBoxButtons.OK);
-                            if (dr == DialogResult.Yes)
+                            if (retry > 0)
                             {
-                                continue;
+                                System.Threading.Thread.Sleep(3000);
+
+                                retry--;
+                                CopyDependencies(installPath, retry);
+                            }
+                            else
+                            {
+                                DialogResult dr = MessageBox.Show("ERROR copying dependency '" + Path.GetFileName(s) + "' : " + e.ToString(), "ERROR!", MessageBoxButtons.OK);
+                                if (dr == DialogResult.Yes)
+                                {
+                                    continue;
+                                }
                             }
                         }
                     }
