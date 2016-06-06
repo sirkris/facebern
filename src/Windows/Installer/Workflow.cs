@@ -247,8 +247,7 @@ namespace Installer
                     /* We're NOT checking for/deleting the installedPath because the user might want that preserved.  We'll just clear the registry and make sure the destination directory's clean.  --Kris */
                     appKey.Close();
 
-                    Thread uninstallThread = ExecuteUninstallThread(installPath);
-                    while (uninstallThread.IsAlive) { }
+                    softwareKey.DeleteSubKeyTree("FaceBERN!", false);
                 }
 
                 /* Perform the installation.  --Kris */
