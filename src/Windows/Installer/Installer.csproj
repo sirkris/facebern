@@ -65,6 +65,12 @@
     <Compile Include="ThankYouForm.Designer.cs">
       <DependentUpon>ThankYouForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="UserPromptForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UserPromptForm.Designer.cs">
+      <DependentUpon>UserPromptForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Workflow.cs" />
     <Compile Include="WorkflowForm1.cs">
       <SubType>Form</SubType>
@@ -93,6 +99,9 @@
     </Compile>
     <EmbeddedResource Include="ThankYouForm.resx">
       <DependentUpon>ThankYouForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserPromptForm.resx">
+      <DependentUpon>UserPromptForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="WorkflowForm1.resx">
       <DependentUpon>WorkflowForm1.cs</DependentUpon>

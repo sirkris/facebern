@@ -246,7 +246,7 @@ namespace Installer
 
                     using (Repository repo = new Repository(installPath))
                     {
-                        RepositoryExtensions.Checkout(repo, repo.Branches[@"origin/" + branchName]);
+                        LibGit2Sharp.Commands.Checkout(repo, repo.Branches[@"origin/" + branchName]);
                     }
                 }
 

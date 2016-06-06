@@ -414,7 +414,7 @@ namespace FaceBERN_
             {
                 Process process = new Process();
                 process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName() + " /startafter";
+                process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName() + " /startafter /assumeUpdate";
                 process.Start();
 
                 Exit();
