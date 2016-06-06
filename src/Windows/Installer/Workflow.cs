@@ -81,6 +81,8 @@ namespace Installer
                 }
             }
 
+            DeleteShortcuts();
+
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
 
             softwareKey.DeleteSubKeyTree("FaceBERN!", false);
@@ -506,6 +508,30 @@ namespace Installer
             shortcut.TargetPath = Path.Combine(installPath, @"FaceBERN!.exe");
             shortcut.WorkingDirectory = installPath;
             shortcut.Save();
+        }
+
+        private void DeleteShortcuts()
+        {
+            try
+            {
+                if (System.IO.File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FaceBERN!.lnk")))
+                {
+                    System.IO.File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FaceBERN!.lnk"));
+                }
+
+                string userSMP = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+                string appSMP = Path.Combine(userSMP, "Programs");
+                if (System.IO.File.Exists(Path.Combine(appSMP, "FaceBERN!.lnk")))
+                {
+                    System.IO.File.Delete(Path.Combine(appSMP, "FaceBERN!.lnk"));
+                }
+            }
+            catch (Exception e)
+            {
+                SetStatus("Unable to delete shortcuts!");
+
+                System.Threading.Thread.Sleep(1000);
+            }
         }
 
         /* Recursively set permissions so that the application can run freely.  Path should be a directory.  --Kris */
