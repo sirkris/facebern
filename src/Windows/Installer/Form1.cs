@@ -197,6 +197,8 @@ namespace Installer
                     process.Start();
 
                     this.Close();
+
+                    return;
                 }
                 catch (Exception ex)
                 {
