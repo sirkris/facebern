@@ -235,6 +235,12 @@ namespace Installer
 
                 try
                 {
+                    if (Directory.Exists(installPath))
+                    {
+                        Directory.Delete(installPath, true);
+                        System.Threading.Thread.Sleep(3000);
+                    }
+
                     Directory.CreateDirectory(installPath);
                 }
                 catch (Exception ex)
