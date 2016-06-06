@@ -265,7 +265,7 @@ namespace Installer
 
                     repoBaseDir = installed;
 
-                    string uninstallerPath = Path.Combine(repoBaseDir, uninstallerName);
+                    string uninstallerPath = Path.Combine(Path.GetTempPath(), uninstallerName);
                     try
                     {
                         File.Copy(executingAssembly, uninstallerPath, true);
