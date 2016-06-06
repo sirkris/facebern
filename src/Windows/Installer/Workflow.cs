@@ -82,25 +82,28 @@ namespace Installer
             Main.Close();
         }
 
+        public static void DeleteReadOnlyDirectory(string directory)
+        {
+            foreach (var subdirectory in Directory.EnumerateDirectories(directory))
+            {
+                DeleteReadOnlyDirectory(subdirectory);
+            }
+            foreach (var fileName in Directory.EnumerateFiles(directory))
+            {
+                var fileInfo = new FileInfo(fileName);
+                fileInfo.Attributes = FileAttributes.Normal;
+                fileInfo.Delete();
+            }
+            Directory.Delete(directory);
+        }
+
         private void DeleteApplicationDir(string installPath)
         {
             if (Directory.Exists(installPath))
             {
                 try
                 {
-                    using (Repository repo = new Repository(installPath))
-                    {
-                        repo.Dispose();
-                    }
-                }
-                catch (Exception e)
-                {
-                    SetStatus("Unable to dispose of repository.  Maybe it's not there?");
-                }
-
-                try
-                {
-                    System.IO.Directory.Delete(installPath, true);
+                    DeleteReadOnlyDirectory(installPath);
                 }
                 catch (Exception e)
                 {
@@ -244,8 +247,7 @@ namespace Installer
                     /* We're NOT checking for/deleting the installedPath because the user might want that preserved.  We'll just clear the registry and make sure the destination directory's clean.  --Kris */
                     appKey.Close();
 
-                    Thread uninstallThread = ExecuteUninstallThread(installPath);
-                    while (uninstallThread.IsAlive) { }
+                    softwareKey.DeleteSubKeyTree("FaceBERN!", false);
                 }
 
                 /* Perform the installation.  --Kris */
