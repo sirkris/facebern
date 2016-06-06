@@ -157,7 +157,11 @@ namespace FaceBERN_
             Globals.bernieFacebookIDs.Add("9124187907");
             Globals.bernieFacebookIDs.Add("124955570892789");
 
-            Globals.requestedFTBInvite = appKey.GetValue("requestedFTBInvite", null, RegistryValueOptions.None).ToString().Equals("1");
+            string s = (string) appKey.GetValue("requestedFTBInvite", null, RegistryValueOptions.None);
+            if (s != null)
+            {
+                Globals.requestedFTBInvite = s.Equals("1");
+            }
 
             SetStateDefaults();
 
