@@ -325,7 +325,7 @@ namespace Installer
                     {
                         try
                         {
-                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
+                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)), true);
                         }
                         catch (Exception e)
                         {
