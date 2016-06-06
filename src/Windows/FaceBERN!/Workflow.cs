@@ -2134,6 +2134,12 @@ namespace FaceBERN_
                 return;
             }
 
+            if (Globals.requestedFTBInvite == true)
+            {
+                Log("FTB invitation already requested.  Skipped.");
+                return;
+            }
+
             int lastState = Globals.executionState;
             SetExecState(Globals.STATE_VALIDATING);
 
@@ -2143,10 +2149,6 @@ namespace FaceBERN_
             RegistryKey facebookKey = appKey.CreateSubKey("Facebook");
 
             string profileURL = facebookKey.GetValue("profileURL", null, RegistryValueOptions.None).ToString();
-
-            facebookKey.Close();
-            appKey.Close();
-            softwareKey.Close();
 
             /* Initialize the driver and navigate to feelthebern.events.  --Kris */
             if (profileURL != null)
@@ -2168,6 +2170,8 @@ namespace FaceBERN_
                 Log("Request sent.");
 
                 webDriver2.FixtureTearDown();
+
+                appKey.SetValue("requestedFTBInvite", "1", RegistryValueKind.String);
             }
             else
             {
@@ -2175,6 +2179,10 @@ namespace FaceBERN_
 
                 Log("Unable to request feelthebern.events invitation due to unknown profile URL!");
             }
+
+            facebookKey.Close();
+            appKey.Close();
+            softwareKey.Close();
 
             SetExecState(lastState);
         }

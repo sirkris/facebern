@@ -157,6 +157,8 @@ namespace FaceBERN_
             Globals.bernieFacebookIDs.Add("9124187907");
             Globals.bernieFacebookIDs.Add("124955570892789");
 
+            Globals.requestedFTBInvite = appKey.GetValue("requestedFTBInvite", null, RegistryValueOptions.None).ToString().Equals("1");
+
             SetStateDefaults();
 
             UpdateVersion();  // Update the version text.  --Kris
