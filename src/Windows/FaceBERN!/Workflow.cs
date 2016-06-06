@@ -39,6 +39,8 @@ namespace FaceBERN_
 
         private Random rand;
 
+        private string lastLogMsg = null;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             rand = new Random();
@@ -485,6 +487,8 @@ namespace FaceBERN_
                 /* Loop until terminated by the user.  --Kris */
                 while (Globals.executionState > 0)
                 {
+                    Log("Beginning workflow....");
+
                     /* Get-out-the-vote!  --Kris */
                     GOTV();
 
@@ -498,7 +502,7 @@ namespace FaceBERN_
                     }
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
-                    Log("Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes....");
+                    Log("Workflow complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
                     SetExecState(Globals.STATE_WAITING);
                     System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
                     SetExecState(Globals.STATE_EXECUTING);
@@ -611,7 +615,7 @@ namespace FaceBERN_
             //CreateGOTVEvent(ref webDriver, ref friends, "NY");
             
             /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
-            string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+            //string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);  // DEPRECATED.
             foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderBy(s => s.Value.primaryDate))
             {
                 if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
@@ -636,7 +640,7 @@ namespace FaceBERN_
                 */
 
                 Log("Checking GOTV for " + state.Key + "....");
-
+                
                 if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
                 {
                     Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
@@ -652,37 +656,31 @@ namespace FaceBERN_
                 int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
 
                 bool dateAppropriate = false;
-                foreach (string entry in defaultGOTVDaysBack)
+                if (state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
+                    && ((last - Math.Floor(state.Value.primaryDate.Subtract(DateTime.Now).TotalDays)) >= state.Value.GOTVWaitInterval) || Globals.devOverride == true)
                 {
-                    int milestone = Int32.Parse(entry);
-                    if (((last == -1 || last > milestone)
-                          && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
-                          && state.Value.primaryDate.Subtract(DateTime.Today).TotalDays <= milestone)
-                        || Globals.devOverride == true)
+                    SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
+
+                    /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
+                    //GetFacebookBernieSupporters("124955570892789");  // DEBUG
+                    List<Person> friends = GetFacebookFriendsOfFriends(state.Key);
+
+                    // TODO - Add direct friends who like Bernie Sanders and live in this state.  --Kris
+
+                    if (friends == null || friends.Count == 0)
                     {
-                        SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
-
-                        /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
-                        //GetFacebookBernieSupporters("124955570892789");  // DEBUG
-                        List<Person> friends = GetFacebookFriendsOfFriends(state.Key);
-
-                        // TODO - Add direct friends who like Bernie Sanders and live in this state.  --Kris
-
-                        if (friends == null || friends.Count == 0)
-                        {
-                            Log("You have no friends or friends of friends in " + state.Key + " who like Bernie Sanders.  Skipped.");
-                        }
-                        else
-                        {
-                            ExecuteGOTV(ref friends, ref stateKey, state.Value, milestone);
-                        }
-
-                        dateAppropriate = true;
-
-                        SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
-
-                        break;
+                        Log("You have no friends or friends of friends in " + state.Key + " who like Bernie Sanders.  Skipped.");
                     }
+                    else
+                    {
+                        ExecuteGOTV(ref friends, ref stateKey, state.Value);
+                    }
+
+                    dateAppropriate = true;
+
+                    SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
+
+                    break;
                 }
 
                 if (!dateAppropriate)
@@ -715,7 +713,7 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state, int milestone)
+        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -777,7 +775,7 @@ namespace FaceBERN_
                     /* If there are no errors, proceed with the invitations.  --Kris */
                     if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr, false))
                     {
-                        InviteToEventSidebar(ref friends, state.abbr, milestone.ToString());
+                        InviteToEventSidebar(ref friends, state.abbr);
                     }
                 }
                 else
@@ -1486,7 +1484,7 @@ namespace FaceBERN_
         }
 
         /* Must already be on the event page with the invite sidebar!  --Kris */
-        private void InviteToEventSidebar(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
+        private void InviteToEventSidebar(ref List<Person> friends, string stateAbbr = null)
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -2208,8 +2206,15 @@ namespace FaceBERN_
             WorkflowLog.Init(logName);
         }
 
-        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true)
+        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
         {
+            if (suppressDups == true && text.Equals(lastLogMsg))
+            {
+                return;
+            }
+
+            lastLogMsg = text;
+
             if (Main.InvokeRequired)
             {
                 Main.BeginInvoke(

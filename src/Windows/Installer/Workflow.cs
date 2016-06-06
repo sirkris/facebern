@@ -246,7 +246,7 @@ namespace Installer
 
                     using (Repository repo = new Repository(installPath))
                     {
-                        RepositoryExtensions.Checkout(repo, repo.Branches[@"origin/" + branchName]);
+                        LibGit2Sharp.Commands.Checkout(repo, repo.Branches[@"origin/" + branchName]);
                     }
                 }
 
@@ -325,7 +325,7 @@ namespace Installer
                     {
                         try
                         {
-                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)));
+                            System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)), true);
                         }
                         catch (Exception e)
                         {

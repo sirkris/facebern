@@ -18,6 +18,8 @@ namespace FaceBERN_
         public string facebookId = null;
         public string FTBEventId = null;
 
+        public int GOTVWaitInterval = 1;  // Days.  --Kris
+
         /* The minimum number of "friends of friends" results targetted for this state.  --Kris */
         public int facebookFriendSearchTarget;
 
@@ -25,7 +27,7 @@ namespace FaceBERN_
         public int facebookFriendSearchPasses;
 
         public States(string abbr, string name, string primaryDateStr, string primaryType, string primaryAccess,
-            int facebookFriendSearchTarget, int facebookFriendSearchPasses, string facebookId, string FTBEventId = null)
+            int facebookFriendSearchTarget, int facebookFriendSearchPasses, int GOTVWaitInterval, string facebookId, string FTBEventId = null)
         {
             this.abbr = abbr;
             this.name = name;
@@ -36,6 +38,8 @@ namespace FaceBERN_
             this.facebookFriendSearchPasses = facebookFriendSearchPasses;
             this.facebookId = facebookId;
             this.FTBEventId = FTBEventId;
+
+            this.GOTVWaitInterval = GOTVWaitInterval;
         }
 
         public States()
