@@ -21,6 +21,8 @@ namespace Installer
 {
     public partial class Form1 : Form
     {
+        public string[] cliArgs;
+
         public string repoBaseDir;
         public string githubRemoteName;
         public string branchName;
@@ -32,6 +34,7 @@ namespace Installer
         private bool startAfter;
         private bool cleanup;
         private bool assumeUpdate;
+        private bool uninstall;
         private int retry;
 
         private string installed;
@@ -40,7 +43,7 @@ namespace Installer
 
         public string installerVersion = "1.0.0.b";
 
-        public Form1(string githubRemoteName, string branchName, bool startAfter, bool cleanup = false, bool assumeUpdate = false, int retry = 0)
+        public Form1(string[] cliArgs, string githubRemoteName, string branchName, bool startAfter, bool cleanup = false, bool assumeUpdate = false, bool uninstall = false, int retry = 0)
         {
             InitializeComponent();
             this.githubRemoteName = githubRemoteName;
@@ -48,7 +51,9 @@ namespace Installer
             this.startAfter = startAfter;
             this.cleanup = cleanup;
             this.assumeUpdate = assumeUpdate;
+            this.uninstall = uninstall;
             this.retry = retry;
+            this.cliArgs = cliArgs;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -164,47 +169,55 @@ namespace Installer
 
             SetStatus("Please wait....");
 
+            /* Running as Administrator solves a lot of FSO issues.  --Kris */
+            if (!IsAdministrator() && installed == null)
+            {
+                /* This will prevent infinite relaunching in the event that it fails to elevate for whatever reason.  --Kris */
+                retry++;
+                if (retry == 5)
+                {
+                    SetStatus("ERROR!  Unable to launch as Administrator!");
+                    return;
+                }
+
+                string executingAssembly = System.Reflection.Assembly.GetEntryAssembly().Location;
+                try
+                {
+                    string args = "";
+                    for (int i = 0; i < cliArgs.Length; i++)
+                    {
+                        args += (args != "" ? " " : "") + cliArgs[i].Trim();
+                    }
+
+                    Process process = new Process();
+                    process.StartInfo.FileName = executingAssembly;
+                    process.StartInfo.Arguments = args + (args != "" ? " " : "") + "retry=" + retry.ToString();
+                    process.StartInfo.UseShellExecute = true;
+                    process.StartInfo.Verb = "runas";  // Run as Administrator.  --Kris
+                    process.Start();
+
+                    this.Close();
+                }
+                catch (Exception ex)
+                {
+                    SetStatus("ERROR:  Updater launch FAILED!");
+                    return;
+                }
+            }
+
             if (installed == null)
             {
-                /* Since we're going to be doing an install, we're gonna need to relaunch as Administrator.  --Kris */
-                if (!IsAdministrator())
-                {
-                    /* This will prevent infinite relaunching in the event that it fails to elevate for whatever reason.  --Kris */
-                    retry++;
-                    if (retry == 5)
-                    {
-                        SetStatus("ERROR!  Unable to launch as Administrator!");
-                        return;
-                    }
-
-                    string executingAssembly = System.Reflection.Assembly.GetEntryAssembly().Location;
-                    try
-                    {
-                        Process process = new Process();
-                        process.StartInfo.FileName = executingAssembly;
-                        process.StartInfo.Arguments = "retry=" + retry.ToString();
-                        process.StartInfo.UseShellExecute = true;
-                        process.StartInfo.Verb = "runas";  // Run as Administrator.  --Kris
-                        process.Start();
-
-                        this.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        SetStatus("ERROR:  Updater launch FAILED!");
-                        return;
-                    }
-                }
-                else
-                {
-                    /* Assume first-time installation and prompt the user accordingly.  --Kris */
-                    Workflow workflow = new Workflow(this);
-                    Thread thread = workflow.ExecuteInstallThread(installerVersion, repoURL);
-                }
+                /* Assume first-time installation and prompt the user accordingly.  --Kris */
+                Workflow workflow = new Workflow(this);
+                Thread thread = workflow.ExecuteInstallThread(installerVersion, repoURL);
             }
             else if (assumeUpdate)
             {
                 Update();
+            }
+            else if (uninstall)
+            {
+                Uninstall();
             }
             else
             {
@@ -252,10 +265,10 @@ namespace Installer
 
                     repoBaseDir = installed;
 
-                    string updaterPath = Path.Combine(repoBaseDir, uninstallerName);
+                    string uninstallerPath = Path.Combine(repoBaseDir, uninstallerName);
                     try
                     {
-                        File.Copy(executingAssembly, updaterPath, true);
+                        File.Copy(executingAssembly, uninstallerPath, true);
                     }
                     catch (Exception ex)
                     {
@@ -266,8 +279,10 @@ namespace Installer
                     try
                     {
                         Process process = new Process();
-                        process.StartInfo.FileName = updaterPath;
-                        process.StartInfo.Arguments = "githubRemoteName=" + githubRemoteName + " branchName=" + branchName + " /startAfter /assumeUpdate";
+                        process.StartInfo.FileName = uninstallerPath;
+                        process.StartInfo.Arguments = "/uninstall";
+                        process.StartInfo.Verb = "runas";  // Run as Administrator.  --Kris
+                        process.StartInfo.UseShellExecute = true;
                         process.Start();
                     }
                     catch (Exception ex)
@@ -340,7 +355,7 @@ namespace Installer
                     SetStatus("Update found!  Preparing to install....");
 
                     Workflow workflow = new Workflow(this);
-                    workflow.ExecuteUpdateThread();
+                    workflow.ExecuteUpdateThread(startAfter);
                 }
             }
         }

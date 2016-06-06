@@ -21,9 +21,12 @@ namespace Installer
     {
         private Form1 Main;
 
+        private List<string> exemptFiles;
+
         public Workflow(Form1 Main)
         {
             this.Main = Main;
+            exemptFiles = new List<string>();
         }
 
         public Thread ExecuteCleanupThread()
@@ -87,16 +90,16 @@ namespace Installer
             SetStatus("Done!");
         }
 
-        public Thread ExecuteUpdateThread()
+        public Thread ExecuteUpdateThread(bool startAfter)
         {
-            Thread thread = new Thread(() => ExecuteUpdate());
+            Thread thread = new Thread(() => ExecuteUpdate(startAfter));
             thread.Start();
             while (!thread.IsAlive) { }
 
             return thread;
         }
 
-        public void ExecuteUpdate()
+        public void ExecuteUpdate(bool startAfter)
         {
             SetStatus("Updating FaceBERN!....");
 
@@ -149,7 +152,7 @@ namespace Installer
             {
                 Process process = new Process();
                 process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " /startafter /cleanup";
+                process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " " + (startAfter ? " /startAfter " : "") + "/cleanup";
                 process.Start();
             }
             catch (Exception ex)
@@ -312,7 +315,7 @@ namespace Installer
             }
         }
 
-        private void CopyDependencies(string installPath, int retry = 3)
+        private void CopyDependencies(string installPath)
         {
             string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
             if (Directory.Exists(Path.Combine(installPath, resourceDir)))
@@ -321,35 +324,17 @@ namespace Installer
 
                 foreach (string s in files)
                 {
+                    if (System.IO.File.Exists(Path.Combine(installPath, Path.GetFileName(s))))
+                    {
+                        DeleteFile(Path.Combine(installPath, Path.GetFileName(s)));
+                    }
+                }
+
+                foreach (string s in files)
+                {
                     if (Path.GetExtension(s).ToLower().Equals(".dll"))
                     {
-                        try
-                        {
-                            if (System.IO.File.Exists(s))
-                            {
-                                System.Threading.Thread.Sleep(100);
-
-                                System.IO.File.Copy(s, Path.Combine(installPath, Path.GetFileName(s)), true);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            if (retry > 0)
-                            {
-                                System.Threading.Thread.Sleep(3000);
-
-                                retry--;
-                                CopyDependencies(installPath, retry);
-                            }
-                            else
-                            {
-                                DialogResult dr = MessageBox.Show("ERROR copying dependency '" + Path.GetFileName(s) + "' : " + e.ToString(), "ERROR!", MessageBoxButtons.OK);
-                                if (dr == DialogResult.Yes)
-                                {
-                                    continue;
-                                }
-                            }
-                        }
+                        CopyFile(s, Path.Combine(installPath, Path.GetFileName(s)));
                     }
                 }
             }
@@ -357,6 +342,78 @@ namespace Installer
             {
                 SetStatus("ERROR!  Resources dir not found!");
                 return;
+            }
+        }
+
+        private void CopyFile(string src, string dest, int retry = 3)
+        {
+            if (exemptFiles.Contains(src) 
+                || exemptFiles.Contains(dest))
+            {
+                return;
+            }
+            
+            try
+            {
+                if (System.IO.File.Exists(src))
+                {
+                    System.Threading.Thread.Sleep(25);
+
+                    System.IO.File.Copy(src, dest, true);
+                }
+            }
+            catch (Exception e)
+            {
+                if (retry > 0)
+                {
+                    System.Threading.Thread.Sleep(3000);
+
+                    retry--;
+                    try
+                    {
+                        System.IO.File.Copy(src, dest, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        CopyFile(src, dest, retry);
+                    }
+                }
+                else
+                {
+                    DialogResult dr = MessageBox.Show("ERROR copying dependency '" + Path.GetFileName(src) + "' : " + e.ToString(), "ERROR!", MessageBoxButtons.OK);
+                    if (dr == DialogResult.Yes)
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+
+        private void DeleteFile(string src, int retry = 3)
+        {
+            try
+            {
+                if (System.IO.File.Exists(src))
+                {
+                    System.IO.File.SetAttributes(Path.GetDirectoryName(src), FileAttributes.Normal);
+                    System.IO.File.SetAttributes(src, FileAttributes.Normal);
+
+                    System.Threading.Thread.Sleep(25);
+                    
+                    System.IO.File.Delete(src);
+                }
+            }
+            catch (Exception e)
+            {
+                if (retry > 0)
+                {
+                    retry--;
+                    DeleteFile(src, retry);
+                }
+                else
+                {
+                    exemptFiles.Add(src);  // No need to update the bundled Git libraries (FSO locked).  --Kris
+                }
             }
         }
 

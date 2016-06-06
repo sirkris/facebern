@@ -20,6 +20,7 @@ namespace Installer
             bool startAfter = false;
             bool cleanup = false;
             bool assumeUpdate = false;
+            bool uninstall = false;
             string githubRemoteName = null;
             string branchName = null;
             int retry = 0;
@@ -56,6 +57,9 @@ namespace Installer
                             case @"/assumeupdate":
                                 assumeUpdate = true;
                                 break;
+                            case @"/uninstall":
+                                uninstall = true;
+                                break;
                         }
                     }
                 }
@@ -73,7 +77,7 @@ namespace Installer
                 softwareKey.Close();
             }
 
-            Application.Run(new Form1(githubRemoteName, branchName, startAfter, cleanup, assumeUpdate, retry));
+            Application.Run(new Form1(args, githubRemoteName, branchName, startAfter, cleanup, assumeUpdate, uninstall, retry));
         }
     }
 }
