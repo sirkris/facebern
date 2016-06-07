@@ -505,9 +505,9 @@ namespace FaceBERN_
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
                     Log("Workflow complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
-                    System.Threading.Thread.Sleep(1000);
+                    
                     SetExecState(Globals.STATE_WAITING);
-                    //System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
+                    System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
                     SetExecState(Globals.STATE_EXECUTING);
                 }
 
@@ -634,6 +634,14 @@ namespace FaceBERN_
                     continue;
                 }
 
+                /* Skip if user disabled GOTV for this state.  --Kris */
+                if (state.Value.enableGOTV == false)
+                {
+                    Log("GOTV not enabled for " + state.Value.name + ".  Skipped.");
+
+                    continue;
+                }
+
                 // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
                 /*
                 if (!(state.Key.Equals("NM")))
@@ -642,7 +650,7 @@ namespace FaceBERN_
                 }
                 */
 
-                Log("Checking GOTV for " + state.Key + "....");
+                Log("Checking GOTV for " + state.Value.name + "....");
                 
                 if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
                 {
@@ -1152,7 +1160,7 @@ namespace FaceBERN_
                 RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
                 RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
 
-                string invitedJSON = (string)GOTVKey.GetValue("invitedJSON", null);
+                string invitedJSON = (string) GOTVKey.GetValue("invitedJSON", null);
                 if (invitedJSON != null && invitedJSON.Trim() != "")
                 {
                     invited = JsonConvert.DeserializeObject<List<Person>>(invitedJSON);
@@ -1472,11 +1480,11 @@ namespace FaceBERN_
             System.Threading.Thread.Sleep(250 * delayMultiplier);
 
             /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
-            int i = 30;
+            int i = 3;
             List<IWebElement> res = new List<IWebElement>();
             do
             {
-                System.Threading.Thread.Sleep(100 * delayMultiplier);
+                System.Threading.Thread.Sleep(250 * delayMultiplier);
 
                 res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
 
@@ -1553,7 +1561,7 @@ namespace FaceBERN_
                     if (res == null || res.Count == 0)
                     {
                         /* Retry once; a bit more slowly, this time.  Sometimes it just doesn't load correctly or quickly enough in the browser.  --Kris */
-                        res = LoadFriendInEventSearchBox(friend, searchBox, 2);
+                        //res = LoadFriendInEventSearchBox(friend, searchBox, 2);  // This doesn't seem to ever help.  Just makes it take forever.  --Kris
                     }
 
                     if (res == null || res.Count == 0)
@@ -2219,13 +2227,6 @@ namespace FaceBERN_
 
         private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
         {
-            if (suppressDups == true && text.Equals(lastLogMsg))
-            {
-                return;
-            }
-
-            lastLogMsg = text;
-
             if (Main.InvokeRequired)
             {
                 Main.BeginInvoke(
@@ -2234,6 +2235,13 @@ namespace FaceBERN_
             }
             else
             {
+                if (suppressDups == true && text.Equals(lastLogMsg))
+                {
+                    return;
+                }
+
+                lastLogMsg = text;
+
                 Main.LogW(text, show, appendW, newline, timestamp, logName, WorkflowLog);
 
                 Main.Refresh();
@@ -2252,7 +2260,7 @@ namespace FaceBERN_
             {
                 Main.UpdateInvitationsCount(x, clear);
 
-                Main.Refresh();
+                //Main.Refresh();
             }
 
             if (!clear)
@@ -2285,7 +2293,7 @@ namespace FaceBERN_
                     Main.UpdateInvitationsCount(x, y);
                 }
 
-                Main.Refresh();
+                //Main.Refresh();
             }
 
             invitesSent += x;
