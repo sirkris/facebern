@@ -332,7 +332,7 @@ namespace FaceBERN_
             if (staleRetry % 3 == 0 && staleRetry > 0)
             {
                 /* Try refreshing the page to shake the element loose.  --Kris */
-                Refresh();
+                //Refresh();  // That was a bad idea.  Needs to be able to rewind and redo requisite page interactions.  May put that logic in the Workflow class....  --Kris
             }
             else if (staleRetry >= 10)
             {
