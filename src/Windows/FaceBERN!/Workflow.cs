@@ -2227,13 +2227,6 @@ namespace FaceBERN_
 
         private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
         {
-            if (suppressDups == true && text.Equals(lastLogMsg))
-            {
-                return;
-            }
-
-            lastLogMsg = text;
-
             if (Main.InvokeRequired)
             {
                 Main.BeginInvoke(
@@ -2242,9 +2235,16 @@ namespace FaceBERN_
             }
             else
             {
+                if (suppressDups == true && text.Equals(lastLogMsg))
+                {
+                    return;
+                }
+
+                lastLogMsg = text;
+
                 Main.LogW(text, show, appendW, newline, timestamp, logName, WorkflowLog);
 
-                //Main.Refresh();
+                Main.Refresh();
             }
         }
 

@@ -108,7 +108,8 @@ namespace FaceBERN_
                     Log("Opening new Firefox window....");
 
                     _profileFirefox = new FirefoxProfile();
-                    _profileFirefox.SetPreference("toolkit.startup.max_resumed_crashes", "-1");
+                    _profileFirefox.SetPreference("toolkit.startup.max_resumed_crashes", -1);
+                    
 
                     _driverFirefox = new FirefoxDriver(_profileFirefox);
                     _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
