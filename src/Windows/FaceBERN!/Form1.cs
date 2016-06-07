@@ -506,7 +506,7 @@ namespace FaceBERN_
             }
 
             Globals.devOverride = false;
-            if (Control.ModifierKeys == Keys.Shift)
+            if (Control.ModifierKeys == Keys.Alt)
             {
                 Globals.devOverride = true;
 
