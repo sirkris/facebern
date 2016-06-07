@@ -43,7 +43,7 @@ namespace FaceBERN_
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
-            rand = new Random();
+            //rand = new Random();
 
             this.Main = Main;
             if (MainLog == null)
@@ -55,8 +55,6 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
-
-            invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
         }
 
         /* This thread is designed to run continuously while the program is running.  --Kris */
@@ -80,6 +78,8 @@ namespace FaceBERN_
         public void ExecuteInterCom()
         {
             DateTime start = DateTime.Now;
+
+            invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
 
             /* Initialize the Birdie API client. --Kris */
             restClient = new RestClient("http://birdie.freeddns.org");
@@ -445,7 +445,7 @@ namespace FaceBERN_
             {
                 browser = Main.browserModeComboBox.SelectedIndex;
             }
-
+            
             Thread thread = new Thread(() => Execute(browser, WorkflowLog));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
 
             thread.IsBackground = true;
@@ -457,7 +457,7 @@ namespace FaceBERN_
 
             Main.buttonStart_ToStop();
 
-            Main.LogW("Workflow thread started successfully.", false);
+            Main.LogW("Workflow thread started successfully.");
 
             return thread;
         }
@@ -475,10 +475,12 @@ namespace FaceBERN_
                 DateTime lastUpdate = start;
 
                 Log("Thread execution initialized.");
-
+                
                 SetExecState(Globals.STATE_EXECUTING);
 
-                Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
+                invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
+
+                //Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
                 // TEST - This will end up going into the loop below.  --Kris
                 //GOTV();
@@ -503,8 +505,9 @@ namespace FaceBERN_
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
                     Log("Workflow complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
+                    System.Threading.Thread.Sleep(1000);
                     SetExecState(Globals.STATE_WAITING);
-                    System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
+                    //System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
                     SetExecState(Globals.STATE_EXECUTING);
                 }
 
