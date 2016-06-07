@@ -46,8 +46,10 @@ namespace FaceBERN_
             {
                 States state = Globals.StateConfigs[stateIndexes[selectedStateIndex]];
 
+                /* Any configurable values are set here.  --Kris */
                 state.facebookId = facebookIDTextBox.Text;
                 state.FTBEventId = FTBEventIdTextBox.Text;
+                state.enableGOTV = enableGOTVCheckbox.Checked;
 
                 Globals.StateConfigs[state.abbr] = state;
 
@@ -63,6 +65,8 @@ namespace FaceBERN_
                 config[sectionName].Add("primaryAccess", state.primaryAccess);
                 config[sectionName].Add("facebookId", state.facebookId);
                 config[sectionName].Add("FTBEventId", state.FTBEventId);
+
+                config[sectionName].Add("enableGOTV", (state.enableGOTV == true ? "1" : "0"));
 
                 Globals.sINI.Clear(Path.Combine(Globals.ConfigDir, state.abbr + ".ini"));
                 Globals.sINI.Save(Path.Combine(Globals.ConfigDir, state.abbr + ".ini"), config);
@@ -166,6 +170,8 @@ namespace FaceBERN_
                 labelPrimaryAccess.Visible = true;
                 labelFacebookID.Visible = true;
                 labelFTBEventID.Visible = true;
+                labelEnabledTasks.Visible = true;
+                labelExpGOTV.Visible = true;
 
                 abbreviationTextBox.Visible = true;
                 nameTextBox.Visible = true;
@@ -174,6 +180,7 @@ namespace FaceBERN_
                 primaryAccessTextBox.Visible = true;
                 facebookIDTextBox.Visible = true;
                 FTBEventIdTextBox.Visible = true;
+                enableGOTVCheckbox.Visible = true;
 
                 abbreviationTextBox.Text = Globals.StateConfigs[stateIndexes[selectedStateIndex]].abbr;
                 nameTextBox.Text = Globals.StateConfigs[stateIndexes[selectedStateIndex]].name;
@@ -182,6 +189,8 @@ namespace FaceBERN_
                 primaryAccessTextBox.Text = Globals.StateConfigs[stateIndexes[selectedStateIndex]].primaryAccess;
                 facebookIDTextBox.Text = Globals.StateConfigs[stateIndexes[selectedStateIndex]].facebookId;
                 FTBEventIdTextBox.Text = Globals.StateConfigs[stateIndexes[selectedStateIndex]].FTBEventId;
+
+                enableGOTVCheckbox.Checked = Globals.StateConfigs[stateIndexes[selectedStateIndex]].enableGOTV;
             }
             else
             {
@@ -192,6 +201,8 @@ namespace FaceBERN_
                 labelPrimaryAccess.Visible = false;
                 labelFacebookID.Visible = false;
                 labelFTBEventID.Visible = false;
+                labelEnabledTasks.Visible = false;
+                labelExpGOTV.Visible = false;
 
                 abbreviationTextBox.Visible = false;
                 nameTextBox.Visible = false;
@@ -200,6 +211,7 @@ namespace FaceBERN_
                 primaryAccessTextBox.Visible = false;
                 facebookIDTextBox.Visible = false;
                 FTBEventIdTextBox.Visible = false;
+                enableGOTVCheckbox.Visible = false;
             }
 
             buttonApply.Enabled = applyEnabled;
@@ -247,6 +259,11 @@ namespace FaceBERN_
 
                 MessageBox.Show("Stored credentials deleted successfully!", "Success!", MessageBoxButtons.OK);
             }
+        }
+
+        private void label7_Click(object sender, EventArgs e)
+        {
+            enableGOTVCheckbox.Checked = !(enableGOTVCheckbox.Checked);
         }
     }
 }

@@ -107,9 +107,12 @@ namespace FaceBERN_
                 case Globals.FIREFOX_HIDDEN:
                     Log("Opening new Firefox window....");
 
-                    _driverFirefox = new FirefoxDriver();
-                    _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                    _profileFirefox = new FirefoxProfile();
+                    _profileFirefox.SetPreference("toolkit.startup.max_resumed_crashes", "-1");
 
+                    _driverFirefox = new FirefoxDriver(_profileFirefox);
+                    _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                    
                     ModWindow();
                     Maximize();
 

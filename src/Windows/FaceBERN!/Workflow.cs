@@ -634,6 +634,14 @@ namespace FaceBERN_
                     continue;
                 }
 
+                /* Skip if user disabled GOTV for this state.  --Kris */
+                if (state.Value.enableGOTV == false)
+                {
+                    Log("GOTV not enabled for " + state.Value.name + ".  Skipped.");
+
+                    continue;
+                }
+
                 // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
                 /*
                 if (!(state.Key.Equals("NM")))
@@ -642,7 +650,7 @@ namespace FaceBERN_
                 }
                 */
 
-                Log("Checking GOTV for " + state.Key + "....");
+                Log("Checking GOTV for " + state.Value.name + "....");
                 
                 if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
                 {
@@ -2236,7 +2244,7 @@ namespace FaceBERN_
             {
                 Main.LogW(text, show, appendW, newline, timestamp, logName, WorkflowLog);
 
-                Main.Refresh();
+                //Main.Refresh();
             }
         }
 
@@ -2252,7 +2260,7 @@ namespace FaceBERN_
             {
                 Main.UpdateInvitationsCount(x, clear);
 
-                Main.Refresh();
+                //Main.Refresh();
             }
 
             if (!clear)
@@ -2285,7 +2293,7 @@ namespace FaceBERN_
                     Main.UpdateInvitationsCount(x, y);
                 }
 
-                Main.Refresh();
+                //Main.Refresh();
             }
 
             invitesSent += x;

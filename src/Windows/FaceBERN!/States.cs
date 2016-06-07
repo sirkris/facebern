@@ -19,6 +19,7 @@ namespace FaceBERN_
         public string FTBEventId = null;
 
         public int GOTVWaitInterval = 1;  // Days.  --Kris
+        public bool enableGOTV = true;
 
         /* The minimum number of "friends of friends" results targetted for this state.  --Kris */
         public int facebookFriendSearchTarget;

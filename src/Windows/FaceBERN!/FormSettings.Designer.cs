@@ -31,6 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSettings));
             this.settingsTabControl = new System.Windows.Forms.TabControl();
             this.tabGeneral = new System.Windows.Forms.TabPage();
+            this.button1 = new System.Windows.Forms.Button();
             this.autoUpdateCheckbox = new System.Windows.Forms.CheckBox();
             this.checkRememberPasswordByDefaultCheckbox = new System.Windows.Forms.CheckBox();
             this.useCustomEventsCheckbox = new System.Windows.Forms.CheckBox();
@@ -59,7 +60,9 @@
             this.buttonApply = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
+            this.labelEnabledTasks = new System.Windows.Forms.Label();
+            this.enableGOTVCheckbox = new System.Windows.Forms.CheckBox();
+            this.labelExpGOTV = new System.Windows.Forms.Label();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
@@ -94,6 +97,16 @@
             this.tabGeneral.Text = "General";
             this.tabGeneral.UseVisualStyleBackColor = true;
             this.tabGeneral.Enter += new System.EventHandler(this.tabGeneral_Load);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(249, 126);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(157, 23);
+            this.button1.TabIndex = 8;
+            this.button1.Text = "Clear Stored Credentials";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // autoUpdateCheckbox
             // 
@@ -185,6 +198,9 @@
             // 
             // tabStates
             // 
+            this.tabStates.Controls.Add(this.labelExpGOTV);
+            this.tabStates.Controls.Add(this.enableGOTVCheckbox);
+            this.tabStates.Controls.Add(this.labelEnabledTasks);
             this.tabStates.Controls.Add(this.FTBEventIdTextBox);
             this.tabStates.Controls.Add(this.facebookIDTextBox);
             this.tabStates.Controls.Add(this.primaryAccessTextBox);
@@ -403,15 +419,38 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // button1
+            // labelEnabledTasks
             // 
-            this.button1.Location = new System.Drawing.Point(249, 126);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(157, 23);
-            this.button1.TabIndex = 8;
-            this.button1.Text = "Clear Stored Credentials";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.labelEnabledTasks.AutoSize = true;
+            this.labelEnabledTasks.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelEnabledTasks.Location = new System.Drawing.Point(184, 263);
+            this.labelEnabledTasks.Name = "labelEnabledTasks";
+            this.labelEnabledTasks.Size = new System.Drawing.Size(116, 16);
+            this.labelEnabledTasks.TabIndex = 17;
+            this.labelEnabledTasks.Text = "Enabled Tasks:";
+            // 
+            // enableGOTVCheckbox
+            // 
+            this.enableGOTVCheckbox.AutoSize = true;
+            this.enableGOTVCheckbox.Checked = true;
+            this.enableGOTVCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.enableGOTVCheckbox.Location = new System.Drawing.Point(306, 283);
+            this.enableGOTVCheckbox.Name = "enableGOTVCheckbox";
+            this.enableGOTVCheckbox.Size = new System.Drawing.Size(56, 17);
+            this.enableGOTVCheckbox.TabIndex = 18;
+            this.enableGOTVCheckbox.Text = "GOTV";
+            this.enableGOTVCheckbox.UseVisualStyleBackColor = true;
+            this.enableGOTVCheckbox.CheckedChanged += new System.EventHandler(this.StateFields_TextChanged);
+            // 
+            // labelExpGOTV
+            // 
+            this.labelExpGOTV.AutoSize = true;
+            this.labelExpGOTV.Location = new System.Drawing.Point(303, 303);
+            this.labelExpGOTV.Name = "labelExpGOTV";
+            this.labelExpGOTV.Size = new System.Drawing.Size(353, 13);
+            this.labelExpGOTV.TabIndex = 19;
+            this.labelExpGOTV.Text = "Invite people to feelthebern.events get-out-the-vote events on Facebook.";
+            this.labelExpGOTV.Click += new System.EventHandler(this.label7_Click);
             // 
             // FormSettings
             // 
@@ -472,5 +511,8 @@
         private System.Windows.Forms.TextBox nameTextBox;
         private System.Windows.Forms.TextBox abbreviationTextBox;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.CheckBox enableGOTVCheckbox;
+        private System.Windows.Forms.Label labelEnabledTasks;
+        private System.Windows.Forms.Label labelExpGOTV;
     }
 }
