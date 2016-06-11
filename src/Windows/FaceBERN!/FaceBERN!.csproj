@@ -41,6 +41,9 @@
     <Reference Include="AutoItX3.Assembly">
       <HintPath>Resources\AutoItX3.Assembly.dll</HintPath>
     </Reference>
+    <Reference Include="csReddit">
+      <HintPath>Resources\csReddit.dll</HintPath>
+    </Reference>
     <Reference Include="HtmlUnit">
       <HintPath>Resources\HtmlUnit.dll</HintPath>
     </Reference>
