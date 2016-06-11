@@ -135,6 +135,7 @@ namespace FaceBERN_
             Globals.Config.Add("UseFTBEvents", "1");
             Globals.Config.Add("UseCustomEvents", "0");
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
+            Globals.Config.Add("TweetRedditNews", "1");
 
             /* How long to wait between GOTV checks.  --Kris */
             Globals.Config.Add("GOTVIntervalHours", "24");

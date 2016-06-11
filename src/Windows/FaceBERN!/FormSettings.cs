@@ -39,6 +39,7 @@ namespace FaceBERN_
             Globals.Config["UseCustomEvents"] = (useCustomEventsCheckbox.Checked ? "1" : "0");
             Globals.Config["CheckRememberPasswordByDefault"] = (checkRememberPasswordByDefaultCheckbox.Checked ? "1" : "0");
             Globals.Config["AutoUpdate"] = (autoUpdateCheckbox.Checked ? "1" : "0");
+            Globals.Config["TweetRedditNews"] = (tweetRedditNewsCheckbox.Checked ? "1" : "0");
 
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
@@ -86,6 +87,8 @@ namespace FaceBERN_
                     useCustomEventsCheckbox.Checked = (Globals.Config["UseCustomEvents"] == "1" ? true : false);
                     checkRememberPasswordByDefaultCheckbox.Checked = (Globals.Config["CheckRememberPasswordByDefault"] == "1" ? true : false);
                     autoUpdateCheckbox.Checked = (Globals.Config["AutoUpdate"] == "1" ? true : false);
+                    tweetRedditNewsCheckbox.Checked = (Globals.Config["TweetRedditNews"] == "1" ? true : false);
+
                     break;
                 case "states":
                     List<string> territories = new List<string> { "AS", "DC", "GU", "MP", "PR", "VI" };

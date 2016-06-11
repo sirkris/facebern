@@ -41,6 +41,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabStates = new System.Windows.Forms.TabPage();
+            this.labelExpGOTV = new System.Windows.Forms.Label();
+            this.enableGOTVCheckbox = new System.Windows.Forms.CheckBox();
+            this.labelEnabledTasks = new System.Windows.Forms.Label();
             this.FTBEventIdTextBox = new System.Windows.Forms.TextBox();
             this.facebookIDTextBox = new System.Windows.Forms.TextBox();
             this.primaryAccessTextBox = new System.Windows.Forms.TextBox();
@@ -60,9 +63,8 @@
             this.buttonApply = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
-            this.labelEnabledTasks = new System.Windows.Forms.Label();
-            this.enableGOTVCheckbox = new System.Windows.Forms.CheckBox();
-            this.labelExpGOTV = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.tweetRedditNewsCheckbox = new System.Windows.Forms.CheckBox();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
@@ -80,6 +82,8 @@
             // 
             // tabGeneral
             // 
+            this.tabGeneral.Controls.Add(this.tweetRedditNewsCheckbox);
+            this.tabGeneral.Controls.Add(this.label6);
             this.tabGeneral.Controls.Add(this.button1);
             this.tabGeneral.Controls.Add(this.autoUpdateCheckbox);
             this.tabGeneral.Controls.Add(this.checkRememberPasswordByDefaultCheckbox);
@@ -100,7 +104,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(249, 126);
+            this.button1.Location = new System.Drawing.Point(249, 151);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(157, 23);
             this.button1.TabIndex = 8;
@@ -113,7 +117,7 @@
             this.autoUpdateCheckbox.AutoSize = true;
             this.autoUpdateCheckbox.Checked = true;
             this.autoUpdateCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.autoUpdateCheckbox.Location = new System.Drawing.Point(392, 89);
+            this.autoUpdateCheckbox.Location = new System.Drawing.Point(391, 89);
             this.autoUpdateCheckbox.Name = "autoUpdateCheckbox";
             this.autoUpdateCheckbox.Size = new System.Drawing.Size(15, 14);
             this.autoUpdateCheckbox.TabIndex = 7;
@@ -225,6 +229,39 @@
             this.tabStates.Text = "States";
             this.tabStates.UseVisualStyleBackColor = true;
             this.tabStates.Enter += new System.EventHandler(this.tabStates_Load);
+            // 
+            // labelExpGOTV
+            // 
+            this.labelExpGOTV.AutoSize = true;
+            this.labelExpGOTV.Location = new System.Drawing.Point(303, 303);
+            this.labelExpGOTV.Name = "labelExpGOTV";
+            this.labelExpGOTV.Size = new System.Drawing.Size(353, 13);
+            this.labelExpGOTV.TabIndex = 19;
+            this.labelExpGOTV.Text = "Invite people to feelthebern.events get-out-the-vote events on Facebook.";
+            this.labelExpGOTV.Click += new System.EventHandler(this.label7_Click);
+            // 
+            // enableGOTVCheckbox
+            // 
+            this.enableGOTVCheckbox.AutoSize = true;
+            this.enableGOTVCheckbox.Checked = true;
+            this.enableGOTVCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.enableGOTVCheckbox.Location = new System.Drawing.Point(306, 283);
+            this.enableGOTVCheckbox.Name = "enableGOTVCheckbox";
+            this.enableGOTVCheckbox.Size = new System.Drawing.Size(56, 17);
+            this.enableGOTVCheckbox.TabIndex = 18;
+            this.enableGOTVCheckbox.Text = "GOTV";
+            this.enableGOTVCheckbox.UseVisualStyleBackColor = true;
+            this.enableGOTVCheckbox.CheckedChanged += new System.EventHandler(this.StateFields_TextChanged);
+            // 
+            // labelEnabledTasks
+            // 
+            this.labelEnabledTasks.AutoSize = true;
+            this.labelEnabledTasks.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelEnabledTasks.Location = new System.Drawing.Point(184, 263);
+            this.labelEnabledTasks.Name = "labelEnabledTasks";
+            this.labelEnabledTasks.Size = new System.Drawing.Size(116, 16);
+            this.labelEnabledTasks.TabIndex = 17;
+            this.labelEnabledTasks.Text = "Enabled Tasks:";
             // 
             // FTBEventIdTextBox
             // 
@@ -419,38 +456,26 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // labelEnabledTasks
+            // label6
             // 
-            this.labelEnabledTasks.AutoSize = true;
-            this.labelEnabledTasks.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelEnabledTasks.Location = new System.Drawing.Point(184, 263);
-            this.labelEnabledTasks.Name = "labelEnabledTasks";
-            this.labelEnabledTasks.Size = new System.Drawing.Size(116, 16);
-            this.labelEnabledTasks.TabIndex = 17;
-            this.labelEnabledTasks.Text = "Enabled Tasks:";
+            this.label6.AutoSize = true;
+            this.label6.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label6.Location = new System.Drawing.Point(129, 112);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(256, 16);
+            this.label6.TabIndex = 9;
+            this.label6.Text = "Tweet birdie news posts from Reddit:";
             // 
-            // enableGOTVCheckbox
+            // tweetRedditNewsCheckbox
             // 
-            this.enableGOTVCheckbox.AutoSize = true;
-            this.enableGOTVCheckbox.Checked = true;
-            this.enableGOTVCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.enableGOTVCheckbox.Location = new System.Drawing.Point(306, 283);
-            this.enableGOTVCheckbox.Name = "enableGOTVCheckbox";
-            this.enableGOTVCheckbox.Size = new System.Drawing.Size(56, 17);
-            this.enableGOTVCheckbox.TabIndex = 18;
-            this.enableGOTVCheckbox.Text = "GOTV";
-            this.enableGOTVCheckbox.UseVisualStyleBackColor = true;
-            this.enableGOTVCheckbox.CheckedChanged += new System.EventHandler(this.StateFields_TextChanged);
-            // 
-            // labelExpGOTV
-            // 
-            this.labelExpGOTV.AutoSize = true;
-            this.labelExpGOTV.Location = new System.Drawing.Point(303, 303);
-            this.labelExpGOTV.Name = "labelExpGOTV";
-            this.labelExpGOTV.Size = new System.Drawing.Size(353, 13);
-            this.labelExpGOTV.TabIndex = 19;
-            this.labelExpGOTV.Text = "Invite people to feelthebern.events get-out-the-vote events on Facebook.";
-            this.labelExpGOTV.Click += new System.EventHandler(this.label7_Click);
+            this.tweetRedditNewsCheckbox.AutoSize = true;
+            this.tweetRedditNewsCheckbox.Checked = true;
+            this.tweetRedditNewsCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.tweetRedditNewsCheckbox.Location = new System.Drawing.Point(391, 114);
+            this.tweetRedditNewsCheckbox.Name = "tweetRedditNewsCheckbox";
+            this.tweetRedditNewsCheckbox.Size = new System.Drawing.Size(15, 14);
+            this.tweetRedditNewsCheckbox.TabIndex = 10;
+            this.tweetRedditNewsCheckbox.UseVisualStyleBackColor = true;
             // 
             // FormSettings
             // 
@@ -514,5 +539,7 @@
         private System.Windows.Forms.CheckBox enableGOTVCheckbox;
         private System.Windows.Forms.Label labelEnabledTasks;
         private System.Windows.Forms.Label labelExpGOTV;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.CheckBox tweetRedditNewsCheckbox;
     }
 }

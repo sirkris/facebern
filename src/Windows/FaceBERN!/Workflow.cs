@@ -1,4 +1,6 @@
 ﻿using AutoIt;
+using csReddit;
+using Tweetinvi;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
@@ -22,12 +24,14 @@ namespace FaceBERN_
         private string logName = "Workflow";
         public Log WorkflowLog;
         private Form1 Main;
+        private Reddit reddit;
         private int browser = 0;
         private bool ftbFriended = false;
 
         public long invitesSent = 0;  // Tracked for current session only.  --Kris
 
         public List<Person> invited;
+        public List<string> tweets;
 
         private WebDriver webDriver = null;
 
@@ -55,6 +59,8 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
+
+            reddit = new Reddit(false);
         }
 
         /* This thread is designed to run continuously while the program is running.  --Kris */
