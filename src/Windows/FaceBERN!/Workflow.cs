@@ -1,6 +1,5 @@
 ﻿using AutoIt;
 using csReddit;
-using Tweetinvi;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
@@ -16,13 +15,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Tweetinvi;
-using Tweetinvi.Core.Credentials;
-using Tweetinvi.Core.Interfaces;
-using Tweetinvi.Core.Interfaces.Controllers;
-using Tweetinvi.Core.Interfaces.DTO;
-using Tweetinvi.Core.Interfaces.Factories;
-using Tweetinvi.Core.Interfaces.Models;
 
 namespace FaceBERN_
 {
@@ -51,8 +43,6 @@ namespace FaceBERN_
         private Random rand;
 
         private string lastLogMsg = null;
-
-        private TwitterCredentials twitterCredentials = null;
 
         private string twitterConsumerKey = "8RzPRXybZGjAGzp0eTXhiWo4f";
         private string twitterConsumerSecret = "vzLGs39ZntP5TQxgG6oQwEjOKcpp5f7KVhUoDjW6tZtfm1D67p";
@@ -610,6 +600,13 @@ namespace FaceBERN_
             }
 
             return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
+        }
+
+        private void AuthorizeTwitter()
+        {
+            twitterCredentials = new TwitterCredentials(twitterConsumerKey, twitterConsumerSecret);
+
+            
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
