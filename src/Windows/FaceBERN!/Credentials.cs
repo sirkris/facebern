@@ -16,12 +16,17 @@ namespace FaceBERN_
         private SecureString facebookUsername;
         private SecureString facebookPassword;
 
+        private SecureString twitterAccessToken;
+        private SecureString twitterAccessTokenSecret;
+
         private RegistryKey softwareKey;
         private RegistryKey appKey;
         private RegistryKey credentialsKey;
         private RegistryKey facebookKey;
+        private RegistryKey twitterKey;
 
         private byte[] facebookEntropy;
+        private byte[] twitterEntropy;
 
         internal Credentials()
         {
@@ -32,6 +37,7 @@ namespace FaceBERN_
                 credentialsKey = appKey.CreateSubKey("Credentials");
 
                 facebookKey = credentialsKey.CreateSubKey("Facebook");
+                twitterKey = credentialsKey.CreateSubKey("Twitter");
 
                 SaveKeys();
             }
@@ -106,6 +112,67 @@ namespace FaceBERN_
             return true;
         }
 
+        internal bool SetTwitter(SecureString accessToken, SecureString accessTokenSecret)
+        {
+            try
+            {
+                twitterAccessToken = accessToken;
+                twitterAccessTokenSecret = accessTokenSecret;
+
+                twitterEntropy = (byte[]) facebookKey.GetValue("entropy", null);
+
+                if (twitterEntropy == null)
+                {
+                    twitterEntropy = new byte[20];
+                    using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                    {
+                        rng.GetBytes(twitterEntropy);
+                    }
+                }
+
+                byte[] tAC = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(accessToken)), twitterEntropy, DataProtectionScope.CurrentUser);
+                byte[] tACS = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(accessTokenSecret)), twitterEntropy, DataProtectionScope.CurrentUser);
+
+                twitterKey.SetValue("entropy", twitterEntropy, RegistryValueKind.Binary);
+                twitterKey.SetValue("tAC", tAC, RegistryValueKind.Binary);
+                twitterKey.SetValue("tACS", tACS, RegistryValueKind.Binary);
+
+                twitterKey.Flush();
+            }
+            catch (IOException e)
+            {
+                // TODO - Log the exception.  --Kris
+
+                twitterAccessToken = null;
+                twitterAccessTokenSecret = null;
+
+                return false;
+            }
+
+            return true;
+        }
+
+        internal bool LoadTwitter()
+        {
+            try
+            {
+                twitterEntropy = (byte[]) twitterKey.GetValue("entropy", null);
+                byte[] tAC = (byte[]) twitterKey.GetValue("tAC", null);
+                byte[] tACS = (byte[]) twitterKey.GetValue("tACS", null);
+
+                twitterAccessToken = (tAC != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tAC, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterAccessTokenSecret = (tACS != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tACS, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
+            }
+            catch (IOException e)
+            {
+                // TODO - Log the exception.  --Kris
+
+                return false;
+            }
+
+            return true;
+        }
+
         internal void Destroy(bool clearRegistry = false)
         {
             if (facebookUsername != null)
@@ -122,9 +189,14 @@ namespace FaceBERN_
                 facebookKey.DeleteValue("entropy", false);
                 facebookKey.DeleteValue("cU", false);
                 facebookKey.DeleteValue("cP", false);
+
+                twitterKey.DeleteValue("entropy", false);
+                twitterKey.DeleteValue("tAC", false);
+                twitterKey.DeleteValue("tACS", false);
             }
 
             facebookKey.Close();
+            twitterKey.Close();
             credentialsKey.Close();
             appKey.Close();
             softwareKey.Close();
@@ -133,19 +205,30 @@ namespace FaceBERN_
         private void SaveKeys()
         {
             facebookKey.Flush();
+            twitterKey.Flush();
             credentialsKey.Flush();
             appKey.Flush();
             softwareKey.Flush();
         }
 
-        internal SecureString GetUsername()
+        internal SecureString GetFacebookUsername()
         {
             return facebookUsername;
         }
 
-        internal SecureString GetPassword()
+        internal SecureString GetFacebookPassword()
         {
             return facebookPassword;
+        }
+
+        internal SecureString GetTwitterAccessToken()
+        {
+            return twitterAccessToken;
+        }
+
+        internal SecureString GetTwitterAccessTokenSecret()
+        {
+            return twitterAccessTokenSecret;
         }
 
         internal SecureString ToSecureString(string str)

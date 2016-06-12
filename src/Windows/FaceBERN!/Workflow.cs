@@ -16,6 +16,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Tweetinvi;
+using Tweetinvi.Core.Credentials;
+using Tweetinvi.Core.Interfaces;
+using Tweetinvi.Core.Interfaces.Controllers;
+using Tweetinvi.Core.Interfaces.DTO;
+using Tweetinvi.Core.Interfaces.Factories;
+using Tweetinvi.Core.Interfaces.Models;
 
 namespace FaceBERN_
 {
@@ -45,6 +52,12 @@ namespace FaceBERN_
 
         private string lastLogMsg = null;
 
+        private TwitterCredentials twitterCredentials = null;
+
+        private string twitterConsumerKey = "8RzPRXybZGjAGzp0eTXhiWo4f";
+        private string twitterConsumerSecret = "vzLGs39ZntP5TQxgG6oQwEjOKcpp5f7KVhUoDjW6tZtfm1D67p";
+        private Credentials twitterAccessCredentials = null;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             //rand = new Random();
@@ -59,7 +72,7 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
-
+            
             reddit = new Reddit(false);
         }
 
@@ -564,6 +577,42 @@ namespace FaceBERN_
             }
         }
 
+        private void LoadTwitterCredentialsFromRegistry()
+        {
+            twitterAccessCredentials = new Credentials();
+            twitterAccessCredentials.LoadTwitter();
+        }
+
+        private void SaveTwitterCredentialsToRegistry(string accessToken, string accessTokenSecret)
+        {
+            if (twitterAccessCredentials == null)
+            {
+                twitterAccessCredentials = new Credentials();
+            }
+
+            twitterAccessCredentials.SetTwitter(twitterAccessCredentials.ToSecureString(accessToken), twitterAccessCredentials.ToSecureString(accessTokenSecret));
+        }
+
+        private string GetTwitterAccessToken()
+        {
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            return (twitterAccessCredentials.GetTwitterAccessToken() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken()) : null);
+        }
+
+        private string GetTwitterAccessTokenSecret()
+        {
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
+        }
+
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
         private void GOTV()
         {
@@ -901,8 +950,8 @@ namespace FaceBERN_
             {
                 Credentials credentials = new Credentials();
 
-                SecureString u = credentials.GetUsername();  // Load encrypted username if stored in registry.  --Kris
-                SecureString p = credentials.GetPassword();  // Load encrypted password if stored in registry.  --Kris
+                SecureString u = credentials.GetFacebookUsername();  // Load encrypted username if stored in registry.  --Kris
+                SecureString p = credentials.GetFacebookPassword();  // Load encrypted password if stored in registry.  --Kris
                 bool remember = false;
 
                 if (u == null || p == null)
