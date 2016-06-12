@@ -579,8 +579,7 @@ namespace FaceBERN_
 
         private void LoadTwitterCredentialsFromRegistry()
         {
-            twitterAccessCredentials = new Credentials();
-            twitterAccessCredentials.LoadTwitter();
+            twitterAccessCredentials = new Credentials(false, true);
         }
 
         private void SaveTwitterCredentialsToRegistry(string accessToken, string accessTokenSecret)
@@ -948,7 +947,7 @@ namespace FaceBERN_
             SetExecState(Globals.STATE_VALIDATING);
             if (webDriver.GetElementById("loginbutton") != null)
             {
-                Credentials credentials = new Credentials();
+                Credentials credentials = new Credentials(true);
 
                 SecureString u = credentials.GetFacebookUsername();  // Load encrypted username if stored in registry.  --Kris
                 SecureString p = credentials.GetFacebookPassword();  // Load encrypted password if stored in registry.  --Kris

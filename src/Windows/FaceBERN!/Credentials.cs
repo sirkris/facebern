@@ -28,7 +28,7 @@ namespace FaceBERN_
         private byte[] facebookEntropy;
         private byte[] twitterEntropy;
 
-        internal Credentials()
+        internal Credentials(bool loadFacebook = false, bool loadTwitter = false)
         {
             try
             {
@@ -48,7 +48,15 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadFacebook();
+            if (loadFacebook)
+            {
+                LoadFacebook();
+            }
+
+            if (loadTwitter)
+            {
+                LoadTwitter();
+            }
         }
 
         internal bool SetFacebook(SecureString username, SecureString password)
