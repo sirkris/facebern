@@ -120,6 +120,11 @@ namespace FaceBERN_
             return true;
         }
 
+        internal bool SetTwitter(string accessToken, string accessTokenSecret)
+        {
+            return SetTwitter(ToSecureString(accessToken), ToSecureString(accessTokenSecret));
+        }
+
         internal bool SetTwitter(SecureString accessToken, SecureString accessTokenSecret)
         {
             try

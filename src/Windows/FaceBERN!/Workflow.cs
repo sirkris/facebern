@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Twitterizer;
 
 namespace FaceBERN_
 {
@@ -604,9 +605,49 @@ namespace FaceBERN_
 
         private void AuthorizeTwitter()
         {
-            twitterCredentials = new TwitterCredentials(twitterConsumerKey, twitterConsumerSecret);
+            Log("Checking Twitter credentials....");
 
-            
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            /* If access token/secret aren't stored, do the workflow for obtaining that.  --Kris */
+            if (twitterAccessCredentials.GetTwitterAccessToken() == null || twitterAccessCredentials.GetTwitterAccessTokenSecret() == null)
+            {
+                Log("User credentials not stored.  Loading Twitter authorization page....");
+
+                string requestToken = OAuthUtility.GetRequestToken(twitterConsumerKey, twitterConsumerSecret, "oob").Token;
+                string authURI = OAuthUtility.BuildAuthorizationUri(requestToken).AbsoluteUri;
+
+                string pin = "";
+                // TODO - Open browser to authURI and popup a window where they can enter the PIN after the page loads (attempt to auto-populate, if possible).  --Kris
+
+
+                if (pin == null || pin.Trim() == "")
+                {
+                    Log("No PIN entered!  Twitter credentials not stored!");
+                }
+                else
+                {
+                    OAuthTokenResponse accessToken = OAuthUtility.GetAccessToken(twitterConsumerKey, twitterConsumerSecret, requestToken, pin);
+
+                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null)
+                    {
+                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret);
+
+                        Log("Twitter credentials stored successfully!");
+                    }
+                    else
+                    {
+                        Log("Twitter authorization FAILED!  Did you enter the PIN correctly?");
+                    }
+                }
+            }
+            else
+            {
+                Log("Twitter credentials loaded successfully.");
+            }
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
