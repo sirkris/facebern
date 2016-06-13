@@ -18,6 +18,8 @@ namespace FaceBERN_
 
         private SecureString twitterAccessToken;
         private SecureString twitterAccessTokenSecret;
+        private SecureString twitterUsername;
+        private SecureString twitterUserID;
 
         private RegistryKey softwareKey;
         private RegistryKey appKey;
@@ -120,12 +122,12 @@ namespace FaceBERN_
             return true;
         }
 
-        internal bool SetTwitter(string accessToken, string accessTokenSecret)
+        internal bool SetTwitter(string accessToken, string accessTokenSecret, string username = null, string userId = null)
         {
-            return SetTwitter(ToSecureString(accessToken), ToSecureString(accessTokenSecret));
+            return SetTwitter(ToSecureString(accessToken), ToSecureString(accessTokenSecret), ToSecureString(username), ToSecureString(userId));
         }
 
-        internal bool SetTwitter(SecureString accessToken, SecureString accessTokenSecret)
+        internal bool SetTwitter(SecureString accessToken, SecureString accessTokenSecret, SecureString username = null, SecureString userId = null)
         {
             try
             {
@@ -145,10 +147,22 @@ namespace FaceBERN_
 
                 byte[] tAC = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(accessToken)), twitterEntropy, DataProtectionScope.CurrentUser);
                 byte[] tACS = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(accessTokenSecret)), twitterEntropy, DataProtectionScope.CurrentUser);
-
+                byte[] u = (username != null ? ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(username)), twitterEntropy, DataProtectionScope.CurrentUser) : null);
+                byte[] uID = (userId != null ? ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(userId)), twitterEntropy, DataProtectionScope.CurrentUser) : null);
+                
                 twitterKey.SetValue("entropy", twitterEntropy, RegistryValueKind.Binary);
                 twitterKey.SetValue("tAC", tAC, RegistryValueKind.Binary);
                 twitterKey.SetValue("tACS", tACS, RegistryValueKind.Binary);
+
+                if (u != null)
+                {
+                    twitterKey.SetValue("u", u, RegistryValueKind.Binary);
+                }
+
+                if (uID != null)
+                {
+                    twitterKey.SetValue("uID", uID, RegistryValueKind.Binary);
+                }
 
                 twitterKey.Flush();
             }
@@ -172,9 +186,13 @@ namespace FaceBERN_
                 twitterEntropy = (byte[]) twitterKey.GetValue("entropy", null);
                 byte[] tAC = (byte[]) twitterKey.GetValue("tAC", null);
                 byte[] tACS = (byte[]) twitterKey.GetValue("tACS", null);
+                byte[] u = (byte[]) twitterKey.GetValue("u", null);
+                byte[] uID = (byte[]) twitterKey.GetValue("uID", null);
 
                 twitterAccessToken = (tAC != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tAC, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
                 twitterAccessTokenSecret = (tACS != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tACS, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterUsername = (u != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(u, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterUserID = (uID != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(uID, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
             }
             catch (IOException e)
             {
@@ -187,6 +205,18 @@ namespace FaceBERN_
         }
 
         internal void Destroy(bool clearRegistry = false)
+        {
+            DestroyFacebook(clearRegistry);
+            DestroyTwitter(clearRegistry);
+
+            facebookKey.Close();
+            twitterKey.Close();
+            credentialsKey.Close();
+            appKey.Close();
+            softwareKey.Close();
+        }
+
+        internal void DestroyFacebook(bool clearRegistry = false)
         {
             if (facebookUsername != null)
             {
@@ -203,16 +233,39 @@ namespace FaceBERN_
                 facebookKey.DeleteValue("cU", false);
                 facebookKey.DeleteValue("cP", false);
 
+                SaveKeys();
+            }
+        }
+
+        internal void DestroyTwitter(bool clearRegistry = false)
+        {
+            if (twitterAccessToken != null)
+            {
+                twitterAccessToken.Dispose();
+            }
+            if (twitterAccessTokenSecret != null)
+            {
+                twitterAccessTokenSecret.Dispose();
+            }
+            if (twitterUsername != null)
+            {
+                twitterUsername.Dispose();
+            }
+            if (twitterUserID != null)
+            {
+                twitterUserID.Dispose();
+            }
+
+            if (clearRegistry)
+            {
                 twitterKey.DeleteValue("entropy", false);
                 twitterKey.DeleteValue("tAC", false);
                 twitterKey.DeleteValue("tACS", false);
-            }
+                twitterKey.DeleteValue("u", false);
+                twitterKey.DeleteValue("uID", false);
 
-            facebookKey.Close();
-            twitterKey.Close();
-            credentialsKey.Close();
-            appKey.Close();
-            softwareKey.Close();
+                SaveKeys();
+            }
         }
 
         private void SaveKeys()
@@ -244,8 +297,28 @@ namespace FaceBERN_
             return twitterAccessTokenSecret;
         }
 
+        internal SecureString GetTwitterUsername()
+        {
+            return twitterUsername;
+        }
+
+        internal SecureString GetTwitterUserID()
+        {
+            return twitterUserID;
+        }
+
+        internal bool IsAssociated()
+        {
+            return (twitterAccessToken != null && twitterAccessTokenSecret != null && twitterUsername != null && twitterUserID != null);
+        }
+
         internal SecureString ToSecureString(string str)
         {
+            if (str == null)
+            {
+                return null;
+            }
+
             SecureString secureString = new SecureString();
 
             Array.ForEach(str.ToCharArray(), secureString.AppendChar);

@@ -155,8 +155,8 @@
     <Reference Include="ThoughtWorks.Selenium.Core">
       <HintPath>Resources\ThoughtWorks.Selenium.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Tweetinvi">
-      <HintPath>Resources\Tweetinvi.dll</HintPath>
+    <Reference Include="Twitterizer2">
+      <HintPath>Resources\Twitterizer2.dll</HintPath>
     </Reference>
     <Reference Include="WebDriver">
       <HintPath>Resources\WebDriver.dll</HintPath>

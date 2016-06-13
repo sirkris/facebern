@@ -16,6 +16,8 @@ namespace FaceBERN_
         private Dictionary<int, string> stateIndexes;
         private int selectedStateIndex = 0;
 
+        private Credentials twitterCredentials;
+
         public FormSettings(bool topMost = false)
         {
             InitializeComponent();
@@ -40,6 +42,8 @@ namespace FaceBERN_
             Globals.Config["CheckRememberPasswordByDefault"] = (checkRememberPasswordByDefaultCheckbox.Checked ? "1" : "0");
             Globals.Config["AutoUpdate"] = (autoUpdateCheckbox.Checked ? "1" : "0");
             Globals.Config["TweetRedditNews"] = (tweetRedditNewsCheckbox.Checked ? "1" : "0");
+            Globals.Config["EnableFacebanking"] = (enableFacebankingCheckbox.Checked ? "1" : "0");
+            Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
 
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
@@ -83,11 +87,7 @@ namespace FaceBERN_
             switch (tab.ToLower())
             {
                 case "general":
-                    useFTBEventsCheckbox.Checked = (Globals.Config["UseFTBEvents"] == "1" ? true : false);
-                    useCustomEventsCheckbox.Checked = (Globals.Config["UseCustomEvents"] == "1" ? true : false);
-                    checkRememberPasswordByDefaultCheckbox.Checked = (Globals.Config["CheckRememberPasswordByDefault"] == "1" ? true : false);
                     autoUpdateCheckbox.Checked = (Globals.Config["AutoUpdate"] == "1" ? true : false);
-                    tweetRedditNewsCheckbox.Checked = (Globals.Config["TweetRedditNews"] == "1" ? true : false);
 
                     break;
                 case "states":
@@ -145,6 +145,25 @@ namespace FaceBERN_
                     SetStateFields();
                     
                     break;
+                case "facebook":
+                    enableFacebankingCheckbox.Checked = (Globals.Config["EnableFacebanking"] == "1" ? true : false);
+                    useFTBEventsCheckbox.Checked = (Globals.Config["UseFTBEvents"] == "1" ? true : false);
+                    useCustomEventsCheckbox.Checked = (Globals.Config["UseCustomEvents"] == "1" ? true : false);
+                    checkRememberPasswordByDefaultCheckbox.Checked = (Globals.Config["CheckRememberPasswordByDefault"] == "1" ? true : false);
+
+                    break;
+                case "twitter":
+                    enableTwitterCheckbox.Checked = (Globals.Config["EnableTwitter"] == "1" ? true : false);
+                    tweetRedditNewsCheckbox.Checked = (Globals.Config["TweetRedditNews"] == "1" ? true : false);
+
+                    twitterCredentials = new Credentials(false, true);
+                    twitterUsernameTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterUsername());
+                    twitterUserIdTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterUserID());
+                    twitterAccessTokenTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterAccessToken());
+
+                    button2.Text = (twitterCredentials.IsAssociated() ? "De-Associate Twitter Account" : "Associate Twitter Account");
+
+                    break;
             }
 
             buttonApply.Enabled = applyEnabled;
@@ -158,6 +177,16 @@ namespace FaceBERN_
         private void tabStates_Load(object sender, EventArgs e)
         {
             SetFormDefaults("states");
+        }
+
+        private void tabFacebook_Load(object sender, EventArgs e)
+        {
+            SetFormDefaults("facebook");
+        }
+
+        private void tabTwitter_Load(object sender, EventArgs e)
+        {
+            SetFormDefaults("twitter");
         }
 
         private void SetStateFields()
@@ -220,6 +249,70 @@ namespace FaceBERN_
             buttonApply.Enabled = applyEnabled;
         }
 
+        private void SetFacebookFields()
+        {
+            bool applyEnabled = buttonApply.Enabled;
+
+            if (enableFacebankingCheckbox.Checked == true)
+            {
+                label1.Visible = true;
+                label2.Visible = true;
+                label3.Visible = true;
+
+                useFTBEventsCheckbox.Visible = true;
+                useCustomEventsCheckbox.Visible = true;
+                checkRememberPasswordByDefaultCheckbox.Visible = true;
+            }
+            else
+            {
+                label1.Visible = false;
+                label2.Visible = false;
+                label3.Visible = false;
+
+                useFTBEventsCheckbox.Visible = false;
+                useCustomEventsCheckbox.Visible = false;
+                checkRememberPasswordByDefaultCheckbox.Visible = false;
+            }
+
+            buttonApply.Enabled = applyEnabled;
+        }
+
+        private void SetTwitterFields()
+        {
+            bool applyEnabled = buttonApply.Enabled;
+
+            if (enableTwitterCheckbox.Checked == true)
+            {
+                label6.Visible = true;
+                label9.Visible = true;
+                label10.Visible = true;
+                label11.Visible = true;
+                label12.Visible = true;
+
+                tweetRedditNewsCheckbox.Visible = true;
+                button2.Visible = true;
+                twitterUsernameTextbox.Visible = true;
+                twitterUserIdTextbox.Visible = true;
+                twitterAccessTokenTextbox.Visible = true;
+            }
+            else
+            {
+                label6.Visible = false;
+                label9.Visible = false;
+                label10.Visible = false;
+                label11.Visible = false;
+                label12.Visible = false;
+
+                tweetRedditNewsCheckbox.Visible = false;
+                button2.Visible = false;
+                twitterUsernameTextbox.Visible = false;
+                twitterUserIdTextbox.Visible = false;
+                twitterAccessTokenTextbox.Visible = false;
+            }
+
+            buttonApply.Enabled = applyEnabled;
+        }
+
         private void StateFields_TextChanged(object sender, EventArgs e)
         {
             buttonApply.Enabled = true;
@@ -229,6 +322,16 @@ namespace FaceBERN_
         {
             selectedStateIndex = statesComboBox.SelectedIndex;
             SetStateFields();
+        }
+
+        private void enableFacebankingCheckbox_CheckChanged(object sender, EventArgs e)
+        {
+            SetFacebookFields();
+        }
+
+        private void enableTwitterCheckbox_CheckChanged(object sender, EventArgs e)
+        {
+            SetTwitterFields();
         }
 
         private void useFTPEventsCheckbox_CheckChanged(object sender, EventArgs e)
@@ -253,7 +356,7 @@ namespace FaceBERN_
 
         private void button1_Click(object sender, EventArgs e)
         {
-            DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to forget your Facebook username/password?", "Confirm Deletion", MessageBoxButtons.YesNo);
+            DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to forget your account information for ALL sites?", "Confirm Deletion", MessageBoxButtons.YesNo);
             if (dr == DialogResult.Yes)
             {
                 Credentials c = new Credentials();
@@ -267,6 +370,83 @@ namespace FaceBERN_
         private void label7_Click(object sender, EventArgs e)
         {
             enableGOTVCheckbox.Checked = !(enableGOTVCheckbox.Checked);
+        }
+
+        private void label4_Click(object sender, EventArgs e)
+        {
+            autoUpdateCheckbox.Checked = !(autoUpdateCheckbox.Checked);
+        }
+
+        private void label7_Click_1(object sender, EventArgs e)
+        {
+            enableFacebankingCheckbox.Checked = !(enableFacebankingCheckbox.Checked);
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+            useFTBEventsCheckbox.Checked = !(useFTBEventsCheckbox.Checked);
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+            useCustomEventsCheckbox.Checked = !(useCustomEventsCheckbox.Checked);
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+            checkRememberPasswordByDefaultCheckbox.Checked = !(checkRememberPasswordByDefaultCheckbox.Checked);
+        }
+
+        private void label8_Click(object sender, EventArgs e)
+        {
+            enableTwitterCheckbox.Checked = !(enableTwitterCheckbox.Checked);
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+            tweetRedditNewsCheckbox.Checked = !(tweetRedditNewsCheckbox.Checked);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to forget your Facebook username/password?", "Confirm Deletion", MessageBoxButtons.YesNo);
+            if (dr == DialogResult.Yes)
+            {
+                Credentials c = new Credentials();
+                c.DestroyFacebook(true);
+                c = null;
+
+                MessageBox.Show("Stored Facebook credentials deleted successfully!", "Success!", MessageBoxButtons.OK);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            twitterCredentials = new Credentials(false, true);
+
+            if (twitterCredentials.IsAssociated())
+            {
+                /* De-associate Twitter account.  --Kris */
+                DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to de-associate your Twitter account?", "Confirm De-Association", MessageBoxButtons.YesNo);
+                if (dr == DialogResult.Yes)
+                {
+                    twitterCredentials.DestroyTwitter(true);
+                    twitterCredentials = null;
+
+                    MessageBox.Show("Twitter account removed successfully!", "Success!", MessageBoxButtons.OK);
+                }
+            }
+            else
+            {
+                /* Associate new Twitter account.  --Kris */
+                DialogResult dr = MessageBox.Show("FaceBERN! will open Twitter in a browser window.  You will be asked to enter the PIN you see there.  Are you ready?", "Confirm De-Association", MessageBoxButtons.YesNo);
+                if (dr == DialogResult.Yes)
+                {
+                    // TODO - Tie in to Workflow Twitter auth functions.  --Kris
+
+                    MessageBox.Show("Twitter account added successfully!", "Success!", MessageBoxButtons.OK);
+                }
+            }
         }
     }
 }

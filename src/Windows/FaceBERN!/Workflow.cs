@@ -621,8 +621,13 @@ namespace FaceBERN_
                 string authURI = OAuthUtility.BuildAuthorizationUri(requestToken).AbsoluteUri;
 
                 string pin = "";
-                // TODO - Open browser to authURI and popup a window where they can enter the PIN after the page loads (attempt to auto-populate, if possible).  --Kris
+                
+                /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
+                WebDriver webDriverTwitPin = new WebDriver(Main, browser);
+                webDriverTwitPin.FixtureSetup();
+                webDriverTwitPin.TestSetUp(authURI);
 
+                pin = pin;
 
                 if (pin == null || pin.Trim() == "")
                 {
@@ -631,10 +636,10 @@ namespace FaceBERN_
                 else
                 {
                     OAuthTokenResponse accessToken = OAuthUtility.GetAccessToken(twitterConsumerKey, twitterConsumerSecret, requestToken, pin);
-
-                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null)
+                    
+                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null && accessToken.UserId != null)
                     {
-                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret);
+                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret, accessToken.ScreenName, accessToken.UserId.ToString());
 
                         Log("Twitter credentials stored successfully!");
                     }
