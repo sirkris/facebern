@@ -18,20 +18,34 @@ namespace FaceBERN_
 
         private Credentials twitterCredentials;
 
-        public FormSettings(bool topMost = false)
+        private Form1 Main;
+
+        public FormSettings(Form1 Main, bool topMost = false)
         {
             InitializeComponent();
+            this.Main = Main;
             this.TopMost = topMost;
         }
 
         private void buttonOk_Click(object sender, EventArgs e)
         {
             buttonApply_Click(sender, e);
-            this.Close();
+            CloseSettings();
         }
 
         private void buttonCancel_Click(object sender, EventArgs e)
         {
+            CloseSettings();
+        }
+
+        private void CloseSettings()
+        {
+            if (twitterCredentials != null)
+            {
+                twitterCredentials.Destroy();
+                twitterCredentials = null;
+            }
+
             this.Close();
         }
 
@@ -156,17 +170,23 @@ namespace FaceBERN_
                     enableTwitterCheckbox.Checked = (Globals.Config["EnableTwitter"] == "1" ? true : false);
                     tweetRedditNewsCheckbox.Checked = (Globals.Config["TweetRedditNews"] == "1" ? true : false);
 
-                    twitterCredentials = new Credentials(false, true);
-                    twitterUsernameTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterUsername());
-                    twitterUserIdTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterUserID());
-                    twitterAccessTokenTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterAccessToken());
-
-                    button2.Text = (twitterCredentials.IsAssociated() ? "De-Associate Twitter Account" : "Associate Twitter Account");
+                    ShowTwitterCredentials();
 
                     break;
             }
 
             buttonApply.Enabled = applyEnabled;
+        }
+
+        // This should be called only when the Twitter tab is active!  --Kris
+        private void ShowTwitterCredentials()
+        {
+            twitterCredentials = new Credentials(false, true);
+            twitterUsernameTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterUsername());
+            twitterUserIdTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterUserID());
+            twitterAccessTokenTextbox.Text = twitterCredentials.ToString(twitterCredentials.GetTwitterAccessToken());
+
+            button2.Text = (twitterCredentials.IsAssociated() ? "De-Associate Twitter Account" : "Associate Twitter Account");
         }
 
         private void tabGeneral_Load(object sender, EventArgs e)
@@ -422,6 +442,12 @@ namespace FaceBERN_
 
         private void button2_Click(object sender, EventArgs e)
         {
+            if (Globals.executionState != Globals.STATE_READY)
+            {
+                MessageBox.Show("This operation can only be performed when FaceBERN! is not executing its workflow.  Please click the STOP button then try again.");
+                return;
+            }
+            
             twitterCredentials = new Credentials(false, true);
 
             if (twitterCredentials.IsAssociated())
@@ -433,18 +459,23 @@ namespace FaceBERN_
                     twitterCredentials.DestroyTwitter(true);
                     twitterCredentials = null;
 
+                    ShowTwitterCredentials();  // Updates the form fields.  --Kris
+
                     MessageBox.Show("Twitter account removed successfully!", "Success!", MessageBoxButtons.OK);
                 }
             }
             else
             {
                 /* Associate new Twitter account.  --Kris */
-                DialogResult dr = MessageBox.Show("FaceBERN! will open Twitter in a browser window.  You will be asked to enter the PIN you see there.  Are you ready?", "Confirm De-Association", MessageBoxButtons.YesNo);
+                DialogResult dr = MessageBox.Show("FaceBERN! will open Twitter in a browser window.  You will be asked to enter the PIN you see there.  Are you ready?", "Confirm Twitter Account Association", MessageBoxButtons.YesNo);
                 if (dr == DialogResult.Yes)
                 {
-                    // TODO - Tie in to Workflow Twitter auth functions.  --Kris
+                    MessageBox.Show("The Settings window will now close and a browser window will open with a temporary PIN.  You will then be prompted to enter that PIN here.");
 
-                    MessageBox.Show("Twitter account added successfully!", "Success!", MessageBoxButtons.OK);
+                    Workflow workflow = new Workflow(Main);
+                    Globals.thread = workflow.ExecuteTwitterAuthThread(Main.browserModeComboBox.SelectedIndex);
+
+                    this.Close();
                 }
             }
         }

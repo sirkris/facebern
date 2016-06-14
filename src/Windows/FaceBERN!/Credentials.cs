@@ -189,10 +189,10 @@ namespace FaceBERN_
                 byte[] u = (byte[]) twitterKey.GetValue("u", null);
                 byte[] uID = (byte[]) twitterKey.GetValue("uID", null);
 
-                twitterAccessToken = (tAC != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tAC, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
-                twitterAccessTokenSecret = (tACS != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tACS, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
-                twitterUsername = (u != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(u, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
-                twitterUserID = (uID != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(uID, facebookEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterAccessToken = (tAC != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tAC, twitterEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterAccessTokenSecret = (tACS != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(tACS, twitterEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterUsername = (u != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(u, twitterEntropy, DataProtectionScope.CurrentUser))) : null);
+                twitterUserID = (uID != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(uID, twitterEntropy, DataProtectionScope.CurrentUser))) : null);
             }
             catch (IOException e)
             {

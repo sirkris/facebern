@@ -442,6 +442,165 @@ namespace FaceBERN_
             }
         }
 
+        public Thread ExecuteTwitterAuthThread(int browser)
+        {
+            SetExecState(Globals.STATE_TWITTERPIN);
+
+            Thread thread = new Thread(() => ExecuteTwitterAuth(browser));
+
+            Main.LogW("Attempting to start TwitterAuth thread....", false);
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("TwitterAuth thread started successfully.", false);
+
+            return thread;
+        }
+
+        public void ExecuteTwitterAuth(int browser)
+        {
+            Log("Commencing Twitter authorization workflow....");
+
+            AuthorizeTwitter(browser);
+
+            Log("Twitter authorization complete!");
+
+            Ready();
+        }
+
+        private void LoadTwitterCredentialsFromRegistry()
+        {
+            twitterAccessCredentials = new Credentials(false, true);
+        }
+
+        private void SaveTwitterCredentialsToRegistry(string accessToken, string accessTokenSecret)
+        {
+            if (twitterAccessCredentials == null)
+            {
+                twitterAccessCredentials = new Credentials();
+            }
+
+            twitterAccessCredentials.SetTwitter(twitterAccessCredentials.ToSecureString(accessToken), twitterAccessCredentials.ToSecureString(accessTokenSecret));
+        }
+
+        private string GetTwitterAccessToken()
+        {
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            return (twitterAccessCredentials.GetTwitterAccessToken() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken()) : null);
+        }
+
+        private string GetTwitterAccessTokenSecret()
+        {
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
+        }
+
+        private void AuthorizeTwitter(int browser)
+        {
+            Log("Checking Twitter credentials....");
+
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            /* If access token/secret aren't stored, do the workflow for obtaining that.  --Kris */
+            if (twitterAccessCredentials.IsAssociated() == false)
+            {
+                Log("User credentials not stored.  Loading Twitter authorization page....");
+
+                string requestToken = OAuthUtility.GetRequestToken(twitterConsumerKey, twitterConsumerSecret, "oob").Token;
+                string authURI = OAuthUtility.BuildAuthorizationUri(requestToken).AbsoluteUri;
+
+                string pin = "";
+
+                /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
+                webDriver = new WebDriver(Main, browser);
+                webDriver.FixtureSetup();
+                webDriver.TestSetUp(authURI);
+
+                System.Threading.Thread.Sleep(3000);
+
+                /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
+                int timeoutSeconds = 30;
+                Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
+                DateTime start = DateTime.Now;
+                do
+                {
+                    try
+                    {
+                        if (webDriver.GetElementById("oauth_pin") != null)
+                        {
+                            List<IWebElement> eles = webDriver.GetElementsByTagName("code");
+                            foreach (IWebElement element in eles)
+                            {
+                                if (element.Text != null && element.Text.Trim().Length >= 5)
+                                {
+                                    pin = element.Text.Trim();
+                                    break;
+                                }
+                            }
+                        }
+
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                    catch (Exception e)
+                    {
+                        pin = "";
+                    }
+                } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
+
+                /* We already have the PIN but we still need the user to confirm.  --Kris */
+                TwitPin twitPin = new TwitPin(pin);
+                DialogResult res = twitPin.ShowDialog();
+                if (res == DialogResult.OK)
+                {
+                    pin = twitPin.pin;
+                }
+                else
+                {
+                    Log("User cancelled PIN input!  Twitter authorization aborted.");
+                    return;
+                }
+
+                webDriver.FixtureTearDown();
+                webDriver = null;
+
+                if (pin == null || pin.Trim() == "")
+                {
+                    Log("No PIN entered!  Twitter credentials not stored!");
+                }
+                else
+                {
+                    OAuthTokenResponse accessToken = OAuthUtility.GetAccessToken(twitterConsumerKey, twitterConsumerSecret, requestToken, pin);
+
+                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null)
+                    {
+                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret, accessToken.ScreenName, accessToken.UserId.ToString());
+
+                        Log("Twitter credentials stored successfully!");
+                    }
+                    else
+                    {
+                        Log("Twitter authorization FAILED!  Did you enter the PIN correctly?");
+                    }
+                }
+            }
+            else
+            {
+                Log("Twitter credentials loaded successfully.");
+            }
+        }
+
         public Thread ExecuteThread()
         {
             SetExecState(Globals.STATE_VALIDATING);
@@ -565,93 +724,6 @@ namespace FaceBERN_
                 {
                     Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
                 }
-            }
-        }
-
-        private void LoadTwitterCredentialsFromRegistry()
-        {
-            twitterAccessCredentials = new Credentials(false, true);
-        }
-
-        private void SaveTwitterCredentialsToRegistry(string accessToken, string accessTokenSecret)
-        {
-            if (twitterAccessCredentials == null)
-            {
-                twitterAccessCredentials = new Credentials();
-            }
-
-            twitterAccessCredentials.SetTwitter(twitterAccessCredentials.ToSecureString(accessToken), twitterAccessCredentials.ToSecureString(accessTokenSecret));
-        }
-
-        private string GetTwitterAccessToken()
-        {
-            if (twitterAccessCredentials == null)
-            {
-                LoadTwitterCredentialsFromRegistry();
-            }
-
-            return (twitterAccessCredentials.GetTwitterAccessToken() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken()) : null);
-        }
-
-        private string GetTwitterAccessTokenSecret()
-        {
-            if (twitterAccessCredentials == null)
-            {
-                LoadTwitterCredentialsFromRegistry();
-            }
-
-            return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
-        }
-
-        private void AuthorizeTwitter()
-        {
-            Log("Checking Twitter credentials....");
-
-            if (twitterAccessCredentials == null)
-            {
-                LoadTwitterCredentialsFromRegistry();
-            }
-
-            /* If access token/secret aren't stored, do the workflow for obtaining that.  --Kris */
-            if (twitterAccessCredentials.GetTwitterAccessToken() == null || twitterAccessCredentials.GetTwitterAccessTokenSecret() == null)
-            {
-                Log("User credentials not stored.  Loading Twitter authorization page....");
-
-                string requestToken = OAuthUtility.GetRequestToken(twitterConsumerKey, twitterConsumerSecret, "oob").Token;
-                string authURI = OAuthUtility.BuildAuthorizationUri(requestToken).AbsoluteUri;
-
-                string pin = "";
-                
-                /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
-                WebDriver webDriverTwitPin = new WebDriver(Main, browser);
-                webDriverTwitPin.FixtureSetup();
-                webDriverTwitPin.TestSetUp(authURI);
-
-                pin = pin;
-
-                if (pin == null || pin.Trim() == "")
-                {
-                    Log("No PIN entered!  Twitter credentials not stored!");
-                }
-                else
-                {
-                    OAuthTokenResponse accessToken = OAuthUtility.GetAccessToken(twitterConsumerKey, twitterConsumerSecret, requestToken, pin);
-                    
-                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null && accessToken.UserId != null)
-                    {
-                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret, accessToken.ScreenName, accessToken.UserId.ToString());
-
-                        Log("Twitter credentials stored successfully!");
-                    }
-                    else
-                    {
-                        Log("Twitter authorization FAILED!  Did you enter the PIN correctly?");
-                    }
-                }
-            }
-            else
-            {
-                Log("Twitter credentials loaded successfully.");
             }
         }
 

@@ -489,6 +489,9 @@ namespace FaceBERN_
                 case Globals.STATE_RESTARTING:
                     logState = "RESTARTING";
                     break;
+                case Globals.STATE_TWITTERPIN:
+                    logState = "TWITTERPIN";
+                    break;
             }
 
             if (state != Globals.executionState)
@@ -502,7 +505,8 @@ namespace FaceBERN_
         {
             if (buttonStart.Enabled == false 
                 || Globals.executionState == Globals.STATE_BROKEN 
-                || Globals.executionState == Globals.STATE_STOPPING)
+                || Globals.executionState == Globals.STATE_STOPPING 
+                || Globals.executionState == Globals.STATE_TWITTERPIN)
             {
                 buttonStart.Click -= buttonStart_Click;
                 return;
@@ -923,7 +927,7 @@ namespace FaceBERN_
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FormSettings settings = new FormSettings(this.TopMost);
+            FormSettings settings = new FormSettings(this, this.TopMost);
             settings.Show(); // TODO - Should probably be ShowDialog(), now that I think of it....  --Kris
         }
 
