@@ -43,7 +43,7 @@ namespace FaceBERN_
         {
             return (bool)csINIType.InvokeMember("Save",
                 BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, csINIInstance,
-                new object[] { filename, directives });
+                new object[] { filename, directives, true });
         }
 
         public bool Save(string filename, Dictionary<string, Dictionary<string, string>> directives)

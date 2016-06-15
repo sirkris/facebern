@@ -69,6 +69,7 @@ namespace FaceBERN_
         public const int STATE_EXECUTING = 4;  // Doing the actual work.
         public const int STATE_STOPPING = 5;  // Stop button has been clicked.
         public const int STATE_RESTARTING = 6;  // Workflow thread is being re-created, most likely due to an error.
+        public const int STATE_TWITTERPIN = 7;  // User is associating or de-associating their Twitter account (via Tools->Settings or post-install setup).
 
         /* Browser constants.  --Kris */
         public const int FIREFOX_HEADLESS = -1;  // Open a headless browser instance using NHtmlUnit.  Not working with Facebook.

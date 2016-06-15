@@ -1,4 +1,5 @@
 ﻿using AutoIt;
+using csReddit;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
@@ -14,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Twitterizer;
 
 namespace FaceBERN_
 {
@@ -22,12 +24,14 @@ namespace FaceBERN_
         private string logName = "Workflow";
         public Log WorkflowLog;
         private Form1 Main;
+        private Reddit reddit;
         private int browser = 0;
         private bool ftbFriended = false;
 
         public long invitesSent = 0;  // Tracked for current session only.  --Kris
 
         public List<Person> invited;
+        public List<string> tweets;
 
         private WebDriver webDriver = null;
 
@@ -40,6 +44,11 @@ namespace FaceBERN_
         private Random rand;
 
         private string lastLogMsg = null;
+
+        private string twitterConsumerKey = "NB74pt5RpC7QuszjGy8qy7rju";
+        private string twitterConsumerSecret = "ifP1aw4ggRjkCktFEnU2T0zS2HA0XxlCpzjb601SMRo7U4HoNR";
+        private Credentials twitterAccessCredentials = null;
+        private OAuthTokens twitterTokens = null;
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
@@ -55,6 +64,8 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
+            
+            reddit = new Reddit(false);
         }
 
         /* This thread is designed to run continuously while the program is running.  --Kris */
@@ -432,6 +443,165 @@ namespace FaceBERN_
             }
         }
 
+        public Thread ExecuteTwitterAuthThread(int browser)
+        {
+            SetExecState(Globals.STATE_TWITTERPIN);
+
+            Thread thread = new Thread(() => ExecuteTwitterAuth(browser));
+
+            Main.LogW("Attempting to start TwitterAuth thread....", false);
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("TwitterAuth thread started successfully.", false);
+
+            return thread;
+        }
+
+        public void ExecuteTwitterAuth(int browser)
+        {
+            Log("Commencing Twitter authorization workflow....");
+
+            AuthorizeTwitter(browser);
+
+            Log("Twitter authorization complete!");
+
+            Ready();
+        }
+
+        private void LoadTwitterCredentialsFromRegistry()
+        {
+            twitterAccessCredentials = new Credentials(false, true);
+        }
+
+        private void SaveTwitterCredentialsToRegistry(string accessToken, string accessTokenSecret)
+        {
+            if (twitterAccessCredentials == null)
+            {
+                twitterAccessCredentials = new Credentials();
+            }
+
+            twitterAccessCredentials.SetTwitter(twitterAccessCredentials.ToSecureString(accessToken), twitterAccessCredentials.ToSecureString(accessTokenSecret));
+        }
+
+        private string GetTwitterAccessToken()
+        {
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            return (twitterAccessCredentials.GetTwitterAccessToken() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken()) : null);
+        }
+
+        private string GetTwitterAccessTokenSecret()
+        {
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
+        }
+
+        private void AuthorizeTwitter(int browser)
+        {
+            Log("Checking Twitter credentials....");
+
+            if (twitterAccessCredentials == null)
+            {
+                LoadTwitterCredentialsFromRegistry();
+            }
+
+            /* If access token/secret aren't stored, do the workflow for obtaining that.  --Kris */
+            if (twitterAccessCredentials.IsAssociated() == false)
+            {
+                Log("User credentials not stored.  Loading Twitter authorization page....");
+
+                string requestToken = OAuthUtility.GetRequestToken(twitterConsumerKey, twitterConsumerSecret, "oob").Token;
+                string authURI = OAuthUtility.BuildAuthorizationUri(requestToken).AbsoluteUri;
+
+                string pin = "";
+
+                /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
+                webDriver = new WebDriver(Main, browser);
+                webDriver.FixtureSetup();
+                webDriver.TestSetUp(authURI);
+
+                System.Threading.Thread.Sleep(3000);
+
+                /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
+                int timeoutSeconds = 30;
+                Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
+                DateTime start = DateTime.Now;
+                do
+                {
+                    try
+                    {
+                        if (webDriver.GetElementById("oauth_pin") != null)
+                        {
+                            List<IWebElement> eles = webDriver.GetElementsByTagName("code");
+                            foreach (IWebElement element in eles)
+                            {
+                                if (element.Text != null && element.Text.Trim().Length >= 5)
+                                {
+                                    pin = element.Text.Trim();
+                                    break;
+                                }
+                            }
+                        }
+
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                    catch (Exception e)
+                    {
+                        pin = "";
+                    }
+                } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
+
+                /* We already have the PIN but we still need the user to confirm.  --Kris */
+                TwitPin twitPin = new TwitPin(pin);
+                DialogResult res = twitPin.ShowDialog();
+                if (res == DialogResult.OK)
+                {
+                    pin = twitPin.pin;
+                }
+                else
+                {
+                    Log("User cancelled PIN input!  Twitter authorization aborted.");
+                    return;
+                }
+
+                webDriver.FixtureTearDown();
+                webDriver = null;
+
+                if (pin == null || pin.Trim() == "")
+                {
+                    Log("No PIN entered!  Twitter credentials not stored!");
+                }
+                else
+                {
+                    OAuthTokenResponse accessToken = OAuthUtility.GetAccessToken(twitterConsumerKey, twitterConsumerSecret, requestToken, pin);
+
+                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null)
+                    {
+                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret, accessToken.ScreenName, accessToken.UserId.ToString());
+
+                        Log("Twitter credentials stored successfully!");
+                    }
+                    else
+                    {
+                        Log("Twitter authorization FAILED!  Did you enter the PIN correctly?");
+                    }
+                }
+            }
+            else
+            {
+                Log("Twitter credentials loaded successfully.");
+            }
+        }
+
         public Thread ExecuteThread()
         {
             SetExecState(Globals.STATE_VALIDATING);
@@ -491,8 +661,25 @@ namespace FaceBERN_
                 {
                     Log("Beginning workflow....");
 
-                    /* Get-out-the-vote!  --Kris */
-                    GOTV();
+                    if (Globals.Config["EnableFacebanking"].Equals("1"))
+                    {
+                        /* Get-out-the-vote!  --Kris */
+                        GOTV();
+                    }
+                    else
+                    {
+                        Log("Facebanking has been disabled.  GOTV skipped.");
+                    }
+
+                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    {
+                        /* Fight back against the media blackout!  --Kris */
+                        Twitter();
+                    }
+                    else
+                    {
+                        Log("Tweetbanking has been disabled.  Twitter workflow skipped.");
+                    }
 
                     /* Check for updates every 24 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
@@ -527,35 +714,169 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                Log("ERROR:  Unhandled Exception : " + e.ToString());
-
-                SetExecState(Globals.STATE_ERROR);
-
-                Log("Aborting broken workflow....");
-
-                if (webDriver != null)
+                try
                 {
-                    webDriver.FixtureTearDown();
-                    webDriver = null;
+                    Log("ERROR:  Unhandled Exception : " + e.ToString());
+
+                    SetExecState(Globals.STATE_ERROR);
+
+                    Log("Aborting broken workflow....");
+
+                    if (webDriver != null)
+                    {
+                        webDriver.FixtureTearDown();
+                        webDriver = null;
+                    }
+
+                    System.Threading.Thread.Sleep(3000);
+
+                    if (Globals.executionState != Globals.STATE_BROKEN)
+                    {
+                        System.Threading.Thread.Sleep(5000);
+
+                        Log("Spawning new workflow thread....");
+
+                        SetExecState(Globals.STATE_RESTARTING);
+
+                        Globals.thread = ExecuteThread();
+                    }
+                    else
+                    {
+                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                    }
                 }
-
-                System.Threading.Thread.Sleep(3000);
-
-                if (Globals.executionState != Globals.STATE_BROKEN)
+                catch (Exception ex)
                 {
-                    System.Threading.Thread.Sleep(5000);
+                    try
+                    {
+                        SetExecState(Globals.STATE_BROKEN);
 
-                    Log("Spawning new workflow thread....");
+                        if (Globals.thread != null)
+                        {
+                            Globals.thread.Abort();
+                        }
+                        while (Globals.thread.IsAlive) { }
 
-                    SetExecState(Globals.STATE_RESTARTING);
-
-                    Globals.thread = ExecuteThread();
-                }
-                else
-                {
-                    Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                    }
+                    catch (Exception ex2)
+                    {
+                        return;
+                    }
                 }
             }
+        }
+
+        // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
+        private void Twitter()
+        {
+            LoadTwitterCredentialsFromRegistry();
+
+            if (twitterAccessCredentials.IsAssociated() == false)
+            {
+                Log("Warning:  Twitter is enabled but you don't have your Twitter account associated!  Twitter workflow aborted.");
+                Log(@"You can link FaceBERN! to your Twitter account under Tools->Settings.");
+
+                return;
+            }
+
+            LoadTwitterTokens();
+
+            // Uncomment below for DEBUG.  --Kris
+            /*
+            TwitterResponse<TwitterStatusCollection> timelineDebug = GetMyTweets();
+            foreach (TwitterStatus tweet in timelineDebug.ResponseObject)
+            {
+                Log("DEBUG:  Tweet:  " + tweet.Text + " (" + tweet.CreatedDate.ToString() + ")");
+            }
+
+            Tweet("Test tweet.  Please disregard.");
+            */
+
+            /* Check Birdie for any tweets that need to go out.  --Kris */
+
+
+            /* Check our Reddit subs for any posts with the "Tweet This!" flair.  --Kris */
+
+
+            DestroyTwitterTokens();
+        }
+
+        /* Post a tweet.  --Kris */
+        private bool Tweet(string tweet)
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return false;
+            }
+
+            LoadTwitterTokens();
+
+            TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
+            if (res.Result == RequestResult.Success)
+            {
+                Log("Tweeted '" + tweet + "' successfully.");
+            }
+            else
+            {
+                Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
+            }
+
+            return (res.Result == RequestResult.Success);
+        }
+
+        /* This function is used for testing Twitter integration.  Not currently used by any production workflows.  --Kris */
+        private TwitterResponse<TwitterStatusCollection> GetMyTweets(int count = 20)
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return null;
+            }
+
+            LoadTwitterTokens();
+
+            UserTimelineOptions userTimelineOptions = new UserTimelineOptions();
+            userTimelineOptions.APIBaseAddress = "https://api.twitter.com/1.1/";
+            userTimelineOptions.Count = count;
+            userTimelineOptions.UseSSL = true;
+            userTimelineOptions.ScreenName = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterUsername());
+
+            return TwitterTimeline.UserTimeline(twitterTokens, userTimelineOptions);
+        }
+
+        private bool LoadTwitterTokens()
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return false;
+            }
+
+            twitterTokens = new OAuthTokens();
+            twitterTokens.ConsumerKey = twitterConsumerKey;
+            twitterTokens.ConsumerSecret = twitterConsumerSecret;
+            twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
+            twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+
+            return true;
+        }
+
+        private void DestroyTwitterTokens()
+        {
+            twitterTokens = null;
+        }
+
+        private bool TwitterIsAuthorized()
+        {
+            if (twitterAccessCredentials == null || twitterAccessCredentials.IsAssociated() == false)
+            {
+                LoadTwitterCredentialsFromRegistry();
+                if (twitterAccessCredentials.IsAssociated() == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
@@ -893,10 +1214,10 @@ namespace FaceBERN_
             SetExecState(Globals.STATE_VALIDATING);
             if (webDriver.GetElementById("loginbutton") != null)
             {
-                Credentials credentials = new Credentials();
+                Credentials credentials = new Credentials(true);
 
-                SecureString u = credentials.GetUsername();  // Load encrypted username if stored in registry.  --Kris
-                SecureString p = credentials.GetPassword();  // Load encrypted password if stored in registry.  --Kris
+                SecureString u = credentials.GetFacebookUsername();  // Load encrypted username if stored in registry.  --Kris
+                SecureString p = credentials.GetFacebookPassword();  // Load encrypted password if stored in registry.  --Kris
                 bool remember = false;
 
                 if (u == null || p == null)

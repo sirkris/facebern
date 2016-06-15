@@ -135,6 +135,9 @@ namespace FaceBERN_
             Globals.Config.Add("UseFTBEvents", "1");
             Globals.Config.Add("UseCustomEvents", "0");
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
+            Globals.Config.Add("TweetRedditNews", "1");
+            Globals.Config.Add("EnableFacebanking", "1");
+            Globals.Config.Add("EnableTwitter", "1");
 
             /* How long to wait between GOTV checks.  --Kris */
             Globals.Config.Add("GOTVIntervalHours", "24");
@@ -439,6 +442,11 @@ namespace FaceBERN_
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
         {
+            if (Globals.executionState == Globals.STATE_BROKEN)
+            {
+                return;
+            }
+
             if (logName == null)
             {
                 logName = Form1.logName;
@@ -486,6 +494,9 @@ namespace FaceBERN_
                 case Globals.STATE_RESTARTING:
                     logState = "RESTARTING";
                     break;
+                case Globals.STATE_TWITTERPIN:
+                    logState = "TWITTERPIN";
+                    break;
             }
 
             if (state != Globals.executionState)
@@ -499,7 +510,8 @@ namespace FaceBERN_
         {
             if (buttonStart.Enabled == false 
                 || Globals.executionState == Globals.STATE_BROKEN 
-                || Globals.executionState == Globals.STATE_STOPPING)
+                || Globals.executionState == Globals.STATE_STOPPING 
+                || Globals.executionState == Globals.STATE_TWITTERPIN)
             {
                 buttonStart.Click -= buttonStart_Click;
                 return;
@@ -920,7 +932,7 @@ namespace FaceBERN_
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FormSettings settings = new FormSettings(this.TopMost);
+            FormSettings settings = new FormSettings(this, this.TopMost);
             settings.Show(); // TODO - Should probably be ShowDialog(), now that I think of it....  --Kris
         }
 
