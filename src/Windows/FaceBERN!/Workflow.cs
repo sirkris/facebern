@@ -45,8 +45,8 @@ namespace FaceBERN_
 
         private string lastLogMsg = null;
 
-        private string twitterConsumerKey = "8RzPRXybZGjAGzp0eTXhiWo4f";
-        private string twitterConsumerSecret = "vzLGs39ZntP5TQxgG6oQwEjOKcpp5f7KVhUoDjW6tZtfm1D67p";
+        private string twitterConsumerKey = "NB74pt5RpC7QuszjGy8qy7rju";
+        private string twitterConsumerSecret = "ifP1aw4ggRjkCktFEnU2T0zS2HA0XxlCpzjb601SMRo7U4HoNR";
         private Credentials twitterAccessCredentials = null;
         private OAuthTokens twitterTokens = null;
 
@@ -783,15 +783,46 @@ namespace FaceBERN_
             LoadTwitterTokens();
 
             // Uncomment below for DEBUG.  --Kris
-
+            /*
             TwitterResponse<TwitterStatusCollection> timelineDebug = GetMyTweets();
             foreach (TwitterStatus tweet in timelineDebug.ResponseObject)
             {
                 Log("DEBUG:  Tweet:  " + tweet.Text + " (" + tweet.CreatedDate.ToString() + ")");
             }
 
+            Tweet("Test tweet.  Please disregard.");
+            */
+
+            /* Check Birdie for any tweets that need to go out.  --Kris */
+
+
+            /* Check our Reddit subs for any posts with the "Tweet This!" flair.  --Kris */
+
 
             DestroyTwitterTokens();
+        }
+
+        /* Post a tweet.  --Kris */
+        private bool Tweet(string tweet)
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return false;
+            }
+
+            LoadTwitterTokens();
+
+            TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
+            if (res.Result == RequestResult.Success)
+            {
+                Log("Tweeted '" + tweet + "' successfully.");
+            }
+            else
+            {
+                Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
+            }
+
+            return (res.Result == RequestResult.Success);
         }
 
         /* This function is used for testing Twitter integration.  Not currently used by any production workflows.  --Kris */
