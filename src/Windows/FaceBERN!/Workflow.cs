@@ -95,6 +95,12 @@ namespace FaceBERN_
             /* Initialize the Birdie API client. --Kris */
             restClient = new RestClient("http://birdie.freeddns.org");
 
+            /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
+            if (CheckClientRegistration() == false)
+            {
+                RegisterClient();
+            }
+
             /* Load any invitations persisted in the registry from a previous run.  --Kris */
             LoadLatestInvitesQueue();
 
@@ -102,8 +108,8 @@ namespace FaceBERN_
             int i = 0;
             while (true)
             {
-                /* Get the Application ID.  If it's not set, generate one.  --Kris */
-                GetAppID();
+                /* Send a keep-alive to the Birdie API.  --Kris */
+                KeepAlive();
                 
                 /* Process the remote update queue and send it to Birdie.  --Kris */
                 PostLatestInvites((i == 0));
@@ -339,6 +345,46 @@ namespace FaceBERN_
             remoteInvitesSent = r;
 
             UpdateInvitationsCount(-1, r);
+        }
+
+        /* Tell the Birdie API we're still active.  --Kris */
+        private void KeepAlive()
+        {
+            IRestResponse res = BirdieQuery("/clients/" + GetAppID() + "/keepAlive", "PUT");
+
+            if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                Log("Sent keep-alive to Birdie API successfully.", false);
+            }
+            else
+            {
+                Log("Warning:  Birdie API keep-alive query failed : " + res.StatusCode);
+            }
+        }
+
+        /* Tell the Birdie API who we are.  --Kris */
+        private void RegisterClient()
+        {
+            Dictionary<string, string> postBody = new Dictionary<string, string>();
+            postBody.Add("clientId", GetAppID());
+            postBody.Add("appName", @"FaceBERN!");
+
+            IRestResponse res = BirdieQuery(@"/clients", "POST", null, JsonConvert.SerializeObject(postBody));
+
+            if (res.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                Log("Client registered with Birdie API successfully.");
+            }
+            else
+            {
+                Log("Warning:  Client registration with Birdie API failed : " + res.StatusCode);
+            }
+        }
+
+        /* Check to see if we're registered with the Birdie API.  --Kris */
+        private bool CheckClientRegistration()
+        {
+            return (BirdieQuery("/clients/" + GetAppID(), "GET").StatusCode == System.Net.HttpStatusCode.OK);
         }
 
         /* Query the Birdie API and return the raw result.  --Kris */
