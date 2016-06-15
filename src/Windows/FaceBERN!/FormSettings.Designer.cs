@@ -423,6 +423,7 @@
             this.checkRememberPasswordByDefaultCheckbox.Size = new System.Drawing.Size(15, 14);
             this.checkRememberPasswordByDefaultCheckbox.TabIndex = 14;
             this.checkRememberPasswordByDefaultCheckbox.UseVisualStyleBackColor = true;
+            this.checkRememberPasswordByDefaultCheckbox.CheckedChanged += new System.EventHandler(this.checkRememberPasswordByDefaultCheckbox_CheckChanged);
             // 
             // useCustomEventsCheckbox
             // 
@@ -432,6 +433,7 @@
             this.useCustomEventsCheckbox.Size = new System.Drawing.Size(15, 14);
             this.useCustomEventsCheckbox.TabIndex = 13;
             this.useCustomEventsCheckbox.UseVisualStyleBackColor = true;
+            this.useCustomEventsCheckbox.CheckedChanged += new System.EventHandler(this.useCustomEventsCheckbox_CheckChanged);
             // 
             // useFTBEventsCheckbox
             // 
@@ -443,6 +445,7 @@
             this.useFTBEventsCheckbox.Size = new System.Drawing.Size(15, 14);
             this.useFTBEventsCheckbox.TabIndex = 12;
             this.useFTBEventsCheckbox.UseVisualStyleBackColor = true;
+            this.useFTBEventsCheckbox.CheckedChanged += new System.EventHandler(this.useFTPEventsCheckbox_CheckChanged);
             // 
             // label3
             // 
@@ -614,6 +617,7 @@
             this.tweetRedditNewsCheckbox.Size = new System.Drawing.Size(15, 14);
             this.tweetRedditNewsCheckbox.TabIndex = 12;
             this.tweetRedditNewsCheckbox.UseVisualStyleBackColor = true;
+            this.tweetRedditNewsCheckbox.CheckedChanged += new System.EventHandler(this.tweetRedditNewsCheckbox_CheckedChanged);
             // 
             // label6
             // 

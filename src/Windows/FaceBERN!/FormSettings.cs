@@ -347,11 +347,13 @@ namespace FaceBERN_
         private void enableFacebankingCheckbox_CheckChanged(object sender, EventArgs e)
         {
             SetFacebookFields();
+            buttonApply.Enabled = true;
         }
 
         private void enableTwitterCheckbox_CheckChanged(object sender, EventArgs e)
         {
             SetTwitterFields();
+            buttonApply.Enabled = true;
         }
 
         private void useFTPEventsCheckbox_CheckChanged(object sender, EventArgs e)
@@ -370,6 +372,11 @@ namespace FaceBERN_
         }
 
         private void autoUpdateCheckbox_CheckChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
+        }
+
+        private void tweetRedditNewsCheckbox_CheckedChanged(object sender, EventArgs e)
         {
             buttonApply.Enabled = true;
         }

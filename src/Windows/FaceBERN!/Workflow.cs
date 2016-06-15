@@ -48,6 +48,7 @@ namespace FaceBERN_
         private string twitterConsumerKey = "8RzPRXybZGjAGzp0eTXhiWo4f";
         private string twitterConsumerSecret = "vzLGs39ZntP5TQxgG6oQwEjOKcpp5f7KVhUoDjW6tZtfm1D67p";
         private Credentials twitterAccessCredentials = null;
+        private OAuthTokens twitterTokens = null;
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
@@ -660,8 +661,25 @@ namespace FaceBERN_
                 {
                     Log("Beginning workflow....");
 
-                    /* Get-out-the-vote!  --Kris */
-                    GOTV();
+                    if (Globals.Config["EnableFacebanking"].Equals("1"))
+                    {
+                        /* Get-out-the-vote!  --Kris */
+                        GOTV();
+                    }
+                    else
+                    {
+                        Log("Facebanking has been disabled.  GOTV skipped.");
+                    }
+
+                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    {
+                        /* Fight back against the media blackout!  --Kris */
+                        Twitter();
+                    }
+                    else
+                    {
+                        Log("Tweetbanking has been disabled.  Twitter workflow skipped.");
+                    }
 
                     /* Check for updates every 24 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
@@ -696,35 +714,138 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                Log("ERROR:  Unhandled Exception : " + e.ToString());
-
-                SetExecState(Globals.STATE_ERROR);
-
-                Log("Aborting broken workflow....");
-
-                if (webDriver != null)
+                try
                 {
-                    webDriver.FixtureTearDown();
-                    webDriver = null;
+                    Log("ERROR:  Unhandled Exception : " + e.ToString());
+
+                    SetExecState(Globals.STATE_ERROR);
+
+                    Log("Aborting broken workflow....");
+
+                    if (webDriver != null)
+                    {
+                        webDriver.FixtureTearDown();
+                        webDriver = null;
+                    }
+
+                    System.Threading.Thread.Sleep(3000);
+
+                    if (Globals.executionState != Globals.STATE_BROKEN)
+                    {
+                        System.Threading.Thread.Sleep(5000);
+
+                        Log("Spawning new workflow thread....");
+
+                        SetExecState(Globals.STATE_RESTARTING);
+
+                        Globals.thread = ExecuteThread();
+                    }
+                    else
+                    {
+                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                    }
                 }
-
-                System.Threading.Thread.Sleep(3000);
-
-                if (Globals.executionState != Globals.STATE_BROKEN)
+                catch (Exception ex)
                 {
-                    System.Threading.Thread.Sleep(5000);
+                    try
+                    {
+                        SetExecState(Globals.STATE_BROKEN);
 
-                    Log("Spawning new workflow thread....");
+                        if (Globals.thread != null)
+                        {
+                            Globals.thread.Abort();
+                        }
+                        while (Globals.thread.IsAlive) { }
 
-                    SetExecState(Globals.STATE_RESTARTING);
-
-                    Globals.thread = ExecuteThread();
-                }
-                else
-                {
-                    Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                    }
+                    catch (Exception ex2)
+                    {
+                        return;
+                    }
                 }
             }
+        }
+
+        // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
+        private void Twitter()
+        {
+            LoadTwitterCredentialsFromRegistry();
+
+            if (twitterAccessCredentials.IsAssociated() == false)
+            {
+                Log("Warning:  Twitter is enabled but you don't have your Twitter account associated!  Twitter workflow aborted.");
+                Log(@"You can link FaceBERN! to your Twitter account under Tools->Settings.");
+
+                return;
+            }
+
+            LoadTwitterTokens();
+
+            // Uncomment below for DEBUG.  --Kris
+
+            TwitterResponse<TwitterStatusCollection> timelineDebug = GetMyTweets();
+            foreach (TwitterStatus tweet in timelineDebug.ResponseObject)
+            {
+                Log("DEBUG:  Tweet:  " + tweet.Text + " (" + tweet.CreatedDate.ToString() + ")");
+            }
+
+
+            DestroyTwitterTokens();
+        }
+
+        /* This function is used for testing Twitter integration.  Not currently used by any production workflows.  --Kris */
+        private TwitterResponse<TwitterStatusCollection> GetMyTweets(int count = 20)
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return null;
+            }
+
+            LoadTwitterTokens();
+
+            UserTimelineOptions userTimelineOptions = new UserTimelineOptions();
+            userTimelineOptions.APIBaseAddress = "https://api.twitter.com/1.1/";
+            userTimelineOptions.Count = count;
+            userTimelineOptions.UseSSL = true;
+            userTimelineOptions.ScreenName = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterUsername());
+
+            return TwitterTimeline.UserTimeline(twitterTokens, userTimelineOptions);
+        }
+
+        private bool LoadTwitterTokens()
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return false;
+            }
+
+            twitterTokens = new OAuthTokens();
+            twitterTokens.ConsumerKey = twitterConsumerKey;
+            twitterTokens.ConsumerSecret = twitterConsumerSecret;
+            twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
+            twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+
+            return true;
+        }
+
+        private void DestroyTwitterTokens()
+        {
+            twitterTokens = null;
+        }
+
+        private bool TwitterIsAuthorized()
+        {
+            if (twitterAccessCredentials == null || twitterAccessCredentials.IsAssociated() == false)
+            {
+                LoadTwitterCredentialsFromRegistry();
+                if (twitterAccessCredentials.IsAssociated() == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris

@@ -442,6 +442,11 @@ namespace FaceBERN_
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
         {
+            if (Globals.executionState == Globals.STATE_BROKEN)
+            {
+                return;
+            }
+
             if (logName == null)
             {
                 logName = Form1.logName;
