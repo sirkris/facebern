@@ -423,13 +423,15 @@ namespace FaceBERN_
                 return;
             }
 
+            Log("Updating tweets queue....");
+
             /* Get any tweets in the Birdie API queue.  --Kris */
             IRestResponse res = BirdieQuery(@"/twitter/tweetsQueue?showActiveOnly&showQueueFor=" + GetAppID(), "GET");
 
             tweetsQueue = BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content));
 
             /* Get any tweets from Reddit, if enabled.  --Kris */
-
+            GetTweetsFromReddit();
 
             /* Persist the queue in the system registry.  --Kris */
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
@@ -963,6 +965,126 @@ namespace FaceBERN_
             DestroyTwitterTokens();
         }
 
+        // TODO - Find an API call to handle this, as there could be URLs embedded within the text, as well.  --Kris
+        private string ComposeTweet(string text, string url = "")
+        {
+            int twitterCharLimit = 140;
+            int maxUrlLength = 25;  // TODO - Query and update this.  Published as 22 for now, so should be able to get away with this for awhile.  --Kris
+
+            int urlLength = (url.Length <= maxUrlLength ? url.Length : maxUrlLength);
+
+            if ((text.Length + 1 + urlLength) <= twitterCharLimit)
+            {
+                return text + " " + url;
+            }
+            else
+            {
+                return (text.Substring(0, (twitterCharLimit - 4 - urlLength)) + "... " + url);
+            }
+        }
+
+        private DateTime TimestampToDateTime(double timestamp)
+        {
+            return new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(timestamp);
+        }
+
+        // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
+        private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
+        {
+            if (!(Globals.Config["TweetRedditNews"].Equals("1")))
+            {
+                return new List<TweetsQueue>();
+            }
+            
+            if (reddit == null)
+            {
+                reddit = new Reddit(false);
+            }
+
+            // No need to login to Reddit since all we're doing is a search.  --Kris
+            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("csReddit Test Flair", "csReddit", "all");  // TODO - Change these to production values when ready.  --Kris
+
+            List<TweetsQueue> res = new List<TweetsQueue>();
+            foreach (RedditPost redditPost in redditPosts)
+            {
+                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
+                    redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
+            }
+
+            if (appendTweetsQueue)
+            {
+                foreach (TweetsQueue entry in res)
+                {
+                    bool dup = false;
+                    foreach (TweetsQueue globalEntry in tweetsQueue)
+                    {
+                        if (globalEntry.tweet.Trim().ToLower().Equals(entry.tweet.Trim().ToLower()))
+                        {
+                            dup = true;
+                            break;
+                        }
+                    }
+
+                    if (dup == false)
+                    {
+                        tweetsQueue.Add(entry);
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
+        private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, string t = "day", bool? self = null)
+        {
+            if (self == null)
+            {
+                List<RedditPost> res = new List<RedditPost>();
+                res.AddRange(SearchSubredditForFlairPosts(flair, sub, t, false));
+                res.AddRange(SearchSubredditForFlairPosts(flair, sub, t, true));
+
+                return res;
+            }
+            else
+            {
+                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub));
+            }
+        }
+
+        private List<RedditPost> ParseRedditPosts(dynamic redditObj)
+        {
+            List<RedditPost> res = new List<RedditPost>();
+
+            if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
+            {
+                return res;  // No results.  --Kris
+            }
+
+            foreach (dynamic o in redditObj["data"]["children"])
+            {
+                if (o != null
+                    && o["data"] != null
+                    && o["data"]["title"] != null
+                    && o["data"]["url"] != null
+                    && o["data"]["score"] != null 
+                    && o["data"]["created"] != null)
+                {
+                    try
+                    {
+                        res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["url"].ToString(),
+                            (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), (string) o["data"]["selftext"]));
+                    }
+                    catch (Exception e)
+                    {
+                        Log("Warning:  Error parsing Reddit post : " + e.ToString());
+                    }
+                }
+            }
+
+            return res;
+        }
+
         /* Post a tweet.  --Kris */
         private bool Tweet(string tweet)
         {
@@ -982,7 +1104,7 @@ namespace FaceBERN_
             {
                 Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
             }
-
+            
             return (res.Result == RequestResult.Success);
         }
 
