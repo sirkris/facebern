@@ -438,7 +438,7 @@ namespace FaceBERN_
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
             RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
 
-            twitterKey.SetValue("tweetsQueue", res.Content, RegistryValueKind.String);
+            twitterKey.SetValue("tweetsQueue", JsonConvert.SerializeObject(tweetsQueue), RegistryValueKind.String);
 
             twitterKey.Close();
             appKey.Close();
