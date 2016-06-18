@@ -56,6 +56,10 @@
             this.label3 = new System.Windows.Forms.Label();
             this.labelInvitesSent = new System.Windows.Forms.Label();
             this.mainProgressBar = new System.Windows.Forms.ProgressBar();
+            this.label4 = new System.Windows.Forms.Label();
+            this.labelTweetsTweeted = new System.Windows.Forms.Label();
+            this.labelActiveUsers = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -188,7 +192,7 @@
             this.buttonStart.BackgroundImage = global::FaceBERN_.Properties.Resources.flames_button_bg;
             this.buttonStart.Font = new System.Drawing.Font("Algerian", 26.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonStart.ForeColor = System.Drawing.Color.Yellow;
-            this.buttonStart.Location = new System.Drawing.Point(263, 490);
+            this.buttonStart.Location = new System.Drawing.Point(263, 464);
             this.buttonStart.Name = "buttonStart";
             this.buttonStart.Size = new System.Drawing.Size(150, 50);
             this.buttonStart.TabIndex = 0;
@@ -283,7 +287,7 @@
             this.label3.AutoSize = true;
             this.label3.BackColor = System.Drawing.Color.Transparent;
             this.label3.ForeColor = System.Drawing.Color.Blue;
-            this.label3.Location = new System.Drawing.Point(274, 543);
+            this.label3.Location = new System.Drawing.Point(274, 517);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(83, 13);
             this.label3.TabIndex = 31;
@@ -295,7 +299,7 @@
             this.labelInvitesSent.BackColor = System.Drawing.Color.Transparent;
             this.labelInvitesSent.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelInvitesSent.ForeColor = System.Drawing.Color.Green;
-            this.labelInvitesSent.Location = new System.Drawing.Point(354, 543);
+            this.labelInvitesSent.Location = new System.Drawing.Point(354, 517);
             this.labelInvitesSent.Name = "labelInvitesSent";
             this.labelInvitesSent.Size = new System.Drawing.Size(14, 13);
             this.labelInvitesSent.TabIndex = 32;
@@ -309,12 +313,62 @@
             this.mainProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.mainProgressBar.TabIndex = 33;
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.BackColor = System.Drawing.Color.Transparent;
+            this.label4.ForeColor = System.Drawing.Color.Blue;
+            this.label4.Location = new System.Drawing.Point(267, 532);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(90, 13);
+            this.label4.TabIndex = 34;
+            this.label4.Text = "Tweets Tweeted:";
+            // 
+            // labelTweetsTweeted
+            // 
+            this.labelTweetsTweeted.AutoSize = true;
+            this.labelTweetsTweeted.BackColor = System.Drawing.Color.Transparent;
+            this.labelTweetsTweeted.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelTweetsTweeted.ForeColor = System.Drawing.Color.Green;
+            this.labelTweetsTweeted.Location = new System.Drawing.Point(354, 532);
+            this.labelTweetsTweeted.Name = "labelTweetsTweeted";
+            this.labelTweetsTweeted.Size = new System.Drawing.Size(14, 13);
+            this.labelTweetsTweeted.TabIndex = 35;
+            this.labelTweetsTweeted.Text = "0";
+            // 
+            // labelActiveUsers
+            // 
+            this.labelActiveUsers.AutoSize = true;
+            this.labelActiveUsers.BackColor = System.Drawing.Color.Transparent;
+            this.labelActiveUsers.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelActiveUsers.ForeColor = System.Drawing.Color.Green;
+            this.labelActiveUsers.Location = new System.Drawing.Point(354, 547);
+            this.labelActiveUsers.Name = "labelActiveUsers";
+            this.labelActiveUsers.Size = new System.Drawing.Size(14, 13);
+            this.labelActiveUsers.TabIndex = 37;
+            this.labelActiveUsers.Text = "0";
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.BackColor = System.Drawing.Color.Transparent;
+            this.label6.ForeColor = System.Drawing.Color.Blue;
+            this.label6.Location = new System.Drawing.Point(287, 547);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(70, 13);
+            this.label6.TabIndex = 36;
+            this.label6.Text = "Active Users:";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.labelActiveUsers);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.labelTweetsTweeted);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.mainProgressBar);
             this.Controls.Add(this.labelInvitesSent);
             this.Controls.Add(this.label3);
@@ -372,6 +426,10 @@
         private System.Windows.Forms.Label labelInvitesSent;
         private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
         private System.Windows.Forms.ProgressBar mainProgressBar;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label labelTweetsTweeted;
+        private System.Windows.Forms.Label labelActiveUsers;
+        private System.Windows.Forms.Label label6;
     }
 }
 

@@ -50,6 +50,8 @@ namespace FaceBERN_
         private Credentials twitterAccessCredentials = null;
         private OAuthTokens twitterTokens = null;
 
+        List<TweetsQueue> tweetsQueue = null;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             //rand = new Random();
@@ -99,6 +101,8 @@ namespace FaceBERN_
             if (CheckClientRegistration() == false)
             {
                 RegisterClient();
+
+                System.Threading.Thread.Sleep(5000);
             }
 
             /* Load any invitations persisted in the registry from a previous run.  --Kris */
@@ -118,6 +122,12 @@ namespace FaceBERN_
                 UpdateRemoteInvitesCount();
                 invited = GetInvitedPeople();
                 UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+
+                /* Update our local tweets count for both ours and remote.  --Kris */
+                UpdateRemoteTweetsCount();
+
+                /* Update our local count for both active users and total users.  --Kris */
+                UpdateRemoteUsers();
 
                 System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
 
@@ -316,13 +326,8 @@ namespace FaceBERN_
             AppendLatestInvitesQueue(null, true);
         }
 
-        /* Get the number of Facebook users invited by everyone.  --Kris */
-        private void UpdateRemoteInvitesCount()
+        private int? GetIntFromRes(IRestResponse res, string op = "complete operation")
         {
-            Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            queryParams.Add("return", "count");
-
-            IRestResponse res = BirdieQuery("/facebook/invited", "GET", queryParams);
             int r;
             if (res.StatusCode == System.Net.HttpStatusCode.OK)
             {
@@ -332,19 +337,132 @@ namespace FaceBERN_
                 }
                 catch (Exception e)
                 {
-                    Log("Warning:  Unexpected response from Birdie API.  Unable to update remote invites count.");
-                    return;
+                    Log("Warning:  Unexpected response from Birdie API.  Unable to " + op + ".");
+                    return null;
                 }
             }
             else
             {
-                Log("Warning:  Birdie API query failed.  Unable to update remote invites count.");
+                Log("Warning:  Birdie API query failed.  Unable to " + op + ".");
+                return null;
+            }
+
+            return r;
+        }
+
+        /* Get the number of Facebook users invited by everyone.  --Kris */
+        private void UpdateRemoteInvitesCount()
+        {
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            queryParams.Add("return", "count");
+            
+            IRestResponse res = BirdieQuery("/facebook/invited", "GET", queryParams);
+
+            int? r = GetIntFromRes(res, "update remote invites count");
+            if (r == null)
+            {
                 return;
             }
 
-            remoteInvitesSent = r;
+            remoteInvitesSent = r.Value;
 
-            UpdateInvitationsCount(-1, r);
+            UpdateInvitationsCount(-1, r.Value);
+        }
+
+        /* Get the number of tweets tweeted by everyone.  --Kris */
+        private void UpdateRemoteTweetsCount()
+        {
+            IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + GetAppID() + "&return=count", "GET");
+
+            int? myTweets = GetIntFromRes(res, "update this client's tweet count");
+            if (myTweets == null)
+            {
+                return;
+            }
+
+            res = BirdieQuery(@"/twitter/tweets?return=count", "GET");
+
+            int? totalTweets = GetIntFromRes(res, "update total tweets count");
+            if (totalTweets == null)
+            {
+                return;
+            }
+
+            UpdateTweetsCount(myTweets.Value, totalTweets.Value);
+        }
+
+        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true)
+        {
+            if (overwrite || tweetsQueue == null)
+            {
+                tweetsQueue = new List<TweetsQueue>();
+            }
+
+            foreach (dynamic o in deserializedJSON)
+            {
+                if (o != null
+                    && o["tweet"] != null
+                    && o["entered"] != null
+                    && o["enteredBy"] != null
+                    && o["start"] != null
+                    && o["end"] != null)
+                {
+                    tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
+                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString())));
+                }
+            }
+
+            return tweetsQueue;
+        }
+
+        /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
+        private void UpdateLocalTweetsQueue()
+        {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                return;
+            }
+
+            /* Get any tweets in the Birdie API queue.  --Kris */
+            IRestResponse res = BirdieQuery(@"/twitter/tweetsQueue?showActiveOnly&showQueueFor=" + GetAppID(), "GET");
+
+            tweetsQueue = BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content));
+
+            /* Get any tweets from Reddit, if enabled.  --Kris */
+
+
+            /* Persist the queue in the system registry.  --Kris */
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+            twitterKey.SetValue("tweetsQueue", res.Content, RegistryValueKind.String);
+
+            twitterKey.Close();
+            appKey.Close();
+            softwareKey.Close();
+        }
+
+        /* Get the number of active and total users.  --Kris */
+        private void UpdateRemoteUsers()
+        {
+            IRestResponse res = BirdieQuery(@"/clients?active&return=count", "GET");
+
+            int? active = GetIntFromRes(res, "update active users count");
+            if (active == null)
+            {
+                return;
+            }
+
+            res = BirdieQuery(@"/clients?return=count", "GET");
+
+            int? total = GetIntFromRes(res, "update total users count");
+            if (total == null)
+            {
+                return;
+            }
+
+            UpdateActiveUsers(active.Value, total.Value);
         }
 
         /* Tell the Birdie API we're still active.  --Kris */
@@ -839,11 +957,8 @@ namespace FaceBERN_
             Tweet("Test tweet.  Please disregard.");
             */
 
-            /* Check Birdie for any tweets that need to go out.  --Kris */
-
-
-            /* Check our Reddit subs for any posts with the "Tweet This!" flair.  --Kris */
-
+            /* Load the tweets queue from the specified source(s).  --Kris */
+            UpdateLocalTweetsQueue();
 
             DestroyTwitterTokens();
         }
@@ -2640,7 +2755,7 @@ namespace FaceBERN_
             }
         }
 
-        /* Update local and remote total invites.  If you just want to update the total remote invites, pass 0 for x.  --Kris */
+        /* Update local and remote total invites.  If you just want to update the total remote invites, pass -1 for x.  --Kris */
         private void UpdateInvitationsCount(int x, int y, bool hard = true)
         {
             if (Main.InvokeRequired)
@@ -2664,6 +2779,40 @@ namespace FaceBERN_
             }
 
             invitesSent += x;
+        }
+
+        /* Update local and remote total tweets.  If you just want to update the total remote tweets, pass -1 for x.  --Kris */
+        private void UpdateTweetsCount(int x, int y)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateTweetsCount(x, y); }));
+            }
+            else
+            {
+                Main.SetTweetsTweeted(x, y);
+
+                //Main.Refresh();
+            }
+        }
+
+        /* Update active and total users.  --Kris */
+        private void UpdateActiveUsers(int active, int total)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateActiveUsers(active, total); }));
+            }
+            else
+            {
+                Main.SetActiveUsers(active, total);
+
+                //Main.Refresh();
+            }
         }
 
         private void SetExecState(int state)

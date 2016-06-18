@@ -49,6 +49,12 @@ namespace FaceBERN_
         public int localInvitesSent = 0;
         public int remoteInvitesSent = 0;
 
+        public int localTweetsTweeted = 0;
+        public int remoteTweetsTweeted = 0;
+
+        public int activeUsers = 0;
+        public int totalUsers = 0;
+
         public Form1(bool updated = false, bool logging = true)
         {
             InitializeComponent();
@@ -57,7 +63,12 @@ namespace FaceBERN_
             appKey = softwareKey.CreateSubKey("FaceBERN!");
 
             label3.Visible = false;
+            label4.Visible = false;
+            label6.Visible = false;
             labelInvitesSent.Visible = false;
+            labelTweetsTweeted.Visible = false;
+            labelActiveUsers.Visible = false;
+
             this.Resize += Form1_Resize;
 
             this.logging = logging;
@@ -858,6 +869,44 @@ namespace FaceBERN_
 
             LogW("Set local invitations count to:  " + x.ToString(), false);
             LogW("Set remote invitions count to:  " + y.ToString(), false);
+        }
+
+        internal void SetTweetsTweeted(int x, int y)
+        {
+            label4.Visible = true;
+            labelTweetsTweeted.Visible = true;
+
+            if (x != -1)
+            {
+                localTweetsTweeted = x;
+            }
+            remoteTweetsTweeted = y;
+
+            if (remoteInvitesSent == 0)
+            {
+                labelTweetsTweeted.Text = localTweetsTweeted.ToString();
+            }
+            else
+            {
+                labelTweetsTweeted.Text = localTweetsTweeted.ToString() + @" / " + remoteTweetsTweeted.ToString();
+            }
+
+            LogW("Set local tweets count to:  " + x.ToString(), false);
+            LogW("Set remote tweets count to:  " + y.ToString(), false);
+        }
+
+        internal void SetActiveUsers(int active, int total)
+        {
+            label6.Visible = true;
+            labelActiveUsers.Visible = true;
+
+            activeUsers = active;
+            totalUsers = total;
+
+            labelActiveUsers.Text = activeUsers.ToString() + @" / " + totalUsers.ToString();
+
+            LogW("Set active users count to:  " + active.ToString(), false);
+            LogW("Set total users count to:  " + total.ToString(), false);
         }
 
         public void SetProgressBar(int percent)
