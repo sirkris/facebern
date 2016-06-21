@@ -15,8 +15,9 @@ namespace FaceBERN_
         public string enteredBy;
         public DateTime start;
         public DateTime end;
+        public DateTime? tweeted = null;
 
-        public TweetsQueue(string tweet, string source, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end)
+        public TweetsQueue(string tweet, string source, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end, DateTime? tweeted = null)
         {
             this.tweet = tweet;
             this.source = source;
@@ -25,6 +26,7 @@ namespace FaceBERN_
             this.enteredBy = enteredBy;
             this.start = start;
             this.end = end;
+            this.tweeted = tweeted;
         }
 
         public TweetsQueue() { }
@@ -97,6 +99,16 @@ namespace FaceBERN_
         public void SetEnd(DateTime end)
         {
             this.end = end;
+        }
+
+        public DateTime? GetTweeted()
+        {
+            return tweeted;
+        }
+
+        public void SetTweeted(DateTime? tweeted)
+        {
+            this.tweeted = tweeted;
         }
     }
 }

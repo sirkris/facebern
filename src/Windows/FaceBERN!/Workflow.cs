@@ -51,6 +51,7 @@ namespace FaceBERN_
         private OAuthTokens twitterTokens = null;
 
         List<TweetsQueue> tweetsQueue = null;
+        List<TweetsQueue> tweetsHistory = null;
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
@@ -433,16 +434,113 @@ namespace FaceBERN_
             /* Get any tweets from Reddit, if enabled.  --Kris */
             GetTweetsFromReddit();
 
-            /* Persist the queue in the system registry.  --Kris */
-            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-            RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+            PersistLocalTweetsQueue();
+        }
 
-            twitterKey.SetValue("tweetsQueue", JsonConvert.SerializeObject(tweetsQueue), RegistryValueKind.String);
+        /* Persist the queue in the system registry.  --Kris */
+        private void PersistLocalTweetsQueue()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
 
-            twitterKey.Close();
-            appKey.Close();
-            softwareKey.Close();
+                twitterKey.SetValue("tweetsQueue", JsonConvert.SerializeObject(tweetsQueue), RegistryValueKind.String);
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Unable to persist tweets queue to registry : " + e.ToString());
+            }
+        }
+
+        /* Update our history of recent tweets.  This is used to prevent duplicate tweet spam in the event of an error or abuse.  --Kris */
+        private void AppendTweetsHistory(List<TweetsQueue> entries)
+        {
+            if (tweetsHistory == null)
+            {
+                tweetsHistory = new List<TweetsQueue>();
+            }
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                entries[i].SetTweeted(DateTime.Now);
+            }
+            
+            tweetsHistory.AddRange(entries);
+
+            SanitizeTweetsHistory();  // Removes duplicates and tweets more than 30 days old.  Also sorts by date/time tweeted (ascending).  --Kris
+
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                twitterKey.SetValue("tweetsHistory", JsonConvert.SerializeObject(tweetsHistory), RegistryValueKind.String);
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Unable to update tweets queue in registry : " + e.ToString());
+            }
+        }
+
+        private void AppendTweetsHistory(TweetsQueue entry)
+        {
+            AppendTweetsHistory(new List<TweetsQueue> { entry });
+        }
+
+        private void SanitizeTweetsHistory()
+        {
+            List<TweetsQueue> newTweetsHistory = new List<TweetsQueue>();
+            foreach (TweetsQueue entry in tweetsHistory)
+            {
+                if (!(newTweetsHistory.Contains(entry))
+                    && entry.tweeted != null
+                    && DateTime.Now <= entry.tweeted.Value.AddDays(30))
+                {
+                    newTweetsHistory.Add(entry);
+                }
+            }
+
+            tweetsHistory = newTweetsHistory.OrderBy(entry => entry.tweeted.Value).ToList();
+        }
+
+        /* Load recent tweets history.  --Kris */
+        private List<TweetsQueue> LoadTweetsHistory()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                tweetsHistory = JsonConvert.DeserializeObject<List<TweetsQueue>>(
+                    (string) twitterKey.GetValue("tweetsHistory", JsonConvert.SerializeObject(new List<TweetsQueue>()), RegistryValueOptions.None)
+                );
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error loading recent tweets history from registry : " + e.ToString());
+
+                tweetsHistory = new List<TweetsQueue>();
+            }
+
+            SanitizeTweetsHistory();
+
+            return tweetsHistory;
         }
 
         /* Get the number of active and total users.  --Kris */
@@ -816,6 +914,9 @@ namespace FaceBERN_
 
                 invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
 
+                /* Load the local recent tweets history.  --Kris */
+                LoadTweetsHistory();
+
                 //Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
                 // TEST - This will end up going into the loop below.  --Kris
@@ -936,6 +1037,11 @@ namespace FaceBERN_
         // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
         private void Twitter()
         {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                return;
+            }
+
             LoadTwitterCredentialsFromRegistry();
 
             if (twitterAccessCredentials.IsAssociated() == false)
@@ -961,6 +1067,9 @@ namespace FaceBERN_
 
             /* Load the tweets queue from the specified source(s).  --Kris */
             UpdateLocalTweetsQueue();
+
+            /* If there are any tweets in the queue and we're past the tweet interval, tweet the next entry from it.  --Kris */
+            ConsumeTweetsQueue();
 
             DestroyTwitterTokens();
         }
@@ -1035,6 +1144,67 @@ namespace FaceBERN_
             return res;
         }
 
+        /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
+        private void ConsumeTweetsQueue()
+        {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                return;
+            }
+
+            /* Tweets history is already sorted with the latest entry being the most-recent tweet.  --Kris */
+            double r;
+            if (Globals.Config.ContainsKey("TweetIntervalMinutes")
+                && Double.TryParse(Globals.Config["TweetIntervalMinutes"], out r)
+                && tweetsHistory != null
+                && tweetsHistory.Count > 0
+                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
+                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now)
+            {
+                return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
+            }
+
+            Log("Consuming tweets queue....");
+
+            if (tweetsQueue != null && tweetsQueue.Count > 0)
+            {
+                List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
+                bool tweeted = false;
+                foreach (TweetsQueue entry in tweetsQueue)
+                {
+                    if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
+                        || DateTime.Now >= entry.end)
+                    {
+                        continue;
+                    }
+
+                    if (!(tweeted) 
+                        && DateTime.Now >= entry.start)
+                    {
+                        if (Tweet(entry.tweet))
+                        {
+                            AppendTweetsHistory(entry);
+                        }
+                        else
+                        {
+                            Log("Warning:  Unable to tweet from queue.  Will try again later.");
+
+                            newTweetsQueue.Add(entry);
+                        }
+
+                        tweeted = true;
+                    }
+                    else
+                    {
+                        newTweetsQueue.Add(entry);
+                    }
+                }
+
+                tweetsQueue = newTweetsQueue;
+                PersistLocalTweetsQueue();
+            }
+        }
+
         /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
         private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, string t = "day", bool? self = null)
         {
@@ -1088,13 +1258,28 @@ namespace FaceBERN_
         /* Post a tweet.  --Kris */
         private bool Tweet(string tweet)
         {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
+
+                return false;
+            }
+
             if (!(TwitterIsAuthorized()))
             {
                 return false;
             }
 
-            LoadTwitterTokens();
+            if (tweetsHistory.Where(entry => entry.tweet.Equals(tweet)).ToList().Count > 0)
+            {
+                Log("Tweet '" + tweet + "' has already been tweeted recently.  Skipped.");
 
+                return true;
+            }
+
+            LoadTwitterTokens();
+            Log("DEBUG - " + tweet);
+            return true;
             TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
             if (res.Result == RequestResult.Success)
             {

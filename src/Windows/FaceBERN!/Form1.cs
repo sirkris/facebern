@@ -149,6 +149,7 @@ namespace FaceBERN_
             Globals.Config.Add("TweetRedditNews", "1");
             Globals.Config.Add("EnableFacebanking", "1");
             Globals.Config.Add("EnableTwitter", "1");
+            Globals.Config.Add("TweetIntervalMinutes", "30");
 
             /* How long to wait between GOTV checks.  --Kris */
             Globals.Config.Add("GOTVIntervalHours", "24");
