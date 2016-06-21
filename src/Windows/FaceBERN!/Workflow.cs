@@ -392,6 +392,33 @@ namespace FaceBERN_
             UpdateTweetsCount(myTweets.Value, totalTweets.Value);
         }
 
+        /* Report one or more new tweets to Birdie.  --Kris */
+        private void ReportNewTweets(List<TweetsQueue> tweets)
+        {
+            for (int i = 0; i < tweets.Count; i++)
+            {
+                tweets[i].SetTweetedBy(GetAppID());
+            }
+
+            IRestResponse res = BirdieQuery(@"/twitter/tweets", "POST", null, JsonConvert.SerializeObject(tweets));
+
+            if (res.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                Log("Tweet(s) reported successfully.", false);
+            }
+            else
+            {
+                Log("Warning:  Tweets reporting to Birdie API failed : " + res.StatusCode);
+            }
+
+            UpdateRemoteTweetsCount();
+        }
+
+        private void ReportNewTweet(TweetsQueue tweet)
+        {
+            ReportNewTweets(new List<TweetsQueue> { tweet });
+        }
+
         private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true)
         {
             if (overwrite || tweetsQueue == null)
@@ -409,7 +436,7 @@ namespace FaceBERN_
                     && o["end"] != null)
                 {
                     tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
-                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString())));
+                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["tid"] != null ? (int) o["tid"] : 0)));
                 }
             }
 
@@ -491,6 +518,8 @@ namespace FaceBERN_
             {
                 Log("Warning:  Unable to update tweets queue in registry : " + e.ToString());
             }
+
+            ReportNewTweets(entries);
         }
 
         private void AppendTweetsHistory(TweetsQueue entry)
@@ -1181,7 +1210,7 @@ namespace FaceBERN_
                     if (!(tweeted) 
                         && DateTime.Now >= entry.start)
                     {
-                        if (Tweet(entry.tweet))
+                        if (Tweet(entry.tweet))  // Perform the actual tweet.  --Kris
                         {
                             AppendTweetsHistory(entry);
                         }
