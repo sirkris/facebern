@@ -1399,18 +1399,27 @@ namespace FaceBERN_
         /* Check to see if GOTV should be executed for a given state.  --Kris */
         private bool GOTVNeeded(States state, bool log = false)
         {
-            /* Skip states that already held their primaries.  --Kris */
-            // TODO - Replace with more sophisticated logic for the general election and beyond.  --Kris
-            if (state.primaryDate < DateTime.Now)
-            {
-                return true;
-            }
-
             /* Skip if user disabled GOTV for this state.  --Kris */
             if (state.enableGOTV == false)
             {
                 Log("GOTV not enabled for " + state.name + ".  Skipped.", log);
+            }
 
+            /* Determine if it's time for GOTV in this state.  --Kris */
+            // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+            RegistryKey stateKey = GOTVKey.CreateSubKey(state.abbr);
+
+            string lastGOTVDaysBack = stateKey.GetValue("LastGOTVDaysBack", "", RegistryValueOptions.None).ToString();
+            int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
+
+            if (state.primaryDate >= DateTime.Now
+                && state.enableGOTV == true 
+                && state.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
+                && ((last - Math.Floor(state.primaryDate.Subtract(DateTime.Now).TotalDays)) >= state.GOTVWaitInterval) || Globals.devOverride == true)
+            {
                 return true;
             }
 
@@ -1515,17 +1524,6 @@ namespace FaceBERN_
                     continue;
                 }
 
-                /* Determine if it's time for GOTV in this state.  --Kris */
-                // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
-                RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
-
-                string lastGOTVDaysBack = stateKey.GetValue("LastGOTVDaysBack", "", RegistryValueOptions.None).ToString();
-                int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
-
-                bool dateAppropriate = false;
-                if (state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
-                    && ((last - Math.Floor(state.Value.primaryDate.Subtract(DateTime.Now).TotalDays)) >= state.Value.GOTVWaitInterval) || Globals.devOverride == true)
-                {
                     SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
 
                     /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
@@ -1548,7 +1546,6 @@ namespace FaceBERN_
                     SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
 
                     break;
-                }
 
                 if (!dateAppropriate)
                 {
