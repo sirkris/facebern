@@ -1502,27 +1502,26 @@ namespace FaceBERN_
                     return;
                 }
 
-                if (!(GOTVNeeded(state.Value, true)))
+                if (GOTVNeeded(state.Value, true))
                 {
-                    continue;
-                }
+                    // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
+                    /*
+                    if (!(state.Key.Equals("NM")))
+                    {
+                        continue;
+                    }
+                    */
 
-                // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
-                /*
-                if (!(state.Key.Equals("NM")))
-                {
-                    continue;
-                }
-                */
+                    Log("Checking GOTV for " + state.Value.name + "....");
 
-                Log("Checking GOTV for " + state.Value.name + "....");
-                
-                if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
-                {
-                    Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
+                    if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
+                    {
+                        Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
 
-                    continue;
-                }
+                        continue;
+                    }
+
+                    RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
 
                     SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
 
@@ -1541,18 +1540,16 @@ namespace FaceBERN_
                         ExecuteGOTV(ref friends, ref stateKey, state.Value);
                     }
 
-                    dateAppropriate = true;
-
                     SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
 
-                    break;
+                    stateKey.Close();
 
-                if (!dateAppropriate)
+                    break;
+                }
+                else
                 {
                     Log("No GOTV needed for " + state.Key + " at this time.");
                 }
-
-                stateKey.Close();
             }
 
             try
