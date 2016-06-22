@@ -58,6 +58,7 @@ namespace FaceBERN_
             Globals.Config["TweetRedditNews"] = (tweetRedditNewsCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableFacebanking"] = (enableFacebankingCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
+            Globals.Config["TweetIntervalMinutes"] = tweetIntervalMinutesNumericUpDown.Value.ToString();
 
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
@@ -169,6 +170,7 @@ namespace FaceBERN_
                 case "twitter":
                     enableTwitterCheckbox.Checked = (Globals.Config["EnableTwitter"] == "1" ? true : false);
                     tweetRedditNewsCheckbox.Checked = (Globals.Config["TweetRedditNews"] == "1" ? true : false);
+                    tweetIntervalMinutesNumericUpDown.Value = Decimal.Parse(Globals.Config["TweetIntervalMinutes"]);
 
                     ShowTwitterCredentials();
 
@@ -308,12 +310,15 @@ namespace FaceBERN_
                 label10.Visible = true;
                 label11.Visible = true;
                 label12.Visible = true;
+                label13.Visible = true;
+                label14.Visible = true;
 
                 tweetRedditNewsCheckbox.Visible = true;
                 button2.Visible = true;
                 twitterUsernameTextbox.Visible = true;
                 twitterUserIdTextbox.Visible = true;
                 twitterAccessTokenTextbox.Visible = true;
+                tweetIntervalMinutesNumericUpDown.Visible = true;
             }
             else
             {
@@ -322,12 +327,15 @@ namespace FaceBERN_
                 label10.Visible = false;
                 label11.Visible = false;
                 label12.Visible = false;
+                label13.Visible = false;
+                label14.Visible = false;
 
                 tweetRedditNewsCheckbox.Visible = false;
                 button2.Visible = false;
                 twitterUsernameTextbox.Visible = false;
                 twitterUserIdTextbox.Visible = false;
                 twitterAccessTokenTextbox.Visible = false;
+                tweetIntervalMinutesNumericUpDown.Visible = false;
             }
 
             buttonApply.Enabled = applyEnabled;
@@ -485,6 +493,11 @@ namespace FaceBERN_
                     this.Close();
                 }
             }
+        }
+
+        private void tweetIntervalMinutesNumericUpDown_ValueChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
         }
     }
 }

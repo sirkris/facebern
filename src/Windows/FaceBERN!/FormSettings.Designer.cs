@@ -55,6 +55,7 @@
             this.statesComboBox = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
             this.tabFacebook = new System.Windows.Forms.TabPage();
+            this.button3 = new System.Windows.Forms.Button();
             this.enableFacebankingCheckbox = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.checkRememberPasswordByDefaultCheckbox = new System.Windows.Forms.CheckBox();
@@ -79,12 +80,15 @@
             this.buttonApply = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
+            this.label13 = new System.Windows.Forms.Label();
+            this.tweetIntervalMinutesNumericUpDown = new System.Windows.Forms.NumericUpDown();
+            this.label14 = new System.Windows.Forms.Label();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
             this.tabFacebook.SuspendLayout();
             this.tabTwitter.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).BeginInit();
             this.SuspendLayout();
             // 
             // settingsTabControl
@@ -390,6 +394,16 @@
             this.tabFacebook.UseVisualStyleBackColor = true;
             this.tabFacebook.Enter += new System.EventHandler(this.tabFacebook_Load);
             // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(208, 132);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(198, 23);
+            this.button3.TabIndex = 18;
+            this.button3.Text = "Clear Stored Facebook Credentials";
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
+            // 
             // enableFacebankingCheckbox
             // 
             this.enableFacebankingCheckbox.AutoSize = true;
@@ -482,6 +496,9 @@
             // 
             // tabTwitter
             // 
+            this.tabTwitter.Controls.Add(this.label14);
+            this.tabTwitter.Controls.Add(this.tweetIntervalMinutesNumericUpDown);
+            this.tabTwitter.Controls.Add(this.label13);
             this.tabTwitter.Controls.Add(this.twitterAccessTokenTextbox);
             this.tabTwitter.Controls.Add(this.twitterUserIdTextbox);
             this.tabTwitter.Controls.Add(this.twitterUsernameTextbox);
@@ -505,7 +522,7 @@
             // 
             this.twitterAccessTokenTextbox.Cursor = System.Windows.Forms.Cursors.No;
             this.twitterAccessTokenTextbox.Enabled = false;
-            this.twitterAccessTokenTextbox.Location = new System.Drawing.Point(306, 200);
+            this.twitterAccessTokenTextbox.Location = new System.Drawing.Point(306, 232);
             this.twitterAccessTokenTextbox.Name = "twitterAccessTokenTextbox";
             this.twitterAccessTokenTextbox.ReadOnly = true;
             this.twitterAccessTokenTextbox.Size = new System.Drawing.Size(284, 20);
@@ -516,7 +533,7 @@
             // 
             this.twitterUserIdTextbox.Cursor = System.Windows.Forms.Cursors.No;
             this.twitterUserIdTextbox.Enabled = false;
-            this.twitterUserIdTextbox.Location = new System.Drawing.Point(306, 175);
+            this.twitterUserIdTextbox.Location = new System.Drawing.Point(306, 207);
             this.twitterUserIdTextbox.Name = "twitterUserIdTextbox";
             this.twitterUserIdTextbox.ReadOnly = true;
             this.twitterUserIdTextbox.Size = new System.Drawing.Size(284, 20);
@@ -527,7 +544,7 @@
             // 
             this.twitterUsernameTextbox.Cursor = System.Windows.Forms.Cursors.No;
             this.twitterUsernameTextbox.Enabled = false;
-            this.twitterUsernameTextbox.Location = new System.Drawing.Point(306, 150);
+            this.twitterUsernameTextbox.Location = new System.Drawing.Point(306, 182);
             this.twitterUsernameTextbox.Name = "twitterUsernameTextbox";
             this.twitterUsernameTextbox.ReadOnly = true;
             this.twitterUsernameTextbox.Size = new System.Drawing.Size(284, 20);
@@ -538,7 +555,7 @@
             // 
             this.label9.AutoSize = true;
             this.label9.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label9.Location = new System.Drawing.Point(194, 201);
+            this.label9.Location = new System.Drawing.Point(194, 233);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(106, 16);
             this.label9.TabIndex = 23;
@@ -548,7 +565,7 @@
             // 
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label11.Location = new System.Drawing.Point(238, 176);
+            this.label11.Location = new System.Drawing.Point(238, 208);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(62, 16);
             this.label11.TabIndex = 22;
@@ -558,7 +575,7 @@
             // 
             this.label12.AutoSize = true;
             this.label12.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label12.Location = new System.Drawing.Point(222, 151);
+            this.label12.Location = new System.Drawing.Point(222, 183);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(78, 16);
             this.label12.TabIndex = 21;
@@ -566,7 +583,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(219, 79);
+            this.button2.Location = new System.Drawing.Point(219, 111);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(187, 23);
             this.button2.TabIndex = 20;
@@ -578,7 +595,7 @@
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label10.Location = new System.Drawing.Point(190, 117);
+            this.label10.Location = new System.Drawing.Point(190, 149);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(110, 16);
             this.label10.TabIndex = 19;
@@ -661,15 +678,48 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // button3
+            // label13
             // 
-            this.button3.Location = new System.Drawing.Point(208, 132);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(198, 23);
-            this.button3.TabIndex = 18;
-            this.button3.Text = "Clear Stored Facebook Credentials";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
+            this.label13.AutoSize = true;
+            this.label13.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label13.Location = new System.Drawing.Point(186, 62);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(199, 16);
+            this.label13.TabIndex = 27;
+            this.label13.Text = "Don\'t exceed 1 tweet every:";
+            // 
+            // tweetIntervalMinutesNumericUpDown
+            // 
+            this.tweetIntervalMinutesNumericUpDown.Location = new System.Drawing.Point(391, 62);
+            this.tweetIntervalMinutesNumericUpDown.Maximum = new decimal(new int[] {
+            999,
+            0,
+            0,
+            0});
+            this.tweetIntervalMinutesNumericUpDown.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.tweetIntervalMinutesNumericUpDown.Name = "tweetIntervalMinutesNumericUpDown";
+            this.tweetIntervalMinutesNumericUpDown.Size = new System.Drawing.Size(46, 20);
+            this.tweetIntervalMinutesNumericUpDown.TabIndex = 28;
+            this.tweetIntervalMinutesNumericUpDown.Value = new decimal(new int[] {
+            30,
+            0,
+            0,
+            0});
+            this.tweetIntervalMinutesNumericUpDown.ValueChanged += new System.EventHandler(this.tweetIntervalMinutesNumericUpDown_ValueChanged);
+            // 
+            // label14
+            // 
+            this.label14.AutoSize = true;
+            this.label14.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label14.Location = new System.Drawing.Point(439, 64);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(59, 16);
+            this.label14.TabIndex = 29;
+            this.label14.Text = "minutes";
             // 
             // FormSettings
             // 
@@ -697,6 +747,7 @@
             this.tabFacebook.PerformLayout();
             this.tabTwitter.ResumeLayout(false);
             this.tabTwitter.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -754,5 +805,8 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Label label14;
+        private System.Windows.Forms.NumericUpDown tweetIntervalMinutesNumericUpDown;
+        private System.Windows.Forms.Label label13;
     }
 }

@@ -50,6 +50,9 @@ namespace FaceBERN_
         private Credentials twitterAccessCredentials = null;
         private OAuthTokens twitterTokens = null;
 
+        List<TweetsQueue> tweetsQueue = null;
+        List<TweetsQueue> tweetsHistory = null;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             //rand = new Random();
@@ -95,6 +98,14 @@ namespace FaceBERN_
             /* Initialize the Birdie API client. --Kris */
             restClient = new RestClient("http://birdie.freeddns.org");
 
+            /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
+            if (CheckClientRegistration() == false)
+            {
+                RegisterClient();
+
+                System.Threading.Thread.Sleep(5000);
+            }
+
             /* Load any invitations persisted in the registry from a previous run.  --Kris */
             LoadLatestInvitesQueue();
 
@@ -102,8 +113,8 @@ namespace FaceBERN_
             int i = 0;
             while (true)
             {
-                /* Get the Application ID.  If it's not set, generate one.  --Kris */
-                GetAppID();
+                /* Send a keep-alive to the Birdie API.  --Kris */
+                KeepAlive();
                 
                 /* Process the remote update queue and send it to Birdie.  --Kris */
                 PostLatestInvites((i == 0));
@@ -112,6 +123,12 @@ namespace FaceBERN_
                 UpdateRemoteInvitesCount();
                 invited = GetInvitedPeople();
                 UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+
+                /* Update our local tweets count for both ours and remote.  --Kris */
+                UpdateRemoteTweetsCount();
+
+                /* Update our local count for both active users and total users.  --Kris */
+                UpdateRemoteUsers();
 
                 System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
 
@@ -310,13 +327,8 @@ namespace FaceBERN_
             AppendLatestInvitesQueue(null, true);
         }
 
-        /* Get the number of Facebook users invited by everyone.  --Kris */
-        private void UpdateRemoteInvitesCount()
+        private int? GetIntFromRes(IRestResponse res, string op = "complete operation")
         {
-            Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            queryParams.Add("return", "count");
-
-            IRestResponse res = BirdieQuery("/facebook/invited", "GET", queryParams);
             int r;
             if (res.StatusCode == System.Net.HttpStatusCode.OK)
             {
@@ -326,19 +338,300 @@ namespace FaceBERN_
                 }
                 catch (Exception e)
                 {
-                    Log("Warning:  Unexpected response from Birdie API.  Unable to update remote invites count.");
-                    return;
+                    Log("Warning:  Unexpected response from Birdie API.  Unable to " + op + ".");
+                    return null;
                 }
             }
             else
             {
-                Log("Warning:  Birdie API query failed.  Unable to update remote invites count.");
+                Log("Warning:  Birdie API query failed.  Unable to " + op + ".");
+                return null;
+            }
+
+            return r;
+        }
+
+        /* Get the number of Facebook users invited by everyone.  --Kris */
+        private void UpdateRemoteInvitesCount()
+        {
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            queryParams.Add("return", "count");
+            
+            IRestResponse res = BirdieQuery("/facebook/invited", "GET", queryParams);
+
+            int? r = GetIntFromRes(res, "update remote invites count");
+            if (r == null)
+            {
                 return;
             }
 
-            remoteInvitesSent = r;
+            remoteInvitesSent = r.Value;
 
-            UpdateInvitationsCount(-1, r);
+            UpdateInvitationsCount(-1, r.Value);
+        }
+
+        /* Get the number of tweets tweeted by everyone.  --Kris */
+        private void UpdateRemoteTweetsCount()
+        {
+            IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + GetAppID() + "&return=count", "GET");
+
+            int? myTweets = GetIntFromRes(res, "update this client's tweet count");
+            if (myTweets == null)
+            {
+                return;
+            }
+
+            res = BirdieQuery(@"/twitter/tweets?return=count", "GET");
+
+            int? totalTweets = GetIntFromRes(res, "update total tweets count");
+            if (totalTweets == null)
+            {
+                return;
+            }
+
+            UpdateTweetsCount(myTweets.Value, totalTweets.Value);
+        }
+
+        /* Report one or more new tweets to Birdie.  --Kris */
+        private void ReportNewTweets(List<TweetsQueue> tweets)
+        {
+            for (int i = 0; i < tweets.Count; i++)
+            {
+                tweets[i].SetTweetedBy(GetAppID());
+            }
+
+            IRestResponse res = BirdieQuery(@"/twitter/tweets", "POST", null, JsonConvert.SerializeObject(tweets));
+
+            if (res.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                Log("Tweet(s) reported successfully.", false);
+            }
+            else
+            {
+                Log("Warning:  Tweets reporting to Birdie API failed : " + res.StatusCode);
+            }
+
+            UpdateRemoteTweetsCount();
+        }
+
+        private void ReportNewTweet(TweetsQueue tweet)
+        {
+            ReportNewTweets(new List<TweetsQueue> { tweet });
+        }
+
+        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true)
+        {
+            if (overwrite || tweetsQueue == null)
+            {
+                tweetsQueue = new List<TweetsQueue>();
+            }
+
+            foreach (dynamic o in deserializedJSON)
+            {
+                if (o != null
+                    && o["tweet"] != null
+                    && o["entered"] != null
+                    && o["enteredBy"] != null
+                    && o["start"] != null
+                    && o["end"] != null)
+                {
+                    tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
+                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["tid"] != null ? (int) o["tid"] : 0)));
+                }
+            }
+
+            return tweetsQueue;
+        }
+
+        /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
+        private void UpdateLocalTweetsQueue()
+        {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                return;
+            }
+
+            Log("Updating tweets queue....");
+
+            /* Get any tweets in the Birdie API queue.  --Kris */
+            IRestResponse res = BirdieQuery(@"/twitter/tweetsQueue?showActiveOnly&showQueueFor=" + GetAppID(), "GET");
+
+            tweetsQueue = BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content));
+
+            /* Get any tweets from Reddit, if enabled.  --Kris */
+            GetTweetsFromReddit();
+
+            PersistLocalTweetsQueue();
+        }
+
+        /* Persist the queue in the system registry.  --Kris */
+        private void PersistLocalTweetsQueue()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                twitterKey.SetValue("tweetsQueue", JsonConvert.SerializeObject(tweetsQueue), RegistryValueKind.String);
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Unable to persist tweets queue to registry : " + e.ToString());
+            }
+        }
+
+        /* Update our history of recent tweets.  This is used to prevent duplicate tweet spam in the event of an error or abuse.  --Kris */
+        private void AppendTweetsHistory(List<TweetsQueue> entries)
+        {
+            if (tweetsHistory == null)
+            {
+                tweetsHistory = new List<TweetsQueue>();
+            }
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                entries[i].SetTweeted(DateTime.Now);
+            }
+            
+            tweetsHistory.AddRange(entries);
+
+            SanitizeTweetsHistory();  // Removes duplicates and tweets more than 30 days old.  Also sorts by date/time tweeted (ascending).  --Kris
+
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                twitterKey.SetValue("tweetsHistory", JsonConvert.SerializeObject(tweetsHistory), RegistryValueKind.String);
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Unable to update tweets queue in registry : " + e.ToString());
+            }
+
+            ReportNewTweets(entries);
+        }
+
+        private void AppendTweetsHistory(TweetsQueue entry)
+        {
+            AppendTweetsHistory(new List<TweetsQueue> { entry });
+        }
+
+        private void SanitizeTweetsHistory()
+        {
+            List<TweetsQueue> newTweetsHistory = new List<TweetsQueue>();
+            foreach (TweetsQueue entry in tweetsHistory)
+            {
+                if (!(newTweetsHistory.Contains(entry))
+                    && entry.tweeted != null
+                    && DateTime.Now <= entry.tweeted.Value.AddDays(30))
+                {
+                    newTweetsHistory.Add(entry);
+                }
+            }
+
+            tweetsHistory = newTweetsHistory.OrderBy(entry => entry.tweeted.Value).ToList();
+        }
+
+        /* Load recent tweets history.  --Kris */
+        private List<TweetsQueue> LoadTweetsHistory()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                tweetsHistory = JsonConvert.DeserializeObject<List<TweetsQueue>>(
+                    (string) twitterKey.GetValue("tweetsHistory", JsonConvert.SerializeObject(new List<TweetsQueue>()), RegistryValueOptions.None)
+                );
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error loading recent tweets history from registry : " + e.ToString());
+
+                tweetsHistory = new List<TweetsQueue>();
+            }
+
+            SanitizeTweetsHistory();
+
+            return tweetsHistory;
+        }
+
+        /* Get the number of active and total users.  --Kris */
+        private void UpdateRemoteUsers()
+        {
+            IRestResponse res = BirdieQuery(@"/clients?active&return=count", "GET");
+
+            int? active = GetIntFromRes(res, "update active users count");
+            if (active == null)
+            {
+                return;
+            }
+
+            res = BirdieQuery(@"/clients?return=count", "GET");
+
+            int? total = GetIntFromRes(res, "update total users count");
+            if (total == null)
+            {
+                return;
+            }
+
+            UpdateActiveUsers(active.Value, total.Value);
+        }
+
+        /* Tell the Birdie API we're still active.  --Kris */
+        private void KeepAlive()
+        {
+            IRestResponse res = BirdieQuery("/clients/" + GetAppID() + "/keepAlive", "PUT");
+
+            if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                Log("Sent keep-alive to Birdie API successfully.", false);
+            }
+            else
+            {
+                Log("Warning:  Birdie API keep-alive query failed : " + res.StatusCode);
+            }
+        }
+
+        /* Tell the Birdie API who we are.  --Kris */
+        private void RegisterClient()
+        {
+            Dictionary<string, string> postBody = new Dictionary<string, string>();
+            postBody.Add("clientId", GetAppID());
+            postBody.Add("appName", @"FaceBERN!");
+
+            IRestResponse res = BirdieQuery(@"/clients", "POST", null, JsonConvert.SerializeObject(postBody));
+
+            if (res.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                Log("Client registered with Birdie API successfully.");
+            }
+            else
+            {
+                Log("Warning:  Client registration with Birdie API failed : " + res.StatusCode);
+            }
+        }
+
+        /* Check to see if we're registered with the Birdie API.  --Kris */
+        private bool CheckClientRegistration()
+        {
+            return (BirdieQuery("/clients/" + GetAppID(), "GET").StatusCode == System.Net.HttpStatusCode.OK);
         }
 
         /* Query the Birdie API and return the raw result.  --Kris */
@@ -650,6 +943,9 @@ namespace FaceBERN_
 
                 invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
 
+                /* Load the local recent tweets history.  --Kris */
+                LoadTweetsHistory();
+
                 //Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
                 // TEST - This will end up going into the loop below.  --Kris
@@ -770,6 +1066,11 @@ namespace FaceBERN_
         // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
         private void Twitter()
         {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                return;
+            }
+
             LoadTwitterCredentialsFromRegistry();
 
             if (twitterAccessCredentials.IsAssociated() == false)
@@ -793,25 +1094,221 @@ namespace FaceBERN_
             Tweet("Test tweet.  Please disregard.");
             */
 
-            /* Check Birdie for any tweets that need to go out.  --Kris */
+            /* Load the tweets queue from the specified source(s).  --Kris */
+            UpdateLocalTweetsQueue();
 
-
-            /* Check our Reddit subs for any posts with the "Tweet This!" flair.  --Kris */
-
+            /* If there are any tweets in the queue and we're past the tweet interval, tweet the next entry from it.  --Kris */
+            ConsumeTweetsQueue();
 
             DestroyTwitterTokens();
+        }
+
+        // TODO - Find an API call to handle this, as there could be URLs embedded within the text, as well.  --Kris
+        private string ComposeTweet(string text, string url = "")
+        {
+            int twitterCharLimit = 140;
+            int maxUrlLength = 25;  // TODO - Query and update this.  Published as 22 for now, so should be able to get away with this for awhile.  --Kris
+
+            int urlLength = (url.Length <= maxUrlLength ? url.Length : maxUrlLength);
+
+            if ((text.Length + 1 + urlLength) <= twitterCharLimit)
+            {
+                return text + " " + url;
+            }
+            else
+            {
+                return (text.Substring(0, (twitterCharLimit - 4 - urlLength)) + "... " + url);
+            }
+        }
+
+        private DateTime TimestampToDateTime(double timestamp)
+        {
+            return new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(timestamp);
+        }
+
+        // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
+        private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
+        {
+            if (!(Globals.Config["TweetRedditNews"].Equals("1")))
+            {
+                return new List<TweetsQueue>();
+            }
+            
+            if (reddit == null)
+            {
+                reddit = new Reddit(false);
+            }
+
+            // No need to login to Reddit since all we're doing is a search.  --Kris
+            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("csReddit Test Flair", "csReddit", "all");  // TODO - Change these to production values when ready.  --Kris
+
+            List<TweetsQueue> res = new List<TweetsQueue>();
+            foreach (RedditPost redditPost in redditPosts)
+            {
+                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
+                    redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
+            }
+
+            if (appendTweetsQueue)
+            {
+                foreach (TweetsQueue entry in res)
+                {
+                    bool dup = false;
+                    foreach (TweetsQueue globalEntry in tweetsQueue)
+                    {
+                        if (globalEntry.tweet.Trim().ToLower().Equals(entry.tweet.Trim().ToLower()))
+                        {
+                            dup = true;
+                            break;
+                        }
+                    }
+
+                    if (dup == false)
+                    {
+                        tweetsQueue.Add(entry);
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
+        private void ConsumeTweetsQueue()
+        {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                return;
+            }
+
+            /* Tweets history is already sorted with the latest entry being the most-recent tweet.  --Kris */
+            double r;
+            if (Globals.Config.ContainsKey("TweetIntervalMinutes")
+                && Double.TryParse(Globals.Config["TweetIntervalMinutes"], out r)
+                && tweetsHistory != null
+                && tweetsHistory.Count > 0
+                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
+                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now)
+            {
+                return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
+            }
+
+            Log("Consuming tweets queue....");
+
+            if (tweetsQueue != null && tweetsQueue.Count > 0)
+            {
+                List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
+                bool tweeted = false;
+                foreach (TweetsQueue entry in tweetsQueue)
+                {
+                    if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
+                        || DateTime.Now >= entry.end)
+                    {
+                        continue;
+                    }
+
+                    if (!(tweeted) 
+                        && DateTime.Now >= entry.start)
+                    {
+                        if (Tweet(entry.tweet))  // Perform the actual tweet.  --Kris
+                        {
+                            AppendTweetsHistory(entry);
+                        }
+                        else
+                        {
+                            Log("Warning:  Unable to tweet from queue.  Will try again later.");
+
+                            newTweetsQueue.Add(entry);
+                        }
+
+                        tweeted = true;
+                    }
+                    else
+                    {
+                        newTweetsQueue.Add(entry);
+                    }
+                }
+
+                tweetsQueue = newTweetsQueue;
+                PersistLocalTweetsQueue();
+            }
+        }
+
+        /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
+        private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, string t = "day", bool? self = null)
+        {
+            if (self == null)
+            {
+                List<RedditPost> res = new List<RedditPost>();
+                res.AddRange(SearchSubredditForFlairPosts(flair, sub, t, false));
+                res.AddRange(SearchSubredditForFlairPosts(flair, sub, t, true));
+
+                return res;
+            }
+            else
+            {
+                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub));
+            }
+        }
+
+        private List<RedditPost> ParseRedditPosts(dynamic redditObj)
+        {
+            List<RedditPost> res = new List<RedditPost>();
+
+            if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
+            {
+                return res;  // No results.  --Kris
+            }
+
+            foreach (dynamic o in redditObj["data"]["children"])
+            {
+                if (o != null
+                    && o["data"] != null
+                    && o["data"]["title"] != null
+                    && o["data"]["url"] != null
+                    && o["data"]["score"] != null 
+                    && o["data"]["created"] != null)
+                {
+                    try
+                    {
+                        res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["url"].ToString(),
+                            (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), (string) o["data"]["selftext"]));
+                    }
+                    catch (Exception e)
+                    {
+                        Log("Warning:  Error parsing Reddit post : " + e.ToString());
+                    }
+                }
+            }
+
+            return res;
         }
 
         /* Post a tweet.  --Kris */
         private bool Tweet(string tweet)
         {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
+
+                return false;
+            }
+
             if (!(TwitterIsAuthorized()))
             {
                 return false;
             }
 
-            LoadTwitterTokens();
+            if (tweetsHistory.Where(entry => entry.tweet.Equals(tweet)).ToList().Count > 0)
+            {
+                Log("Tweet '" + tweet + "' has already been tweeted recently.  Skipped.");
 
+                return true;
+            }
+
+            LoadTwitterTokens();
+            Log("DEBUG - " + tweet);
+            return true;
             TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
             if (res.Result == RequestResult.Success)
             {
@@ -821,7 +1318,7 @@ namespace FaceBERN_
             {
                 Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
             }
-
+            
             return (res.Result == RequestResult.Success);
         }
 
@@ -879,6 +1376,56 @@ namespace FaceBERN_
             return true;
         }
 
+        /* Messy check to see if we'll need to open a browser window for GOTV on this iteration.  Will replace later when Facebook has been moved to its own class (TODO).  --Kris */
+        private bool GOTVNeeded()
+        {
+            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderBy(s => s.Value.primaryDate))
+            {
+                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+                {
+                    Log("Thread stop received.  Workflow aborted.");
+                    return false;
+                }
+
+                if (GOTVNeeded(state.Value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /* Check to see if GOTV should be executed for a given state.  --Kris */
+        private bool GOTVNeeded(States state, bool log = false)
+        {
+            /* Skip if user disabled GOTV for this state.  --Kris */
+            if (state.enableGOTV == false)
+            {
+                Log("GOTV not enabled for " + state.name + ".  Skipped.", log);
+            }
+
+            /* Determine if it's time for GOTV in this state.  --Kris */
+            // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+            RegistryKey stateKey = GOTVKey.CreateSubKey(state.abbr);
+
+            string lastGOTVDaysBack = stateKey.GetValue("LastGOTVDaysBack", "", RegistryValueOptions.None).ToString();
+            int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
+
+            if (state.primaryDate >= DateTime.Now
+                && state.enableGOTV == true 
+                && state.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
+                && ((last - Math.Floor(state.primaryDate.Subtract(DateTime.Now).TotalDays)) >= state.GOTVWaitInterval) || Globals.devOverride == true)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
         private void GOTV()
         {
@@ -912,6 +1459,13 @@ namespace FaceBERN_
             }
 
             Log("Running GOTV checklist....");
+
+            if (!(GOTVNeeded()))
+            {
+                Log("No GOTV is needed at this time.");
+
+                return;
+            }
 
             /* Initialize the Selenium WebDriver.  --Kris */
             webDriver = new WebDriver(Main, browser);
@@ -948,49 +1502,27 @@ namespace FaceBERN_
                     return;
                 }
 
-                /* Skip states that already held their primaries.  --Kris */
-                // TODO - Replace with more sophisticated logic for the general election and beyond.  --Kris
-                if (state.Value.primaryDate < DateTime.Now)
+                if (GOTVNeeded(state.Value, true))
                 {
-                    continue;
-                }
+                    // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
+                    /*
+                    if (!(state.Key.Equals("NM")))
+                    {
+                        continue;
+                    }
+                    */
 
-                /* Skip if user disabled GOTV for this state.  --Kris */
-                if (state.Value.enableGOTV == false)
-                {
-                    Log("GOTV not enabled for " + state.Value.name + ".  Skipped.");
+                    Log("Checking GOTV for " + state.Value.name + "....");
 
-                    continue;
-                }
+                    if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
+                    {
+                        Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
 
-                // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
-                /*
-                if (!(state.Key.Equals("NM")))
-                {
-                    continue;
-                }
-                */
+                        continue;
+                    }
 
-                Log("Checking GOTV for " + state.Value.name + "....");
-                
-                if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
-                {
-                    Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
+                    RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
 
-                    continue;
-                }
-
-                /* Determine if it's time for GOTV in this state.  --Kris */
-                // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
-                RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
-
-                string lastGOTVDaysBack = stateKey.GetValue("LastGOTVDaysBack", "", RegistryValueOptions.None).ToString();
-                int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
-
-                bool dateAppropriate = false;
-                if (state.Value.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
-                    && ((last - Math.Floor(state.Value.primaryDate.Subtract(DateTime.Now).TotalDays)) >= state.Value.GOTVWaitInterval) || Globals.devOverride == true)
-                {
                     SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
 
                     /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
@@ -1008,19 +1540,16 @@ namespace FaceBERN_
                         ExecuteGOTV(ref friends, ref stateKey, state.Value);
                     }
 
-                    dateAppropriate = true;
-
                     SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
+
+                    stateKey.Close();
 
                     break;
                 }
-
-                if (!dateAppropriate)
+                else
                 {
                     Log("No GOTV needed for " + state.Key + " at this time.");
                 }
-
-                stateKey.Close();
             }
 
             try
@@ -2594,7 +3123,7 @@ namespace FaceBERN_
             }
         }
 
-        /* Update local and remote total invites.  If you just want to update the total remote invites, pass 0 for x.  --Kris */
+        /* Update local and remote total invites.  If you just want to update the total remote invites, pass -1 for x.  --Kris */
         private void UpdateInvitationsCount(int x, int y, bool hard = true)
         {
             if (Main.InvokeRequired)
@@ -2618,6 +3147,40 @@ namespace FaceBERN_
             }
 
             invitesSent += x;
+        }
+
+        /* Update local and remote total tweets.  If you just want to update the total remote tweets, pass -1 for x.  --Kris */
+        private void UpdateTweetsCount(int x, int y)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateTweetsCount(x, y); }));
+            }
+            else
+            {
+                Main.SetTweetsTweeted(x, y);
+
+                //Main.Refresh();
+            }
+        }
+
+        /* Update active and total users.  --Kris */
+        private void UpdateActiveUsers(int active, int total)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateActiveUsers(active, total); }));
+            }
+            else
+            {
+                Main.SetActiveUsers(active, total);
+
+                //Main.Refresh();
+            }
         }
 
         private void SetExecState(int state)
