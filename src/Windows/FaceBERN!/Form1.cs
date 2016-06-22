@@ -442,7 +442,7 @@ namespace FaceBERN_
             }
         }
 
-        private void Exit()
+        internal void Exit()
         {
             // TODO - Save configs.  --Kris
 

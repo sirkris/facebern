@@ -61,6 +61,11 @@ namespace FaceBERN_
             }
         }
 
+        internal bool SetFacebook(string username, string password)
+        {
+            return SetFacebook(ToSecureString(username), ToSecureString(password));
+        }
+
         internal bool SetFacebook(SecureString username, SecureString password)
         {
             try
