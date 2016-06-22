@@ -1376,6 +1376,47 @@ namespace FaceBERN_
             return true;
         }
 
+        /* Messy check to see if we'll need to open a browser window for GOTV on this iteration.  Will replace later when Facebook has been moved to its own class (TODO).  --Kris */
+        private bool GOTVNeeded()
+        {
+            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderBy(s => s.Value.primaryDate))
+            {
+                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
+                {
+                    Log("Thread stop received.  Workflow aborted.");
+                    return false;
+                }
+
+                if (GOTVNeeded(state.Value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /* Check to see if GOTV should be executed for a given state.  --Kris */
+        private bool GOTVNeeded(States state, bool log = false)
+        {
+            /* Skip states that already held their primaries.  --Kris */
+            // TODO - Replace with more sophisticated logic for the general election and beyond.  --Kris
+            if (state.primaryDate < DateTime.Now)
+            {
+                return true;
+            }
+
+            /* Skip if user disabled GOTV for this state.  --Kris */
+            if (state.enableGOTV == false)
+            {
+                Log("GOTV not enabled for " + state.name + ".  Skipped.", log);
+
+                return true;
+            }
+
+            return false;
+        }
+
         // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
         private void GOTV()
         {
@@ -1409,6 +1450,13 @@ namespace FaceBERN_
             }
 
             Log("Running GOTV checklist....");
+
+            if (!(GOTVNeeded()))
+            {
+                Log("No GOTV is needed at this time.");
+
+                return;
+            }
 
             /* Initialize the Selenium WebDriver.  --Kris */
             webDriver = new WebDriver(Main, browser);
@@ -1445,18 +1493,8 @@ namespace FaceBERN_
                     return;
                 }
 
-                /* Skip states that already held their primaries.  --Kris */
-                // TODO - Replace with more sophisticated logic for the general election and beyond.  --Kris
-                if (state.Value.primaryDate < DateTime.Now)
+                if (!(GOTVNeeded(state.Value, true)))
                 {
-                    continue;
-                }
-
-                /* Skip if user disabled GOTV for this state.  --Kris */
-                if (state.Value.enableGOTV == false)
-                {
-                    Log("GOTV not enabled for " + state.Value.name + ".  Skipped.");
-
                     continue;
                 }
 
