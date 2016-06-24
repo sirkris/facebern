@@ -49,7 +49,10 @@ namespace FaceBERN_
 
             Globals.sINI.Save(System.IO.Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
+            PostInstallTwitter postInstallTwitter = new PostInstallTwitter(Main, appVersion);
+            postInstallTwitter.Show();
 
+            this.Close();
         }
 
         private void button1_Click(object sender, EventArgs e)

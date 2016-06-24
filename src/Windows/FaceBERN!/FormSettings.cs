@@ -55,7 +55,9 @@ namespace FaceBERN_
             Globals.Config["UseCustomEvents"] = (useCustomEventsCheckbox.Checked ? "1" : "0");
             Globals.Config["CheckRememberPasswordByDefault"] = (checkRememberPasswordByDefaultCheckbox.Checked ? "1" : "0");
             Globals.Config["AutoUpdate"] = (autoUpdateCheckbox.Checked ? "1" : "0");
-            Globals.Config["TweetRedditNews"] = (tweetRedditNewsCheckbox.Checked ? "1" : "0");
+            Globals.Config["TwitterCampaignRunBernieRun"] = (cRunBernieRunCheckbox.Checked ? "1" : "0");
+            Globals.Config["TwitterCampaignRedditS4P"] = (cMediaBlackoutCompensatorForS4PCheckbox.Checked ? "1" : "0");
+            Globals.Config["TwitterCampaignRedditPolRev"] = (cMediaBlackoutCompensatorForPolRevCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableFacebanking"] = (enableFacebankingCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
             Globals.Config["TweetIntervalMinutes"] = tweetIntervalMinutesNumericUpDown.Value.ToString();
@@ -169,7 +171,9 @@ namespace FaceBERN_
                     break;
                 case "twitter":
                     enableTwitterCheckbox.Checked = (Globals.Config["EnableTwitter"] == "1" ? true : false);
-                    tweetRedditNewsCheckbox.Checked = (Globals.Config["TweetRedditNews"] == "1" ? true : false);
+                    cRunBernieRunCheckbox.Checked = (Globals.Config["TwitterCampaignRunBernieRun"] == "1" ? true : false);
+                    cMediaBlackoutCompensatorForS4PCheckbox.Checked = (Globals.Config["TwitterCampaignRedditS4P"] == "1" ? true : false);
+                    cMediaBlackoutCompensatorForPolRevCheckbox.Checked = (Globals.Config["TwitterCampaignRedditPolRev"] == "1" ? true : false);
                     tweetIntervalMinutesNumericUpDown.Value = Decimal.Parse(Globals.Config["TweetIntervalMinutes"]);
 
                     ShowTwitterCredentials();
@@ -305,15 +309,17 @@ namespace FaceBERN_
 
             if (enableTwitterCheckbox.Checked == true)
             {
-                label6.Visible = true;
                 label9.Visible = true;
                 label10.Visible = true;
                 label11.Visible = true;
                 label12.Visible = true;
                 label13.Visible = true;
                 label14.Visible = true;
+                label15.Visible = true;
 
-                tweetRedditNewsCheckbox.Visible = true;
+                cRunBernieRunCheckbox.Visible = true;
+                cMediaBlackoutCompensatorForS4PCheckbox.Visible = true;
+                cMediaBlackoutCompensatorForPolRevCheckbox.Visible = true;
                 button2.Visible = true;
                 twitterUsernameTextbox.Visible = true;
                 twitterUserIdTextbox.Visible = true;
@@ -322,15 +328,17 @@ namespace FaceBERN_
             }
             else
             {
-                label6.Visible = false;
                 label9.Visible = false;
                 label10.Visible = false;
                 label11.Visible = false;
                 label12.Visible = false;
                 label13.Visible = false;
                 label14.Visible = false;
+                label15.Visible = false;
 
-                tweetRedditNewsCheckbox.Visible = false;
+                cRunBernieRunCheckbox.Visible = false;
+                cMediaBlackoutCompensatorForS4PCheckbox.Visible = false;
+                cMediaBlackoutCompensatorForPolRevCheckbox.Visible = false;
                 button2.Visible = false;
                 twitterUsernameTextbox.Visible = false;
                 twitterUserIdTextbox.Visible = false;
@@ -384,9 +392,34 @@ namespace FaceBERN_
             buttonApply.Enabled = true;
         }
 
-        private void tweetRedditNewsCheckbox_CheckedChanged(object sender, EventArgs e)
+        private void cRunBernieRunCheckbox_CheckChanged(object sender, EventArgs e)
         {
             buttonApply.Enabled = true;
+        }
+
+        private void cMediaBlackoutCompensatorForS4PCheckbox_CheckChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
+        }
+
+        private void cMediaBlackoutCompensatorForPolRevCheckbox_CheckChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
+        }
+
+        private void cRunBernieRunCheckbox_MouseMove(object sender, MouseEventArgs e)
+        {
+            toolTip1.SetToolTip(cRunBernieRunCheckbox, "Promote a Bernie Sanders candidacy for President of the United States (assuming you're still unhappy about all the election fraud and voter suppression in the Dem primaries).");
+        }
+
+        private void cMediaBlackoutCompensatorForS4PCheckbox_MouseMove(object sender, MouseEventArgs e)
+        {
+            toolTip1.SetToolTip(cMediaBlackoutCompensatorForS4PCheckbox, "Tweet news posts from Reddit /r/SandersForPresident that are flaired by the mods.");
+        }
+
+        private void cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove(object sender, MouseEventArgs e)
+        {
+            toolTip1.SetToolTip(cMediaBlackoutCompensatorForPolRevCheckbox, "Tweet news posts from Reddit /r/Political_Revolution that are flaired by the mods.");
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -435,11 +468,6 @@ namespace FaceBERN_
         private void label8_Click(object sender, EventArgs e)
         {
             enableTwitterCheckbox.Checked = !(enableTwitterCheckbox.Checked);
-        }
-
-        private void label6_Click(object sender, EventArgs e)
-        {
-            tweetRedditNewsCheckbox.Checked = !(tweetRedditNewsCheckbox.Checked);
         }
 
         private void button3_Click(object sender, EventArgs e)

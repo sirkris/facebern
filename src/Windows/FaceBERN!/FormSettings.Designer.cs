@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSettings));
             this.settingsTabControl = new System.Windows.Forms.TabControl();
             this.tabGeneral = new System.Windows.Forms.TabPage();
@@ -65,6 +66,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabTwitter = new System.Windows.Forms.TabPage();
+            this.label14 = new System.Windows.Forms.Label();
+            this.tweetIntervalMinutesNumericUpDown = new System.Windows.Forms.NumericUpDown();
+            this.label13 = new System.Windows.Forms.Label();
             this.twitterAccessTokenTextbox = new System.Windows.Forms.TextBox();
             this.twitterUserIdTextbox = new System.Windows.Forms.TextBox();
             this.twitterUsernameTextbox = new System.Windows.Forms.TextBox();
@@ -75,14 +79,14 @@
             this.label10 = new System.Windows.Forms.Label();
             this.enableTwitterCheckbox = new System.Windows.Forms.CheckBox();
             this.label8 = new System.Windows.Forms.Label();
-            this.tweetRedditNewsCheckbox = new System.Windows.Forms.CheckBox();
-            this.label6 = new System.Windows.Forms.Label();
             this.buttonApply = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
-            this.label13 = new System.Windows.Forms.Label();
-            this.tweetIntervalMinutesNumericUpDown = new System.Windows.Forms.NumericUpDown();
-            this.label14 = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.cMediaBlackoutCompensatorForPolRevCheckbox = new System.Windows.Forms.CheckBox();
+            this.cMediaBlackoutCompensatorForS4PCheckbox = new System.Windows.Forms.CheckBox();
+            this.cRunBernieRunCheckbox = new System.Windows.Forms.CheckBox();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
@@ -496,6 +500,10 @@
             // 
             // tabTwitter
             // 
+            this.tabTwitter.Controls.Add(this.cMediaBlackoutCompensatorForPolRevCheckbox);
+            this.tabTwitter.Controls.Add(this.cMediaBlackoutCompensatorForS4PCheckbox);
+            this.tabTwitter.Controls.Add(this.cRunBernieRunCheckbox);
+            this.tabTwitter.Controls.Add(this.label15);
             this.tabTwitter.Controls.Add(this.label14);
             this.tabTwitter.Controls.Add(this.tweetIntervalMinutesNumericUpDown);
             this.tabTwitter.Controls.Add(this.label13);
@@ -509,8 +517,6 @@
             this.tabTwitter.Controls.Add(this.label10);
             this.tabTwitter.Controls.Add(this.enableTwitterCheckbox);
             this.tabTwitter.Controls.Add(this.label8);
-            this.tabTwitter.Controls.Add(this.tweetRedditNewsCheckbox);
-            this.tabTwitter.Controls.Add(this.label6);
             this.tabTwitter.Location = new System.Drawing.Point(4, 22);
             this.tabTwitter.Name = "tabTwitter";
             this.tabTwitter.Size = new System.Drawing.Size(752, 449);
@@ -518,11 +524,54 @@
             this.tabTwitter.Text = "Twitter";
             this.tabTwitter.UseVisualStyleBackColor = true;
             // 
+            // label14
+            // 
+            this.label14.AutoSize = true;
+            this.label14.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label14.Location = new System.Drawing.Point(439, 39);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(59, 16);
+            this.label14.TabIndex = 29;
+            this.label14.Text = "minutes";
+            // 
+            // tweetIntervalMinutesNumericUpDown
+            // 
+            this.tweetIntervalMinutesNumericUpDown.Location = new System.Drawing.Point(391, 37);
+            this.tweetIntervalMinutesNumericUpDown.Maximum = new decimal(new int[] {
+            999,
+            0,
+            0,
+            0});
+            this.tweetIntervalMinutesNumericUpDown.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.tweetIntervalMinutesNumericUpDown.Name = "tweetIntervalMinutesNumericUpDown";
+            this.tweetIntervalMinutesNumericUpDown.Size = new System.Drawing.Size(46, 20);
+            this.tweetIntervalMinutesNumericUpDown.TabIndex = 28;
+            this.tweetIntervalMinutesNumericUpDown.Value = new decimal(new int[] {
+            30,
+            0,
+            0,
+            0});
+            this.tweetIntervalMinutesNumericUpDown.ValueChanged += new System.EventHandler(this.tweetIntervalMinutesNumericUpDown_ValueChanged);
+            // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label13.Location = new System.Drawing.Point(186, 37);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(199, 16);
+            this.label13.TabIndex = 27;
+            this.label13.Text = "Don\'t exceed 1 tweet every:";
+            // 
             // twitterAccessTokenTextbox
             // 
             this.twitterAccessTokenTextbox.Cursor = System.Windows.Forms.Cursors.No;
             this.twitterAccessTokenTextbox.Enabled = false;
-            this.twitterAccessTokenTextbox.Location = new System.Drawing.Point(306, 232);
+            this.twitterAccessTokenTextbox.Location = new System.Drawing.Point(306, 290);
             this.twitterAccessTokenTextbox.Name = "twitterAccessTokenTextbox";
             this.twitterAccessTokenTextbox.ReadOnly = true;
             this.twitterAccessTokenTextbox.Size = new System.Drawing.Size(284, 20);
@@ -533,7 +582,7 @@
             // 
             this.twitterUserIdTextbox.Cursor = System.Windows.Forms.Cursors.No;
             this.twitterUserIdTextbox.Enabled = false;
-            this.twitterUserIdTextbox.Location = new System.Drawing.Point(306, 207);
+            this.twitterUserIdTextbox.Location = new System.Drawing.Point(306, 265);
             this.twitterUserIdTextbox.Name = "twitterUserIdTextbox";
             this.twitterUserIdTextbox.ReadOnly = true;
             this.twitterUserIdTextbox.Size = new System.Drawing.Size(284, 20);
@@ -544,7 +593,7 @@
             // 
             this.twitterUsernameTextbox.Cursor = System.Windows.Forms.Cursors.No;
             this.twitterUsernameTextbox.Enabled = false;
-            this.twitterUsernameTextbox.Location = new System.Drawing.Point(306, 182);
+            this.twitterUsernameTextbox.Location = new System.Drawing.Point(306, 240);
             this.twitterUsernameTextbox.Name = "twitterUsernameTextbox";
             this.twitterUsernameTextbox.ReadOnly = true;
             this.twitterUsernameTextbox.Size = new System.Drawing.Size(284, 20);
@@ -555,7 +604,7 @@
             // 
             this.label9.AutoSize = true;
             this.label9.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label9.Location = new System.Drawing.Point(194, 233);
+            this.label9.Location = new System.Drawing.Point(194, 291);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(106, 16);
             this.label9.TabIndex = 23;
@@ -565,7 +614,7 @@
             // 
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label11.Location = new System.Drawing.Point(238, 208);
+            this.label11.Location = new System.Drawing.Point(238, 266);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(62, 16);
             this.label11.TabIndex = 22;
@@ -575,7 +624,7 @@
             // 
             this.label12.AutoSize = true;
             this.label12.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label12.Location = new System.Drawing.Point(222, 183);
+            this.label12.Location = new System.Drawing.Point(222, 241);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(78, 16);
             this.label12.TabIndex = 21;
@@ -583,7 +632,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(219, 111);
+            this.button2.Location = new System.Drawing.Point(219, 169);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(187, 23);
             this.button2.TabIndex = 20;
@@ -595,7 +644,7 @@
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label10.Location = new System.Drawing.Point(190, 149);
+            this.label10.Location = new System.Drawing.Point(190, 207);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(110, 16);
             this.label10.TabIndex = 19;
@@ -623,29 +672,6 @@
             this.label8.TabIndex = 13;
             this.label8.Text = "Enable Twitter:";
             this.label8.Click += new System.EventHandler(this.label8_Click);
-            // 
-            // tweetRedditNewsCheckbox
-            // 
-            this.tweetRedditNewsCheckbox.AutoSize = true;
-            this.tweetRedditNewsCheckbox.Checked = true;
-            this.tweetRedditNewsCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.tweetRedditNewsCheckbox.Location = new System.Drawing.Point(391, 39);
-            this.tweetRedditNewsCheckbox.Name = "tweetRedditNewsCheckbox";
-            this.tweetRedditNewsCheckbox.Size = new System.Drawing.Size(15, 14);
-            this.tweetRedditNewsCheckbox.TabIndex = 12;
-            this.tweetRedditNewsCheckbox.UseVisualStyleBackColor = true;
-            this.tweetRedditNewsCheckbox.CheckedChanged += new System.EventHandler(this.tweetRedditNewsCheckbox_CheckedChanged);
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(129, 37);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(256, 16);
-            this.label6.TabIndex = 11;
-            this.label6.Text = "Tweet birdie news posts from Reddit:";
-            this.label6.Click += new System.EventHandler(this.label6_Click);
             // 
             // buttonApply
             // 
@@ -678,48 +704,57 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // label13
+            // label15
             // 
-            this.label13.AutoSize = true;
-            this.label13.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label13.Location = new System.Drawing.Point(186, 62);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(199, 16);
-            this.label13.TabIndex = 27;
-            this.label13.Text = "Don\'t exceed 1 tweet every:";
+            this.label15.AutoSize = true;
+            this.label15.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label15.Location = new System.Drawing.Point(206, 69);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(94, 16);
+            this.label15.TabIndex = 30;
+            this.label15.Text = "Campaigns:";
             // 
-            // tweetIntervalMinutesNumericUpDown
+            // cMediaBlackoutCompensatorForPolRevCheckbox
             // 
-            this.tweetIntervalMinutesNumericUpDown.Location = new System.Drawing.Point(391, 62);
-            this.tweetIntervalMinutesNumericUpDown.Maximum = new decimal(new int[] {
-            999,
-            0,
-            0,
-            0});
-            this.tweetIntervalMinutesNumericUpDown.Minimum = new decimal(new int[] {
-            5,
-            0,
-            0,
-            0});
-            this.tweetIntervalMinutesNumericUpDown.Name = "tweetIntervalMinutesNumericUpDown";
-            this.tweetIntervalMinutesNumericUpDown.Size = new System.Drawing.Size(46, 20);
-            this.tweetIntervalMinutesNumericUpDown.TabIndex = 28;
-            this.tweetIntervalMinutesNumericUpDown.Value = new decimal(new int[] {
-            30,
-            0,
-            0,
-            0});
-            this.tweetIntervalMinutesNumericUpDown.ValueChanged += new System.EventHandler(this.tweetIntervalMinutesNumericUpDown_ValueChanged);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.AutoSize = true;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Checked = true;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Location = new System.Drawing.Point(306, 134);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Name = "cMediaBlackoutCompensatorForPolRevCheckbox";
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Size = new System.Drawing.Size(289, 17);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.TabIndex = 56;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Text = "Media Blackout Compensator for /r/Political_Revolution";
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.UseVisualStyleBackColor = true;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckedChanged += new System.EventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_CheckChanged);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove);
             // 
-            // label14
+            // cMediaBlackoutCompensatorForS4PCheckbox
             // 
-            this.label14.AutoSize = true;
-            this.label14.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label14.Location = new System.Drawing.Point(439, 64);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(59, 16);
-            this.label14.TabIndex = 29;
-            this.label14.Text = "minutes";
+            this.cMediaBlackoutCompensatorForS4PCheckbox.AutoSize = true;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Checked = true;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Location = new System.Drawing.Point(306, 111);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Name = "cMediaBlackoutCompensatorForS4PCheckbox";
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Size = new System.Drawing.Size(294, 17);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.TabIndex = 55;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Text = "Media Blackout Compensator for /r/SandersForPresident";
+            this.cMediaBlackoutCompensatorForS4PCheckbox.UseVisualStyleBackColor = true;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.CheckedChanged += new System.EventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_CheckChanged);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_MouseMove);
+            // 
+            // cRunBernieRunCheckbox
+            // 
+            this.cRunBernieRunCheckbox.AutoSize = true;
+            this.cRunBernieRunCheckbox.Checked = true;
+            this.cRunBernieRunCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cRunBernieRunCheckbox.Location = new System.Drawing.Point(306, 87);
+            this.cRunBernieRunCheckbox.Name = "cRunBernieRunCheckbox";
+            this.cRunBernieRunCheckbox.Size = new System.Drawing.Size(103, 17);
+            this.cRunBernieRunCheckbox.TabIndex = 54;
+            this.cRunBernieRunCheckbox.Text = "#RunBernieRun";
+            this.cRunBernieRunCheckbox.UseVisualStyleBackColor = true;
+            this.cRunBernieRunCheckbox.CheckedChanged += new System.EventHandler(this.cRunBernieRunCheckbox_CheckChanged);
+            this.cRunBernieRunCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cRunBernieRunCheckbox_MouseMove);
             // 
             // FormSettings
             // 
@@ -794,8 +829,6 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.CheckBox enableTwitterCheckbox;
         private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.CheckBox tweetRedditNewsCheckbox;
-        private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.TextBox twitterAccessTokenTextbox;
@@ -808,5 +841,10 @@
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.NumericUpDown tweetIntervalMinutesNumericUpDown;
         private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.Label label15;
+        private System.Windows.Forms.CheckBox cMediaBlackoutCompensatorForPolRevCheckbox;
+        private System.Windows.Forms.CheckBox cMediaBlackoutCompensatorForS4PCheckbox;
+        private System.Windows.Forms.CheckBox cRunBernieRunCheckbox;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }
