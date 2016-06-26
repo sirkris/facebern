@@ -55,7 +55,7 @@ namespace FaceBERN_
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
-            //rand = new Random();
+            rand = new Random();
 
             this.Main = Main;
             if (MainLog == null)
