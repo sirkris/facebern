@@ -114,6 +114,14 @@ namespace FaceBERN_
                 LogW("Launched by updater so no need to check for updates.");
             }
 
+            if (appKey.GetValue("PostInstallNeeded", null) != null)
+            {
+                LogW("Launching post-installation wizard....");
+
+                PostInstall postInstall = new PostInstall(this, Globals.__VERSION__);
+                postInstall.ShowDialog();
+            }
+
             Ready();
         }
 

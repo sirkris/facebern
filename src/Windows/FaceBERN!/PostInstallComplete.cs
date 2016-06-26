@@ -48,7 +48,7 @@ namespace FaceBERN_
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
 
-            appKey.DeleteValue("postInstallNeeded", false);
+            appKey.DeleteValue("PostInstallNeeded", false);
 
             appKey.Close();
             softwareKey.Close();

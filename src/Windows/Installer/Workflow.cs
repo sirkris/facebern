@@ -316,11 +316,12 @@ namespace Installer
 
                 SetStatus("Updating system registry....", 90);
 
-                appKey = softwareKey.CreateSubKey("FaceBERN!");
+                appKey = softwareKey.CreateSubKey("FaceBERN!");  // Sticking with the old name because it's more likely to be unique.  --Kris
 
                 appKey.SetValue("Installed", installPath, RegistryValueKind.String);
                 appKey.SetValue("BranchName", branchName, RegistryValueKind.String);
                 appKey.SetValue("GithubRemoteName", "origin", RegistryValueKind.String);
+                appKey.SetValue("PostInstallNeeded", "1", RegistryValueKind.String);
 
                 appKey.Flush();
                 softwareKey.Flush();
@@ -503,7 +504,7 @@ namespace Installer
                     Directory.CreateDirectory(appSMP);
                 }
 
-                string shortcutPath = Path.Combine(appSMP, "FaceBERN!.lnk");
+                string shortcutPath = Path.Combine(appSMP, "Birdie.lnk");
 
                 CreateShortcut(shortcutPath, installPath);
             }
@@ -517,7 +518,7 @@ namespace Installer
                     return;  // If your desktop directory doesn't exist, you've got bigger problems to deal with.  --Kris
                 }
 
-                string shortcutPath = Path.Combine(desktopPath, "FaceBERN!.lnk");
+                string shortcutPath = Path.Combine(desktopPath, "Birdie.lnk");
 
                 CreateShortcut(shortcutPath, installPath);
             }
@@ -528,7 +529,7 @@ namespace Installer
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut) shell.CreateShortcut(shortcutPath);
 
-            shortcut.Description = "FaceBERN! - Because the political revolution begins at home";
+            shortcut.Description = "Birdie - Because the political revolution begins at home";
             shortcut.TargetPath = Path.Combine(installPath, @"FaceBERN!.exe");
             shortcut.WorkingDirectory = installPath;
             shortcut.Save();
@@ -538,16 +539,16 @@ namespace Installer
         {
             try
             {
-                if (System.IO.File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FaceBERN!.lnk")))
+                if (System.IO.File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "Birdie.lnk")))
                 {
-                    System.IO.File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FaceBERN!.lnk"));
+                    System.IO.File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "Birdie.lnk"));
                 }
 
                 string userSMP = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
                 string appSMP = Path.Combine(userSMP, "Programs");
-                if (System.IO.File.Exists(Path.Combine(appSMP, "FaceBERN!.lnk")))
+                if (System.IO.File.Exists(Path.Combine(appSMP, "Birdie.lnk")))
                 {
-                    System.IO.File.Delete(Path.Combine(appSMP, "FaceBERN!.lnk"));
+                    System.IO.File.Delete(Path.Combine(appSMP, "Birdie.lnk"));
                 }
             }
             catch (Exception e)
