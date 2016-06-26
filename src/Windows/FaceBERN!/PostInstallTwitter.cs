@@ -32,19 +32,33 @@ namespace FaceBERN_
             button2.Enabled = false;
 
             HideTwitterCredentials();
+            HideCampaignsForm();
         }
 
-        private void cRunBernieRunCheckbox_MouseMove(object sender, MouseEventArgs e)
+        private void PostInstallTwitter_Shown(object sender, EventArgs e)
+        {
+            if (twitterCredentials.IsAssociated())
+            {
+                ShowTwitterCredentials();
+                ShowCampaignsForm();
+
+                button4.Text = "De-Associate Twitter Account";
+
+                button2.Enabled = true;
+            }
+        }
+
+        private void cRunBernieRunCheckbox_MouseMove(object sender, EventArgs e)
         {
             toolTip1.SetToolTip(cRunBernieRunCheckbox, "Promote a Bernie Sanders candidacy for President of the United States (assuming you're still unhappy about all the election fraud and voter suppression in the Dem primaries).");
         }
 
-        private void cMediaBlackoutCompensatorForS4PCheckbox_MouseMove(object sender, MouseEventArgs e)
+        private void cMediaBlackoutCompensatorForS4PCheckbox_MouseMove(object sender, EventArgs e)
         {
             toolTip1.SetToolTip(cMediaBlackoutCompensatorForS4PCheckbox, "Tweet news posts from Reddit /r/SandersForPresident that are flaired by the mods.");
         }
 
-        private void cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove(object sender, MouseEventArgs e)
+        private void cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove(object sender, EventArgs e)
         {
             toolTip1.SetToolTip(cMediaBlackoutCompensatorForPolRevCheckbox, "Tweet news posts from Reddit /r/Political_Revolution that are flaired by the mods.");
         }
@@ -95,7 +109,10 @@ namespace FaceBERN_
                 {
                     twitterCredentials.DestroyTwitter(true);
 
+                    twitterCredentials = new Credentials(false, true);
+
                     HideTwitterCredentials();  // Updates the form fields.  --Kris
+                    HideCampaignsForm();
 
                     button2.Enabled = false;
 
@@ -119,13 +136,16 @@ namespace FaceBERN_
 
                     // Don't do it as an asynchronous thread.  Better to lock the UI down here, anyway.  --Kris
                     Workflow workflow = new Workflow(Main);
-                    twitterCredentials = workflow.AuthorizeTwitterWithReturn(Main.browserModeComboBox.SelectedIndex); 
+                    workflow.AuthorizeTwitter(Main.browserModeComboBox.SelectedIndex);
+
+                    twitterCredentials = new Credentials(false, true);
 
                     this.Enabled = true;
                     this.TopMost = true;
                     this.UseWaitCursor = false;
 
                     ShowTwitterCredentials();  // Updates the form fields.  --Kris
+                    ShowCampaignsForm();
 
                     button2.Enabled = true;
 
@@ -157,6 +177,12 @@ namespace FaceBERN_
             if (twitterCredentials.IsAssociated())
             {
                 ShowTwitterCredentials();
+
+                button2.Enabled = true;
+            }
+            else if (enableTwitterCheckbox.Checked == true)
+            {
+                button2.Enabled = false;
             }
 
             label6.Visible = true;
@@ -203,6 +229,8 @@ namespace FaceBERN_
             {
                 HideAccountForm();
                 HideCampaignsForm();
+
+                button2.Enabled = true;  // We don't have to have an account if Twitter is disabled.  --Kris
             }
         }
     }

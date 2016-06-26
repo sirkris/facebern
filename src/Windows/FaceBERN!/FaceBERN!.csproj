@@ -208,11 +208,23 @@
     <Compile Include="PostInstall.Designer.cs">
       <DependentUpon>PostInstall.cs</DependentUpon>
     </Compile>
+    <Compile Include="PostInstallComplete.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PostInstallComplete.Designer.cs">
+      <DependentUpon>PostInstallComplete.cs</DependentUpon>
+    </Compile>
     <Compile Include="PostInstallFacebook.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="PostInstallFacebook.Designer.cs">
       <DependentUpon>PostInstallFacebook.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PostInstallTwitter.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PostInstallTwitter.Designer.cs">
+      <DependentUpon>PostInstallTwitter.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -245,8 +257,14 @@
     <EmbeddedResource Include="PostInstall.resx">
       <DependentUpon>PostInstall.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="PostInstallComplete.resx">
+      <DependentUpon>PostInstallComplete.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PostInstallFacebook.resx">
       <DependentUpon>PostInstallFacebook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PostInstallTwitter.resx">
+      <DependentUpon>PostInstallTwitter.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

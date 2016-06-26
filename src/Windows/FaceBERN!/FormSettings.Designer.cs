@@ -66,6 +66,10 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabTwitter = new System.Windows.Forms.TabPage();
+            this.cMediaBlackoutCompensatorForPolRevCheckbox = new System.Windows.Forms.CheckBox();
+            this.cMediaBlackoutCompensatorForS4PCheckbox = new System.Windows.Forms.CheckBox();
+            this.cRunBernieRunCheckbox = new System.Windows.Forms.CheckBox();
+            this.label15 = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
             this.tweetIntervalMinutesNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.label13 = new System.Windows.Forms.Label();
@@ -82,10 +86,6 @@
             this.buttonApply = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
-            this.label15 = new System.Windows.Forms.Label();
-            this.cMediaBlackoutCompensatorForPolRevCheckbox = new System.Windows.Forms.CheckBox();
-            this.cMediaBlackoutCompensatorForS4PCheckbox = new System.Windows.Forms.CheckBox();
-            this.cRunBernieRunCheckbox = new System.Windows.Forms.CheckBox();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
@@ -524,6 +524,58 @@
             this.tabTwitter.Text = "Twitter";
             this.tabTwitter.UseVisualStyleBackColor = true;
             // 
+            // cMediaBlackoutCompensatorForPolRevCheckbox
+            // 
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.AutoSize = true;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Checked = true;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Location = new System.Drawing.Point(306, 134);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Name = "cMediaBlackoutCompensatorForPolRevCheckbox";
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Size = new System.Drawing.Size(289, 17);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.TabIndex = 56;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Text = "Media Blackout Compensator for /r/Political_Revolution";
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.UseVisualStyleBackColor = true;
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckedChanged += new System.EventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_CheckChanged);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.MouseHover += new System.EventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove);
+            // 
+            // cMediaBlackoutCompensatorForS4PCheckbox
+            // 
+            this.cMediaBlackoutCompensatorForS4PCheckbox.AutoSize = true;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Checked = true;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Location = new System.Drawing.Point(306, 111);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Name = "cMediaBlackoutCompensatorForS4PCheckbox";
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Size = new System.Drawing.Size(294, 17);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.TabIndex = 55;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.Text = "Media Blackout Compensator for /r/SandersForPresident";
+            this.cMediaBlackoutCompensatorForS4PCheckbox.UseVisualStyleBackColor = true;
+            this.cMediaBlackoutCompensatorForS4PCheckbox.CheckedChanged += new System.EventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_CheckChanged);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.MouseHover += new System.EventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_MouseMove);
+            // 
+            // cRunBernieRunCheckbox
+            // 
+            this.cRunBernieRunCheckbox.AutoSize = true;
+            this.cRunBernieRunCheckbox.Checked = true;
+            this.cRunBernieRunCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cRunBernieRunCheckbox.Location = new System.Drawing.Point(306, 87);
+            this.cRunBernieRunCheckbox.Name = "cRunBernieRunCheckbox";
+            this.cRunBernieRunCheckbox.Size = new System.Drawing.Size(103, 17);
+            this.cRunBernieRunCheckbox.TabIndex = 54;
+            this.cRunBernieRunCheckbox.Text = "#RunBernieRun";
+            this.cRunBernieRunCheckbox.UseVisualStyleBackColor = true;
+            this.cRunBernieRunCheckbox.CheckedChanged += new System.EventHandler(this.cRunBernieRunCheckbox_CheckChanged);
+            this.cRunBernieRunCheckbox.MouseHover += new System.EventHandler(this.cRunBernieRunCheckbox_MouseMove);
+            // 
+            // label15
+            // 
+            this.label15.AutoSize = true;
+            this.label15.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label15.Location = new System.Drawing.Point(206, 69);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(94, 16);
+            this.label15.TabIndex = 30;
+            this.label15.Text = "Campaigns:";
+            // 
             // label14
             // 
             this.label14.AutoSize = true;
@@ -703,58 +755,6 @@
             this.buttonOk.Text = "OK";
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
-            // 
-            // label15
-            // 
-            this.label15.AutoSize = true;
-            this.label15.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label15.Location = new System.Drawing.Point(206, 69);
-            this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(94, 16);
-            this.label15.TabIndex = 30;
-            this.label15.Text = "Campaigns:";
-            // 
-            // cMediaBlackoutCompensatorForPolRevCheckbox
-            // 
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.AutoSize = true;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.Checked = true;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.Location = new System.Drawing.Point(306, 134);
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.Name = "cMediaBlackoutCompensatorForPolRevCheckbox";
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.Size = new System.Drawing.Size(289, 17);
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.TabIndex = 56;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.Text = "Media Blackout Compensator for /r/Political_Revolution";
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.UseVisualStyleBackColor = true;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckedChanged += new System.EventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_CheckChanged);
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove);
-            // 
-            // cMediaBlackoutCompensatorForS4PCheckbox
-            // 
-            this.cMediaBlackoutCompensatorForS4PCheckbox.AutoSize = true;
-            this.cMediaBlackoutCompensatorForS4PCheckbox.Checked = true;
-            this.cMediaBlackoutCompensatorForS4PCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cMediaBlackoutCompensatorForS4PCheckbox.Location = new System.Drawing.Point(306, 111);
-            this.cMediaBlackoutCompensatorForS4PCheckbox.Name = "cMediaBlackoutCompensatorForS4PCheckbox";
-            this.cMediaBlackoutCompensatorForS4PCheckbox.Size = new System.Drawing.Size(294, 17);
-            this.cMediaBlackoutCompensatorForS4PCheckbox.TabIndex = 55;
-            this.cMediaBlackoutCompensatorForS4PCheckbox.Text = "Media Blackout Compensator for /r/SandersForPresident";
-            this.cMediaBlackoutCompensatorForS4PCheckbox.UseVisualStyleBackColor = true;
-            this.cMediaBlackoutCompensatorForS4PCheckbox.CheckedChanged += new System.EventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_CheckChanged);
-            this.cMediaBlackoutCompensatorForS4PCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_MouseMove);
-            // 
-            // cRunBernieRunCheckbox
-            // 
-            this.cRunBernieRunCheckbox.AutoSize = true;
-            this.cRunBernieRunCheckbox.Checked = true;
-            this.cRunBernieRunCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cRunBernieRunCheckbox.Location = new System.Drawing.Point(306, 87);
-            this.cRunBernieRunCheckbox.Name = "cRunBernieRunCheckbox";
-            this.cRunBernieRunCheckbox.Size = new System.Drawing.Size(103, 17);
-            this.cRunBernieRunCheckbox.TabIndex = 54;
-            this.cRunBernieRunCheckbox.Text = "#RunBernieRun";
-            this.cRunBernieRunCheckbox.UseVisualStyleBackColor = true;
-            this.cRunBernieRunCheckbox.CheckedChanged += new System.EventHandler(this.cRunBernieRunCheckbox_CheckChanged);
-            this.cRunBernieRunCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cRunBernieRunCheckbox_MouseMove);
             // 
             // FormSettings
             // 

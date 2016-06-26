@@ -66,6 +66,20 @@ namespace FaceBERN_
             labelVersion.Text = appVersion;
         }
 
+        private void PostInstallFacebook_Shown(object sender, EventArgs e)
+        {
+            // Populate if they're already in the registry.  Mainly used for DEBUG operations.  --Kris
+            Credentials credentials = new Credentials(true);
+
+            if (credentials.GetFacebookUsername() != null && credentials.GetFacebookPassword() != null)
+            {
+                facebookUsernameTextbox.Text = credentials.ToString(credentials.GetFacebookUsername());
+                facebookPasswordTextbox.Text = credentials.ToString(credentials.GetFacebookPassword());
+
+                button2.Focus();
+            }
+        }
+
         private void rememberUsernamePasswordCheckbox_CheckedChanged(object sender, EventArgs e)
         {
             ToggleCredentialsFields();

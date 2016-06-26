@@ -36,7 +36,6 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.weCanDoThisTogether = new System.Windows.Forms.PictureBox();
             this.enableFacebankingCheckbox = new System.Windows.Forms.CheckBox();
             this.rememberUsernamePasswordCheckbox = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -45,6 +44,7 @@
             this.facebookPasswordTextbox = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
+            this.weCanDoThisTogether = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).BeginInit();
             this.SuspendLayout();
             // 
@@ -53,7 +53,7 @@
             this.button2.Location = new System.Drawing.Point(745, 366);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 23;
+            this.button2.TabIndex = 2;
             this.button2.Text = "Next >";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
@@ -117,15 +117,6 @@
             this.label1.TabIndex = 17;
             this.label1.Text = "Facebook Settings";
             // 
-            // weCanDoThisTogether
-            // 
-            this.weCanDoThisTogether.Image = global::FaceBERN_.Properties.Resources.together2;
-            this.weCanDoThisTogether.Location = new System.Drawing.Point(0, 0);
-            this.weCanDoThisTogether.Name = "weCanDoThisTogether";
-            this.weCanDoThisTogether.Size = new System.Drawing.Size(436, 350);
-            this.weCanDoThisTogether.TabIndex = 16;
-            this.weCanDoThisTogether.TabStop = false;
-            // 
             // enableFacebankingCheckbox
             // 
             this.enableFacebankingCheckbox.AutoSize = true;
@@ -175,14 +166,14 @@
             this.facebookUsernameTextbox.Location = new System.Drawing.Point(623, 224);
             this.facebookUsernameTextbox.Name = "facebookUsernameTextbox";
             this.facebookUsernameTextbox.Size = new System.Drawing.Size(286, 20);
-            this.facebookUsernameTextbox.TabIndex = 28;
+            this.facebookUsernameTextbox.TabIndex = 0;
             // 
             // facebookPasswordTextbox
             // 
             this.facebookPasswordTextbox.Location = new System.Drawing.Point(623, 247);
             this.facebookPasswordTextbox.Name = "facebookPasswordTextbox";
             this.facebookPasswordTextbox.Size = new System.Drawing.Size(286, 20);
-            this.facebookPasswordTextbox.TabIndex = 29;
+            this.facebookPasswordTextbox.TabIndex = 1;
             this.facebookPasswordTextbox.UseSystemPasswordChar = true;
             // 
             // label6
@@ -205,6 +196,15 @@
             this.button3.Text = "< Back";
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
+            // 
+            // weCanDoThisTogether
+            // 
+            this.weCanDoThisTogether.Image = global::FaceBERN_.Properties.Resources.together2;
+            this.weCanDoThisTogether.Location = new System.Drawing.Point(0, 0);
+            this.weCanDoThisTogether.Name = "weCanDoThisTogether";
+            this.weCanDoThisTogether.Size = new System.Drawing.Size(436, 350);
+            this.weCanDoThisTogether.TabIndex = 16;
+            this.weCanDoThisTogether.TabStop = false;
             // 
             // PostInstallFacebook
             // 
@@ -232,9 +232,11 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "PostInstallFacebook";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "First-Run Setup Wizard : Facebook";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.PostInstallFacebook_Load);
+            this.Shown += new System.EventHandler(this.PostInstallFacebook_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

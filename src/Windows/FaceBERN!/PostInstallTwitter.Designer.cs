@@ -41,7 +41,6 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.weCanDoThisTogether = new System.Windows.Forms.PictureBox();
             this.label6 = new System.Windows.Forms.Label();
             this.button4 = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
@@ -49,6 +48,7 @@
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.cMediaBlackoutCompensatorForS4PCheckbox = new System.Windows.Forms.CheckBox();
             this.cMediaBlackoutCompensatorForPolRevCheckbox = new System.Windows.Forms.CheckBox();
+            this.weCanDoThisTogether = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).BeginInit();
             this.SuspendLayout();
             // 
@@ -163,15 +163,6 @@
             this.label1.TabIndex = 33;
             this.label1.Text = "Twitter Settings";
             // 
-            // weCanDoThisTogether
-            // 
-            this.weCanDoThisTogether.Image = global::FaceBERN_.Properties.Resources.together2;
-            this.weCanDoThisTogether.Location = new System.Drawing.Point(0, 0);
-            this.weCanDoThisTogether.Name = "weCanDoThisTogether";
-            this.weCanDoThisTogether.Size = new System.Drawing.Size(436, 350);
-            this.weCanDoThisTogether.TabIndex = 32;
-            this.weCanDoThisTogether.TabStop = false;
-            // 
             // label6
             // 
             this.label6.AutoSize = true;
@@ -213,7 +204,7 @@
             this.cRunBernieRunCheckbox.TabIndex = 51;
             this.cRunBernieRunCheckbox.Text = "#RunBernieRun";
             this.cRunBernieRunCheckbox.UseVisualStyleBackColor = true;
-            this.cRunBernieRunCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cRunBernieRunCheckbox_MouseMove);
+            this.cRunBernieRunCheckbox.MouseHover += new System.EventHandler(this.cRunBernieRunCheckbox_MouseMove);
             // 
             // cMediaBlackoutCompensatorForS4PCheckbox
             // 
@@ -226,7 +217,7 @@
             this.cMediaBlackoutCompensatorForS4PCheckbox.TabIndex = 52;
             this.cMediaBlackoutCompensatorForS4PCheckbox.Text = "Media Blackout Compensator for /r/SandersForPresident";
             this.cMediaBlackoutCompensatorForS4PCheckbox.UseVisualStyleBackColor = true;
-            this.cMediaBlackoutCompensatorForS4PCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_MouseMove);
+            this.cMediaBlackoutCompensatorForS4PCheckbox.MouseHover += new System.EventHandler(this.cMediaBlackoutCompensatorForS4PCheckbox_MouseMove);
             // 
             // cMediaBlackoutCompensatorForPolRevCheckbox
             // 
@@ -239,7 +230,16 @@
             this.cMediaBlackoutCompensatorForPolRevCheckbox.TabIndex = 53;
             this.cMediaBlackoutCompensatorForPolRevCheckbox.Text = "Media Blackout Compensator for /r/Political_Revolution";
             this.cMediaBlackoutCompensatorForPolRevCheckbox.UseVisualStyleBackColor = true;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.MouseHover += new System.EventHandler(this.cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove);
+            // 
+            // weCanDoThisTogether
+            // 
+            this.weCanDoThisTogether.Image = global::FaceBERN_.Properties.Resources.together2;
+            this.weCanDoThisTogether.Location = new System.Drawing.Point(0, 0);
+            this.weCanDoThisTogether.Name = "weCanDoThisTogether";
+            this.weCanDoThisTogether.Size = new System.Drawing.Size(436, 350);
+            this.weCanDoThisTogether.TabIndex = 32;
+            this.weCanDoThisTogether.TabStop = false;
             // 
             // PostInstallTwitter
             // 
@@ -264,6 +264,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.weCanDoThisTogether);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
@@ -273,6 +274,7 @@
             this.Text = "First-Run Setup Wizard : Twitter";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.PostInstallTwitter_Load);
+            this.Shown += new System.EventHandler(this.PostInstallTwitter_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

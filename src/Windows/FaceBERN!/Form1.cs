@@ -139,6 +139,10 @@ namespace FaceBERN_
 
         public void SetDefaults()
         {
+            /* Only show the DEBUG menu if we've launched in DEBUG mode.  --Kris */
+#if (!DEBUG)
+            DEBUGToolStripMenuItem.Visible = false;
+#endif
             Globals.Config = new Dictionary<string, string>();
 
             //Globals.Config.Add("CurrentDirectory", Environment.CurrentDirectory);
@@ -1042,6 +1046,12 @@ namespace FaceBERN_
                     LogW("You are running the most current version.  No update is required at this time.");
                 }
             }
+        }
+
+        private void launchPostInstallerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            PostInstall postInstall = new PostInstall(this, Globals.__VERSION__);
+            postInstall.Show();
         }
     }
 }

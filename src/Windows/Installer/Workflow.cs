@@ -74,6 +74,8 @@ namespace Installer
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
 
             softwareKey.DeleteSubKeyTree("FaceBERN!", false);
+            RegistryKey runKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+            runKey.DeleteValue("Birdie", false);
 
             softwareKey.Close();
 

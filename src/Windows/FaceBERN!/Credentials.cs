@@ -347,6 +347,10 @@ namespace FaceBERN_
 
                 return Marshal.PtrToStringUni(output);
             }
+            catch (Exception e)
+            {
+                return null;
+            }
             finally
             {
                 Marshal.ZeroFreeGlobalAllocUnicode(output);
