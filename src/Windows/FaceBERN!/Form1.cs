@@ -38,6 +38,7 @@ namespace FaceBERN_
 
         private bool logging;
         private bool updated;
+        private bool autoStart;
 
         private RegistryKey softwareKey;
         private RegistryKey appKey;
@@ -55,7 +56,7 @@ namespace FaceBERN_
         public int activeUsers = 0;
         public int totalUsers = 0;
 
-        public Form1(bool updated = false, bool logging = true)
+        public Form1(bool updated = false, bool logging = true, bool autoStart = false)
         {
             InitializeComponent();
 
@@ -73,6 +74,7 @@ namespace FaceBERN_
 
             this.logging = logging;
             this.updated = updated;
+            this.autoStart = autoStart;
 
             /* Initialize the log.  --Kris */
             if (logging == true)
@@ -143,6 +145,14 @@ namespace FaceBERN_
             }
 
             Application.OpenForms[this.Name].Focus();
+
+            if (autoStart)
+            {
+                LogW("Auto-start initiated.");
+
+                buttonStart.PerformClick();
+                this.WindowState = FormWindowState.Minimized;
+            }
         }
 
         public void SetDefaults()

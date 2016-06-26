@@ -20,10 +20,14 @@ namespace FaceBERN_
             {
                 bool updated = false;
                 bool logging = true;
+                bool autoStart = false;
                 for (int i = 0; i < args.Length; i++)
                 {
                     switch (args[i].ToLower().Trim())
                     {
+                        case @"/autostart":
+                            autoStart = true;
+                            break;
                         case @"/nolog":
                             logging = false;
                             break;
@@ -33,7 +37,7 @@ namespace FaceBERN_
                     }
                 }
 
-                Application.Run(new Form1(updated, logging));
+                Application.Run(new Form1(updated, logging, autoStart));
             }
             else
             {
