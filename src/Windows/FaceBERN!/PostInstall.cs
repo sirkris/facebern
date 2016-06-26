@@ -20,6 +20,9 @@ namespace FaceBERN_
             InitializeComponent();
             this.Main = Main;
             this.appVersion = appVersion;
+
+            Main.UseWaitCursor = true;
+            Main.Enabled = false;
         }
 
         private void button1_Click(object sender, EventArgs e)

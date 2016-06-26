@@ -79,7 +79,10 @@ namespace FaceBERN_
 
             Globals.sINI.Save(System.IO.Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
+            PostInstallComplete postInstallComplete = new PostInstallComplete(Main, appVersion);
+            postInstallComplete.Show();
 
+            this.Close();
         }
 
         private void button4_Click(object sender, EventArgs e)

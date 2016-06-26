@@ -167,7 +167,7 @@ namespace FaceBERN_
 
             this.INIPath = (Globals.ConfigDir != null ? Globals.ConfigDir : "") 
                 + Path.DirectorySeparatorChar 
-                + (Globals.MainINI != null ? Globals.MainINI : @"FaceBERN!.ini");
+                + (Globals.MainINI != null ? Globals.MainINI : Globals.__APPNAME__ + @".ini");
             Directory.CreateDirectory(Globals.ConfigDir);
 
             Globals.bernieFacebookIDs = new List<string>();
