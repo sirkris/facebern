@@ -17,9 +17,13 @@ namespace FaceBERN_
         /* The version.  Please adhere to Git versioning procedures.  --Kris */
         public static string __VERSION__        = @"1.0.0.b";
 
+        /* The name of the application.  --Kris */
+        public static string __APPNAME__        = @"Birdie";
+        //public static string __APPNAME__      = @"FaceBERN!";  // Deprecated.  --Kris
+
         /* File paths.  --Kris */
         public static string ConfigDir          = @"config";
-        public static string MainINI            = @"FaceBERN!.ini";
+        public static string MainINI            = __APPNAME__ + @".ini";
         public static string StatesINIDir       = @"states";
 
         /* How long to wait for an action element to appear before dying.  --Kris */

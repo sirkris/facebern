@@ -798,7 +798,7 @@ namespace FaceBERN_
             return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
         }
 
-        private void AuthorizeTwitter(int browser)
+        internal void AuthorizeTwitter(int browser)
         {
             Log("Checking Twitter credentials....");
 
@@ -893,6 +893,13 @@ namespace FaceBERN_
             {
                 Log("Twitter credentials loaded successfully.");
             }
+        }
+
+        internal Credentials AuthorizeTwitterWithReturn(int browser)
+        {
+            AuthorizeTwitter(browser);
+
+            return twitterAccessCredentials;
         }
 
         public Thread ExecuteThread()
@@ -1129,25 +1136,13 @@ namespace FaceBERN_
         // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
         private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
         {
-            if (!(Globals.Config["TweetRedditNews"].Equals("1")))
+            if (!(Globals.Config["TwitterCampaignRedditS4P"].Equals("1"))
+                && !(Globals.Config["TwitterCampaignRedditPolRev"].Equals("1")))
             {
                 return new List<TweetsQueue>();
             }
-            
-            if (reddit == null)
-            {
-                reddit = new Reddit(false);
-            }
 
-            // No need to login to Reddit since all we're doing is a search.  --Kris
-            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("csReddit Test Flair", "csReddit", "all");  // TODO - Change these to production values when ready.  --Kris
-
-            List<TweetsQueue> res = new List<TweetsQueue>();
-            foreach (RedditPost redditPost in redditPosts)
-            {
-                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
-                    redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
-            }
+            List<TweetsQueue> res = GetTweetsFromSubreddit("csReddit");  // TODO - Change to the production subs.  --Kris
 
             if (appendTweetsQueue)
             {
@@ -1168,6 +1163,26 @@ namespace FaceBERN_
                         tweetsQueue.Add(entry);
                     }
                 }
+            }
+
+            return res;
+        }
+
+        private List<TweetsQueue> GetTweetsFromSubreddit(string sub)
+        {
+            if (reddit == null)
+            {
+                reddit = new Reddit(false);
+            }
+
+            // No need to login to Reddit since all we're doing is a search.  --Kris
+            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("Tweet This!", sub, "all");
+
+            List<TweetsQueue> res = new List<TweetsQueue>();
+            foreach (RedditPost redditPost in redditPosts)
+            {
+                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
+                    redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
             }
 
             return res;

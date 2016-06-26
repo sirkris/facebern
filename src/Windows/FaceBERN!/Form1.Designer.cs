@@ -60,6 +60,8 @@
             this.labelTweetsTweeted = new System.Windows.Forms.Label();
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
+            this.DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -102,6 +104,7 @@
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem1,
             this.toolsToolStripMenuItem1,
+            this.DEBUGToolStripMenuItem,
             this.helpToolStripMenuItem1});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -138,7 +141,7 @@
             // 
             this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
@@ -359,6 +362,21 @@
             this.label6.TabIndex = 36;
             this.label6.Text = "Active Users:";
             // 
+            // DEBUGToolStripMenuItem
+            // 
+            this.DEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.launchPostInstallerToolStripMenuItem});
+            this.DEBUGToolStripMenuItem.Name = "DEBUGToolStripMenuItem";
+            this.DEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+            this.DEBUGToolStripMenuItem.Text = "DEBUG";
+            // 
+            // launchPostInstallerToolStripMenuItem
+            // 
+            this.launchPostInstallerToolStripMenuItem.Name = "launchPostInstallerToolStripMenuItem";
+            this.launchPostInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.launchPostInstallerToolStripMenuItem.Text = "Launch Post-Installer";
+            this.launchPostInstallerToolStripMenuItem.Click += new System.EventHandler(this.launchPostInstallerToolStripMenuItem_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -430,6 +448,8 @@
         private System.Windows.Forms.Label labelTweetsTweeted;
         private System.Windows.Forms.Label labelActiveUsers;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.ToolStripMenuItem DEBUGToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem launchPostInstallerToolStripMenuItem;
     }
 }
 

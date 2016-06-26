@@ -61,6 +61,11 @@ namespace FaceBERN_
             }
         }
 
+        internal bool SetFacebook(string username, string password)
+        {
+            return SetFacebook(ToSecureString(username), ToSecureString(password));
+        }
+
         internal bool SetFacebook(SecureString username, SecureString password)
         {
             try
@@ -341,6 +346,10 @@ namespace FaceBERN_
                 output = Marshal.SecureStringToGlobalAllocUnicode(sStr);
 
                 return Marshal.PtrToStringUni(output);
+            }
+            catch (Exception e)
+            {
+                return null;
             }
             finally
             {

@@ -38,6 +38,7 @@ namespace FaceBERN_
 
         private bool logging;
         private bool updated;
+        private bool autoStart;
 
         private RegistryKey softwareKey;
         private RegistryKey appKey;
@@ -55,7 +56,7 @@ namespace FaceBERN_
         public int activeUsers = 0;
         public int totalUsers = 0;
 
-        public Form1(bool updated = false, bool logging = true)
+        public Form1(bool updated = false, bool logging = true, bool autoStart = false)
         {
             InitializeComponent();
 
@@ -73,6 +74,7 @@ namespace FaceBERN_
 
             this.logging = logging;
             this.updated = updated;
+            this.autoStart = autoStart;
 
             /* Initialize the log.  --Kris */
             if (logging == true)
@@ -114,6 +116,14 @@ namespace FaceBERN_
                 LogW("Launched by updater so no need to check for updates.");
             }
 
+            if (appKey.GetValue("PostInstallNeeded", null) != null)
+            {
+                LogW("Launching post-installation wizard....");
+
+                PostInstall postInstall = new PostInstall(this, Globals.__VERSION__);
+                postInstall.ShowDialog();
+            }
+
             Ready();
         }
 
@@ -135,10 +145,22 @@ namespace FaceBERN_
             }
 
             Application.OpenForms[this.Name].Focus();
+
+            if (autoStart)
+            {
+                LogW("Auto-start initiated.");
+
+                buttonStart.PerformClick();
+                this.WindowState = FormWindowState.Minimized;
+            }
         }
 
         public void SetDefaults()
         {
+            /* Only show the DEBUG menu if we've launched in DEBUG mode.  --Kris */
+#if (!DEBUG)
+            DEBUGToolStripMenuItem.Visible = false;
+#endif
             Globals.Config = new Dictionary<string, string>();
 
             //Globals.Config.Add("CurrentDirectory", Environment.CurrentDirectory);
@@ -146,7 +168,9 @@ namespace FaceBERN_
             Globals.Config.Add("UseFTBEvents", "1");
             Globals.Config.Add("UseCustomEvents", "0");
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
-            Globals.Config.Add("TweetRedditNews", "1");
+            Globals.Config.Add("TwitterCampaignRunBernieRun", "1");
+            Globals.Config.Add("TwitterCampaignRedditS4P", "1");
+            Globals.Config.Add("TwitterCampaignRedditPolRev", "1");
             Globals.Config.Add("EnableFacebanking", "1");
             Globals.Config.Add("EnableTwitter", "1");
             Globals.Config.Add("TweetIntervalMinutes", "30");
@@ -165,7 +189,7 @@ namespace FaceBERN_
 
             this.INIPath = (Globals.ConfigDir != null ? Globals.ConfigDir : "") 
                 + Path.DirectorySeparatorChar 
-                + (Globals.MainINI != null ? Globals.MainINI : @"FaceBERN!.ini");
+                + (Globals.MainINI != null ? Globals.MainINI : Globals.__APPNAME__ + @".ini");
             Directory.CreateDirectory(Globals.ConfigDir);
 
             Globals.bernieFacebookIDs = new List<string>();
@@ -442,7 +466,7 @@ namespace FaceBERN_
             }
         }
 
-        private void Exit()
+        internal void Exit()
         {
             // TODO - Save configs.  --Kris
 
@@ -1040,6 +1064,12 @@ namespace FaceBERN_
                     LogW("You are running the most current version.  No update is required at this time.");
                 }
             }
+        }
+
+        private void launchPostInstallerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            PostInstall postInstall = new PostInstall(this, Globals.__VERSION__);
+            postInstall.Show();
         }
     }
 }
