@@ -682,7 +682,6 @@ namespace FaceBERN_
                     config[sectionName].Add("primaryAccess", state.Value.primaryAccess);
                     config[sectionName].Add("facebookId", state.Value.facebookId);
                     config[sectionName].Add("FTBEventId", state.Value.FTBEventId);
-                    config[sectionName].Add("FTBEventId", state.Value.FTBEventId);
 
                     config[sectionName].Add("enableGOTV", (state.Value.enableGOTV == true ? "1" : "0"));
 
