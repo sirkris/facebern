@@ -959,7 +959,7 @@ namespace FaceBERN_
             {
                 //InitLog();
                 this.WorkflowLog = WorkflowLog;
-                throw new Exception();
+                
                 this.browser = browser;
 
                 DateTime start = DateTime.Now;
