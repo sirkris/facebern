@@ -818,40 +818,51 @@ namespace FaceBERN_
                 string pin = "";
 
                 /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
-                webDriver = new WebDriver(Main, browser);
-                webDriver.FixtureSetup();
-                webDriver.TestSetUp(authURI);
-
-                System.Threading.Thread.Sleep(3000);
-
-                /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
-                int timeoutSeconds = 30;
-                Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
-                DateTime start = DateTime.Now;
-                do
+                try
                 {
-                    try
+                    webDriver = new WebDriver(Main, browser);
+                    webDriver.FixtureSetup();
+                    webDriver.TestSetUp(authURI);
+
+                    System.Threading.Thread.Sleep(3000);
+
+                    /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
+                    int timeoutSeconds = 30;
+                    Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
+                    DateTime start = DateTime.Now;
+                    do
                     {
-                        if (webDriver.GetElementById("oauth_pin") != null)
+                        try
                         {
-                            List<IWebElement> eles = webDriver.GetElementsByTagName("code");
-                            foreach (IWebElement element in eles)
+                            if (webDriver.GetElementById("oauth_pin") != null)
                             {
-                                if (element.Text != null && element.Text.Trim().Length >= 5)
+                                List<IWebElement> eles = webDriver.GetElementsByTagName("code");
+                                foreach (IWebElement element in eles)
                                 {
-                                    pin = element.Text.Trim();
-                                    break;
+                                    if (element.Text != null && element.Text.Trim().Length >= 5)
+                                    {
+                                        pin = element.Text.Trim();
+                                        break;
+                                    }
                                 }
                             }
-                        }
 
-                        System.Threading.Thread.Sleep(1000);
-                    }
-                    catch (Exception e)
-                    {
-                        pin = "";
-                    }
-                } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
+                            System.Threading.Thread.Sleep(1000);
+                        }
+                        catch (Exception e)
+                        {
+                            pin = "";
+                        }
+                    } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
+                }
+                catch (Exception e)
+                {
+                    Log("Warning:  Error using WebDriver to obtain PIN.  Opening in default browser, instead....");
+
+                    System.Diagnostics.Process.Start(authURI);
+
+                    System.Threading.Thread.Sleep(5000);  // After the delay, they'll have to enter the PIN manually.  --Kris
+                }
 
                 /* We already have the PIN but we still need the user to confirm.  --Kris */
                 TwitPin twitPin = new TwitPin(pin);
