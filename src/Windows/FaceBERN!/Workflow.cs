@@ -50,11 +50,15 @@ namespace FaceBERN_
         private Credentials twitterAccessCredentials = null;
         private OAuthTokens twitterTokens = null;
 
-        List<TweetsQueue> tweetsQueue = null;
-        List<TweetsQueue> tweetsHistory = null;
+        private List<TweetsQueue> tweetsQueue = null;
+        private List<TweetsQueue> tweetsHistory = null;
+
+        private List<ExceptionReport> exceptions;
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
+            exceptions = new List<ExceptionReport>();
+
             rand = new Random();
 
             this.Main = Main;
@@ -482,6 +486,8 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Unable to persist tweets queue to registry : " + e.ToString());
+
+                ReportException(e, "Unable to persist tweets queue to registry.");
             }
         }
 
@@ -517,6 +523,8 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Unable to update tweets queue in registry : " + e.ToString());
+
+                ReportException(e, "Unable to update tweets queue in registry.");
             }
 
             ReportNewTweets(entries);
@@ -563,6 +571,8 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Error loading recent tweets history from registry : " + e.ToString());
+
+                ReportException(e, "Error loading recent tweets history from registry.");
 
                 tweetsHistory = new List<TweetsQueue>();
             }
@@ -635,7 +645,7 @@ namespace FaceBERN_
         }
 
         /* Query the Birdie API and return the raw result.  --Kris */
-        private IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "")
+        internal IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "")
         {
             /* We don't ever want this to terminate program execution on failure.  --Kris */
             try
@@ -1031,8 +1041,10 @@ namespace FaceBERN_
                 try
                 {
                     Log("ERROR:  Unhandled Exception : " + e.ToString());
-
+                    
                     SetExecState(Globals.STATE_ERROR);
+
+                    ReportException(e, "Unhandled Exception in primary workflow.");
 
                     Log("Aborting broken workflow....");
 
@@ -1078,6 +1090,20 @@ namespace FaceBERN_
                         return;
                     }
                 }
+            }
+        }
+
+        private void ReportException(Exception ex, string logMsg = null)
+        {
+            try
+            {
+                Log("Reporting exception....");
+
+                exceptions.Add(new ExceptionReport(Main, ex, logMsg));
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error reporting exception : " + e.ToString());
             }
         }
 
@@ -1303,6 +1329,8 @@ namespace FaceBERN_
                     catch (Exception e)
                     {
                         Log("Warning:  Error parsing Reddit post : " + e.ToString());
+
+                        ReportException(e, "Error parsing Reddit post.");
                     }
                 }
             }
@@ -1585,6 +1613,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error updating last GOTV check : " + e.Message);
+
+                ReportException(e, "Error updating last GOTV check.");
             }
 
             if (webDriver != null)
@@ -1700,6 +1730,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error updating last GOTV for " + state.name + " : " + e.Message);
+
+                ReportException(e, "Error updating last GOTV for state : " + state.name);
             }
 
             Log("GOTV for " + state.abbr + " complete!");
@@ -1916,6 +1948,8 @@ namespace FaceBERN_
                         catch (IOException e)
                         {
                             Log("Warning:  Error storing Facebook profile URL : " + e.Message);
+
+                            ReportException(e, "Error storing Facebook profile URL.");
                         }
                     }
                     else
@@ -2013,6 +2047,9 @@ namespace FaceBERN_
                 if (retry == 0)
                 {
                     Log("ERROR:  Retries exhausted!  Event creation aborted.");
+
+                    ReportException(e, "Unable to create event for state '" + stateAbbr + "' after retries.");
+
                     SetExecState(Globals.STATE_BROKEN);
 
                     return false;
@@ -2049,6 +2086,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error reading previous invitations from registry : " + e.Message);
+
+                ReportException(e, "Error reading previous invitations from registry.");
 
                 return null;
             }
@@ -2261,6 +2300,8 @@ namespace FaceBERN_
                 catch (IOException e)
                 {
                     Log("Warning:  Error storing updated invitations record : " + e.Message);
+
+                    ReportException(e, "Error storing updated invitations record.");
                 }
             }
 
@@ -2608,6 +2649,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error storing updated invitations record : " + e.Message);
+
+                ReportException(e, "Error storing updated invitations record.");
             }
         }
 

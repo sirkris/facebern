@@ -179,6 +179,7 @@
       <DependentUpon>About.cs</DependentUpon>
     </Compile>
     <Compile Include="Credentials.cs" />
+    <Compile Include="ExceptionReport.cs" />
     <Compile Include="FacebookUser.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
