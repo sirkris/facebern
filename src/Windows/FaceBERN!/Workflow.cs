@@ -50,11 +50,15 @@ namespace FaceBERN_
         private Credentials twitterAccessCredentials = null;
         private OAuthTokens twitterTokens = null;
 
-        List<TweetsQueue> tweetsQueue = null;
-        List<TweetsQueue> tweetsHistory = null;
+        private List<TweetsQueue> tweetsQueue = null;
+        private List<TweetsQueue> tweetsHistory = null;
+
+        private List<ExceptionReport> exceptions;
 
         public Workflow(Form1 Main, Log MainLog = null)
         {
+            exceptions = new List<ExceptionReport>();
+
             rand = new Random();
 
             this.Main = Main;
@@ -67,7 +71,10 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
-            
+
+            /* Initialize the Birdie API client. --Kris */
+            restClient = new RestClient("http://birdie.freeddns.org");
+
             reddit = new Reddit(false);
         }
 
@@ -94,9 +101,6 @@ namespace FaceBERN_
             DateTime start = DateTime.Now;
 
             invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
-
-            /* Initialize the Birdie API client. --Kris */
-            restClient = new RestClient("http://birdie.freeddns.org");
 
             /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
             if (CheckClientRegistration() == false)
@@ -482,6 +486,8 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Unable to persist tweets queue to registry : " + e.ToString());
+
+                ReportException(e, "Unable to persist tweets queue to registry.");
             }
         }
 
@@ -517,6 +523,8 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Unable to update tweets queue in registry : " + e.ToString());
+
+                ReportException(e, "Unable to update tweets queue in registry.");
             }
 
             ReportNewTweets(entries);
@@ -563,6 +571,8 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Error loading recent tweets history from registry : " + e.ToString());
+
+                ReportException(e, "Error loading recent tweets history from registry.");
 
                 tweetsHistory = new List<TweetsQueue>();
             }
@@ -635,7 +645,7 @@ namespace FaceBERN_
         }
 
         /* Query the Birdie API and return the raw result.  --Kris */
-        private IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "")
+        internal IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "")
         {
             /* We don't ever want this to terminate program execution on failure.  --Kris */
             try
@@ -818,40 +828,51 @@ namespace FaceBERN_
                 string pin = "";
 
                 /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
-                webDriver = new WebDriver(Main, browser);
-                webDriver.FixtureSetup();
-                webDriver.TestSetUp(authURI);
-
-                System.Threading.Thread.Sleep(3000);
-
-                /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
-                int timeoutSeconds = 30;
-                Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
-                DateTime start = DateTime.Now;
-                do
+                try
                 {
-                    try
+                    webDriver = new WebDriver(Main, browser);
+                    webDriver.FixtureSetup();
+                    webDriver.TestSetUp(authURI);
+
+                    System.Threading.Thread.Sleep(3000);
+
+                    /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
+                    int timeoutSeconds = 30;
+                    Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
+                    DateTime start = DateTime.Now;
+                    do
                     {
-                        if (webDriver.GetElementById("oauth_pin") != null)
+                        try
                         {
-                            List<IWebElement> eles = webDriver.GetElementsByTagName("code");
-                            foreach (IWebElement element in eles)
+                            if (webDriver.GetElementById("oauth_pin") != null)
                             {
-                                if (element.Text != null && element.Text.Trim().Length >= 5)
+                                List<IWebElement> eles = webDriver.GetElementsByTagName("code");
+                                foreach (IWebElement element in eles)
                                 {
-                                    pin = element.Text.Trim();
-                                    break;
+                                    if (element.Text != null && element.Text.Trim().Length >= 5)
+                                    {
+                                        pin = element.Text.Trim();
+                                        break;
+                                    }
                                 }
                             }
-                        }
 
-                        System.Threading.Thread.Sleep(1000);
-                    }
-                    catch (Exception e)
-                    {
-                        pin = "";
-                    }
-                } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
+                            System.Threading.Thread.Sleep(1000);
+                        }
+                        catch (Exception e)
+                        {
+                            pin = "";
+                        }
+                    } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
+                }
+                catch (Exception e)
+                {
+                    Log("Warning:  Error using WebDriver to obtain PIN.  Opening in default browser, instead....");
+
+                    System.Diagnostics.Process.Start(authURI);
+
+                    System.Threading.Thread.Sleep(5000);  // After the delay, they'll have to enter the PIN manually.  --Kris
+                }
 
                 /* We already have the PIN but we still need the user to confirm.  --Kris */
                 TwitPin twitPin = new TwitPin(pin);
@@ -938,7 +959,7 @@ namespace FaceBERN_
             {
                 //InitLog();
                 this.WorkflowLog = WorkflowLog;
-
+                
                 this.browser = browser;
 
                 DateTime start = DateTime.Now;
@@ -1020,8 +1041,10 @@ namespace FaceBERN_
                 try
                 {
                     Log("ERROR:  Unhandled Exception : " + e.ToString());
-
+                    
                     SetExecState(Globals.STATE_ERROR);
+
+                    ReportException(e, "Unhandled Exception in primary workflow.");
 
                     Log("Aborting broken workflow....");
 
@@ -1067,6 +1090,20 @@ namespace FaceBERN_
                         return;
                     }
                 }
+            }
+        }
+
+        private void ReportException(Exception ex, string logMsg = null)
+        {
+            try
+            {
+                Log("Reporting exception....");
+
+                exceptions.Add(new ExceptionReport(Main, ex, logMsg));
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error reporting exception : " + e.ToString());
             }
         }
 
@@ -1292,6 +1329,8 @@ namespace FaceBERN_
                     catch (Exception e)
                     {
                         Log("Warning:  Error parsing Reddit post : " + e.ToString());
+
+                        ReportException(e, "Error parsing Reddit post.");
                     }
                 }
             }
@@ -1574,6 +1613,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error updating last GOTV check : " + e.Message);
+
+                ReportException(e, "Error updating last GOTV check.");
             }
 
             if (webDriver != null)
@@ -1689,6 +1730,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error updating last GOTV for " + state.name + " : " + e.Message);
+
+                ReportException(e, "Error updating last GOTV for state : " + state.name);
             }
 
             Log("GOTV for " + state.abbr + " complete!");
@@ -1905,6 +1948,8 @@ namespace FaceBERN_
                         catch (IOException e)
                         {
                             Log("Warning:  Error storing Facebook profile URL : " + e.Message);
+
+                            ReportException(e, "Error storing Facebook profile URL.");
                         }
                     }
                     else
@@ -2002,6 +2047,9 @@ namespace FaceBERN_
                 if (retry == 0)
                 {
                     Log("ERROR:  Retries exhausted!  Event creation aborted.");
+
+                    ReportException(e, "Unable to create event for state '" + stateAbbr + "' after retries.");
+
                     SetExecState(Globals.STATE_BROKEN);
 
                     return false;
@@ -2038,6 +2086,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error reading previous invitations from registry : " + e.Message);
+
+                ReportException(e, "Error reading previous invitations from registry.");
 
                 return null;
             }
@@ -2250,6 +2300,8 @@ namespace FaceBERN_
                 catch (IOException e)
                 {
                     Log("Warning:  Error storing updated invitations record : " + e.Message);
+
+                    ReportException(e, "Error storing updated invitations record.");
                 }
             }
 
@@ -2597,6 +2649,8 @@ namespace FaceBERN_
             catch (IOException e)
             {
                 Log("Warning:  Error storing updated invitations record : " + e.Message);
+
+                ReportException(e, "Error storing updated invitations record.");
             }
         }
 

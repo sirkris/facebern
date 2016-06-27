@@ -34,6 +34,11 @@ namespace FaceBERN_
         private void TwitPin_Shown(object sender, EventArgs e)
         {
             pinTextbox.Text = pin;
+            if (pinTextbox.Text.Length > 0)
+            {
+                pinTextbox.SelectionStart = pinTextbox.Text.Length - 1;
+                pinTextbox.SelectionLength = 0;
+            }
         }
     }
 }
