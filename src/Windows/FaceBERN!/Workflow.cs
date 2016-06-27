@@ -71,7 +71,10 @@ namespace FaceBERN_
                 WorkflowLog = MainLog;
                 WorkflowLog.Init("Workflow");
             }
-            
+
+            /* Initialize the Birdie API client. --Kris */
+            restClient = new RestClient("http://birdie.freeddns.org");
+
             reddit = new Reddit(false);
         }
 
@@ -98,9 +101,6 @@ namespace FaceBERN_
             DateTime start = DateTime.Now;
 
             invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
-
-            /* Initialize the Birdie API client. --Kris */
-            restClient = new RestClient("http://birdie.freeddns.org");
 
             /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
             if (CheckClientRegistration() == false)
@@ -959,7 +959,7 @@ namespace FaceBERN_
             {
                 //InitLog();
                 this.WorkflowLog = WorkflowLog;
-
+                throw new Exception();
                 this.browser = browser;
 
                 DateTime start = DateTime.Now;

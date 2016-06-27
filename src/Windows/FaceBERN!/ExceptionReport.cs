@@ -86,7 +86,7 @@ namespace FaceBERN_
 
                 if (res == null || res.StatusCode != System.Net.HttpStatusCode.Created)
                 {
-                    Log("Warning:  BirdieQuery failed for exception report on exception : " + ex.ToString());
+                    Log("Warning:  BirdieQuery failed (code=" + (res != null ? res.StatusCode.ToString() : "" ) + ") for exception report on exception : " + ex.ToString());
 
                     error = true;
 
