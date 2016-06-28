@@ -828,6 +828,8 @@ namespace FaceBERN_
                 string pin = "";
 
                 /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
+                bool pinError = false;
+                string pinErrorMessage = "";
                 try
                 {
                     webDriver = new WebDriver(Main, browser);
@@ -862,6 +864,8 @@ namespace FaceBERN_
                         catch (Exception e)
                         {
                             pin = "";
+                            pinError = true;
+                            pinErrorMessage = e.Message;
                         }
                     } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
                 }
@@ -869,6 +873,14 @@ namespace FaceBERN_
                 {
                     Log("Warning:  Error using WebDriver to obtain PIN.  Opening in default browser, instead....");
 
+                    if (browser > 0)
+                    {
+                        ReportException(e, 
+                            "Error using WebDriver to obtain PIN for browser " + Globals.BrowserName(browser) + " : " 
+                            + (pinError ? "Unable to extract PIN (" + pinErrorMessage + ")" : "Unable to launch browser") + "."
+                        );
+                    }
+                    
                     System.Diagnostics.Process.Start(authURI);
 
                     System.Threading.Thread.Sleep(5000);  // After the delay, they'll have to enter the PIN manually.  --Kris
@@ -1522,7 +1534,7 @@ namespace FaceBERN_
             }
 
             /* Initialize the Selenium WebDriver.  --Kris */
-            webDriver = new WebDriver(Main, browser);
+            webDriver = new WebDriver(Main, browser, (Globals.Config["HideFacebookBrowser"].Equals("1")));
 
             /* Initialize the browser.  --Kris */
             webDriver.FixtureSetup();

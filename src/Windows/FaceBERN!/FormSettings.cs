@@ -61,6 +61,7 @@ namespace FaceBERN_
             Globals.Config["EnableFacebanking"] = (enableFacebankingCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
             Globals.Config["TweetIntervalMinutes"] = tweetIntervalMinutesNumericUpDown.Value.ToString();
+            Globals.Config["HideFacebookBrowser"] = (hideWebBrowserCheckbox.Checked ? "1" : "0");
 
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
@@ -167,6 +168,7 @@ namespace FaceBERN_
                     useFTBEventsCheckbox.Checked = (Globals.Config["UseFTBEvents"] == "1" ? true : false);
                     useCustomEventsCheckbox.Checked = (Globals.Config["UseCustomEvents"] == "1" ? true : false);
                     checkRememberPasswordByDefaultCheckbox.Checked = (Globals.Config["CheckRememberPasswordByDefault"] == "1" ? true : false);
+                    hideWebBrowserCheckbox.Checked = (Globals.Config["HideFacebookBrowser"] == "1" ? true : false);
 
                     break;
                 case "twitter":
@@ -177,6 +179,7 @@ namespace FaceBERN_
                     tweetIntervalMinutesNumericUpDown.Value = Decimal.Parse(Globals.Config["TweetIntervalMinutes"]);
 
                     ShowTwitterCredentials();
+                    ShowOrHideAccountFields();
 
                     break;
             }
@@ -284,20 +287,24 @@ namespace FaceBERN_
                 label1.Visible = true;
                 label2.Visible = true;
                 label3.Visible = true;
+                label6.Visible = true;
 
                 useFTBEventsCheckbox.Visible = true;
                 useCustomEventsCheckbox.Visible = true;
                 checkRememberPasswordByDefaultCheckbox.Visible = true;
+                hideWebBrowserCheckbox.Visible = true;
             }
             else
             {
                 label1.Visible = false;
                 label2.Visible = false;
                 label3.Visible = false;
+                label6.Visible = false;
 
                 useFTBEventsCheckbox.Visible = false;
                 useCustomEventsCheckbox.Visible = false;
                 checkRememberPasswordByDefaultCheckbox.Visible = false;
+                hideWebBrowserCheckbox.Visible = false;
             }
 
             buttonApply.Enabled = applyEnabled;
@@ -309,10 +316,6 @@ namespace FaceBERN_
 
             if (enableTwitterCheckbox.Checked == true)
             {
-                label9.Visible = true;
-                label10.Visible = true;
-                label11.Visible = true;
-                label12.Visible = true;
                 label13.Visible = true;
                 label14.Visible = true;
                 label15.Visible = true;
@@ -321,10 +324,9 @@ namespace FaceBERN_
                 cMediaBlackoutCompensatorForS4PCheckbox.Visible = true;
                 cMediaBlackoutCompensatorForPolRevCheckbox.Visible = true;
                 button2.Visible = true;
-                twitterUsernameTextbox.Visible = true;
-                twitterUserIdTextbox.Visible = true;
-                twitterAccessTokenTextbox.Visible = true;
                 tweetIntervalMinutesNumericUpDown.Visible = true;
+
+                ShowOrHideAccountFields();
             }
             else
             {
@@ -347,6 +349,32 @@ namespace FaceBERN_
             }
 
             buttonApply.Enabled = applyEnabled;
+        }
+
+        private void ShowOrHideAccountFields()
+        {
+            if (twitterCredentials == null || twitterCredentials.IsAssociated() == false)
+            {
+                label9.Visible = false;
+                label10.Visible = false;
+                label11.Visible = false;
+                label12.Visible = false;
+
+                twitterUsernameTextbox.Visible = false;
+                twitterUserIdTextbox.Visible = false;
+                twitterAccessTokenTextbox.Visible = false;
+            }
+            else
+            {
+                label9.Visible = true;
+                label10.Visible = true;
+                label11.Visible = true;
+                label12.Visible = true;
+
+                twitterUsernameTextbox.Visible = true;
+                twitterUserIdTextbox.Visible = true;
+                twitterAccessTokenTextbox.Visible = true;
+            }
         }
 
         private void StateFields_TextChanged(object sender, EventArgs e)
@@ -521,11 +549,23 @@ namespace FaceBERN_
                     this.Close();
                 }
             }
+
+            ShowOrHideAccountFields();
         }
 
         private void tweetIntervalMinutesNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
             buttonApply.Enabled = true;
+        }
+
+        private void hideWebBrowserCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+            hideWebBrowserCheckbox.Checked = !(hideWebBrowserCheckbox.Checked);
         }
     }
 }

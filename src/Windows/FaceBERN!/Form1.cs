@@ -121,6 +121,24 @@ namespace FaceBERN_
 
         private void Form1_Shown(object sender, EventArgs e)
         {
+            try
+            {
+                int n;
+                if (Globals.Config.ContainsKey("SelectedBrowser")
+                    && Globals.Config["SelectedBrowser"] != null
+                    && Globals.BrowserConsts().ContainsKey(Globals.Config["SelectedBrowser"].ToLower()))
+                {
+                    browserModeComboBox.SelectedIndex = Globals.BrowserConst(Globals.Config["SelectedBrowser"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = "Unable to load browser preference into combobox.";
+
+                Log("Warning:  " + msg);
+                // TODO - Report it.  --Kris
+            }
+
             workflow = new Workflow(this);
             workflow.ExecuteInterComThread();
 
@@ -173,6 +191,8 @@ namespace FaceBERN_
             Globals.Config.Add("EnableFacebanking", "1");
             Globals.Config.Add("EnableTwitter", "1");
             Globals.Config.Add("TweetIntervalMinutes", "30");
+            Globals.Config.Add("HideFacebookBrowser", "1");
+            Globals.Config.Add("SelectedBrowser", "Firefox");
 
             /* How long to wait between GOTV checks.  --Kris */
             Globals.Config.Add("GOTVIntervalHours", "24");
@@ -207,8 +227,6 @@ namespace FaceBERN_
             SetProgressBar(Globals.PROGRESSBAR_HIDDEN);  // Hide the progress bar.  --Kris
 
             HideCaret(outBox.Handle);
-
-            browserModeComboBox.SelectedIndex = 1;  // TODO - Change default to hidden after initial beta testing.  --Kris
         }
 
         public void SetStateDefaults()
@@ -1068,6 +1086,12 @@ namespace FaceBERN_
         {
             PostInstall postInstall = new PostInstall(this, Globals.__VERSION__);
             postInstall.Show();
+        }
+
+        private void browserModeComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Globals.Config["SelectedBrowser"] = Globals.BrowserName(browserModeComboBox.SelectedIndex);
+            Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
         }
     }
 }

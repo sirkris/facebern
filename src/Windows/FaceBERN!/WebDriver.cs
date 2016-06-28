@@ -2,7 +2,12 @@
 using NHtmlUnit.Html;
 using NUnit.Framework;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.IE;
+using OpenQA.Selenium.Opera;
+using OpenQA.Selenium.PhantomJS;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Interactions.Internal;
 using OpenQA.Selenium.Internal;
@@ -26,8 +31,10 @@ namespace FaceBERN_
     [TestFixture]
     public class WebDriver
     {
-        private IWebDriver _driverFirefox;
+        private IWebDriver _driver;
         private FirefoxProfile _profileFirefox;
+        private ChromeDriverService _serviceChrome;
+        private ChromeOptions _optionsChrome;
         private ISelenium selenium;
         private NHtmlUnit.WebClient webClient;
         private HtmlPage page;
@@ -37,16 +44,20 @@ namespace FaceBERN_
         public const int ERROR_NOCREDENTIALS = 1;
         public const int ERROR_BADCREDENTIALS = 2;
         public const int ERROR_UNEXPECTED = 3;
+        public const int ERROR_NOBROWSER = 4;
 
         private string logName = "WebDriver";
         public Log WebDriverLog;
         private Form1 Main;
 
         private int browser;
+        private string browserName;
+
+        private bool hideBrowser = false;
 
         private int staleRetry = 0;
 
-        public WebDriver(Form1 Main, int browser, Log MainLog = null)
+        public WebDriver(Form1 Main, int browser, bool hideBrowser = false, Log MainLog = null)
         {
             this.Main = Main;
             if (MainLog == null)
@@ -60,6 +71,8 @@ namespace FaceBERN_
             }
 
             this.browser = browser;
+            this.browserName = Globals.BrowserName(browser);
+            this.hideBrowser = hideBrowser;
         }
 
         private void InitLog()
@@ -101,21 +114,47 @@ namespace FaceBERN_
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
+            if (browser == 0)
+            {
+                Log("No web browser selected!  WebDriver session aborted.");
+
+                error = ERROR_NOBROWSER;
+
+                return;
+            }
+            else if (browser > 0)
+            {
+                Log("Opening new " + browserName + " window....");
+            }
+
             switch (browser)
             {
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    Log("Opening new Firefox window....");
-
+                case Globals.FIREFOX:
                     _profileFirefox = new FirefoxProfile();
                     _profileFirefox.SetPreference("toolkit.startup.max_resumed_crashes", -1);
-                    
 
-                    _driverFirefox = new FirefoxDriver(_profileFirefox);
-                    _driverFirefox.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                    _driver = new FirefoxDriver(_profileFirefox);
+                    _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
                     
                     ModWindow();
                     Maximize();
+
+                    break;
+                case Globals.IE:
+                    _driver = new InternetExplorerDriver();
+                    _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                    break;
+                case Globals.CHROME:
+                    _serviceChrome = ChromeDriverService.CreateDefaultService();
+                    _serviceChrome.HideCommandPromptWindow = true;
+
+                    _optionsChrome = new ChromeOptions();
+                    _optionsChrome.AddArgument(@"--start-maximized");
+
+                    _driver = new ChromeDriver(_serviceChrome, _optionsChrome);
+                    _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+
+                    ModWindow();
 
                     break;
                 case Globals.FIREFOX_HEADLESS:
@@ -138,11 +177,10 @@ namespace FaceBERN_
         {
             switch (browser)
             {
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    Log("Navigating Firefox to:  " + URL);
+                default:
+                    Log("Navigating " + browserName + " to:  " + URL);
 
-                    _driverFirefox.Navigate().GoToUrl(URL);
+                    _driver.Navigate().GoToUrl(URL);
 
                     WaitForPageLoad();
                     break;
@@ -161,37 +199,34 @@ namespace FaceBERN_
 
         private void ModWindow(bool unhide = false)
         {
-            switch (browser)
+            if (hideBrowser)
             {
-                case Globals.FIREFOX_HIDDEN:
-                    Log("Hiding Firefox window....", false);
+                Log("Hiding " + browserName + " window....", false);
 
-                    _driverFirefox.Manage().Window.Position = new Point(-9999, -9999);
-                    //_driverFirefox.Manage().Window.Size = new Size(1, 1);
+                _driver.Manage().Window.Position = new Point(-9999, -9999);
+                //_driver.Manage().Window.Size = new Size(1, 1);
 
-                    IntPtr hWnd = IntPtr.Zero;
+                IntPtr hWnd = IntPtr.Zero;
 
-                    int i = 300;
-                    do
-                    {
-                        hWnd = GetWindowHandle();
-                        System.Threading.Thread.Sleep(100);
-                        i--;
-                    } while (!hWnd.Equals(IntPtr.Zero)
-                        && AutoIt.AutoItX.WinExists(hWnd) == 0
-                        && i > 0);
+                int i = 300;
+                do
+                {
+                    hWnd = GetWindowHandle();
+                    System.Threading.Thread.Sleep(100);
+                    i--;
+                } while (!hWnd.Equals(IntPtr.Zero)
+                    && AutoIt.AutoItX.WinExists(hWnd) == 0
+                    && i > 0);
 
-                    if (AutoIt.AutoItX.WinExists(hWnd) == 0)
-                    {
-                        browser = Globals.FIREFOX_WINDOWED;
-                        Log("WARNING:  Unable to hide browser window!  Switched to windowed mode.");
-                    }
-                    else
-                    {
-                        AutoIt.AutoItX.WinSetState(hWnd, (unhide ? AutoIt.AutoItX.SW_SHOW : AutoIt.AutoItX.SW_HIDE));
-                    }
-
-                    break;
+                if (AutoIt.AutoItX.WinExists(hWnd) == 0)
+                {
+                    hideBrowser = false;
+                    Log("WARNING:  Unable to hide browser window!  Switched to windowed mode.");
+                }
+                else
+                {
+                    AutoIt.AutoItX.WinSetState(hWnd, (unhide ? AutoIt.AutoItX.SW_SHOW : AutoIt.AutoItX.SW_HIDE));
+                }
             }
         }
 
@@ -204,17 +239,11 @@ namespace FaceBERN_
         [Test]
         public string GetPageSource(int retry = 5)
         {
-            dynamic driver;
-
-            driver = GetDriver();
-
             string res = null;
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    res = driver.PageSource;
+                    res = _driver.PageSource;
                     break;
                 case Globals.FIREFOX_HEADLESS:
                     res = page.AsXml();
@@ -245,9 +274,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    return _driverFirefox;
+                    return _driver;
                 case Globals.FIREFOX_HEADLESS:
                     return page;  // Doesn't go through the WebDriver interface, unfortunately.  --Kris
             }
@@ -257,7 +284,7 @@ namespace FaceBERN_
         public void Maximize()
         {
             if (browser == Globals.FIREFOX_HEADLESS 
-                || browser == Globals.FIREFOX_HIDDEN)
+                || hideBrowser == true)
             {
                 return;
             }
@@ -272,22 +299,30 @@ namespace FaceBERN_
 
         private IntPtr GetWindowHandle()
         {
-            IWebDriver driver = GetDriver();
-
             string script;
             string name;
 
-            /* Just in case the black magic below doesn't work....  --Kris */
-            script = "window.moveTo( 0, 1 ); ";
-            script += "window.resizeTo( screen.width, screen.height );";
+            /* Some black magic to get the window handle for Chrome.  I created this workaround several years ago, so there may or may not be a better way now.  --Kris */
+            if (browser == Globals.CHROME)
+            {
+                name = "ed47cd2a4fcb5534a49f6eeb3bfcc564 - Google Search";
 
-            ((IJavaScriptExecutor)driver).ExecuteScript(script);
+                _driver.Navigate().GoToUrl("http://www.google.com/search?q=ed47cd2a4fcb5534a49f6eeb3bfcc564");
+            }
+            else
+            {
+                /* Just in case the black magic below doesn't work....  --Kris */
+                script = "window.moveTo( 0, 1 ); ";
+                script += "window.resizeTo( screen.width, screen.height );";
 
-            name = "ed47cd2a4fcb5534a49f6eeb3bfcc564";
+                ((IJavaScriptExecutor) _driver).ExecuteScript(script);
 
-            script = "document.title='" + name + "';";
+                name = "ed47cd2a4fcb5534a49f6eeb3bfcc564";
 
-            ((IJavaScriptExecutor)driver).ExecuteScript(script);
+                script = "document.title='" + name + "';";
+
+                ((IJavaScriptExecutor) _driver).ExecuteScript(script);
+            }
 
             /* This is some real voodoo magic here!  Muaa ha ha ha!!  --Kris */
             return FindWindow(null, name + " - " + Globals.BrowserPIDName(browser));
@@ -305,10 +340,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    IWebDriver driver = GetDriver();
-                    return driver.Url;
+                    return _driver.Url;
                 case Globals.FIREFOX_HEADLESS:
                     // TODO
                     return null;
@@ -318,9 +350,7 @@ namespace FaceBERN_
         [Test]
         public void Refresh()
         {
-            IWebDriver driver = GetDriver();
-
-            driver.Navigate().Refresh();
+            _driver.Navigate().Refresh();
 
             WaitForPageLoad();
         }
@@ -430,10 +460,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
-                        IWebDriver driver = GetDriver();
-
                         /*
                          * This is necessary to fix a bug in the IE WebDriver.
                          * Basically, what this does is "click" on a parent element in 
@@ -446,10 +472,10 @@ namespace FaceBERN_
                          */
                         if (iefix == true && browser == Globals.IE)
                         {
-                            driver.FindElement(By.Id(elementid)).FindElement(By.XPath("..")).Click();
+                            _driver.FindElement(By.Id(elementid)).FindElement(By.XPath("..")).Click();
                         }
                         
-                        return driver.FindElement(By.Id(elementid));
+                        return _driver.FindElement(By.Id(elementid));
                     case Globals.FIREFOX_HEADLESS:
                         return page.GetElementById(elementid);
                 }
@@ -476,10 +502,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
-                        IWebDriver driver = GetDriver();
-
                         /*
                          * This is necessary to fix a bug in the IE WebDriver.
                          * Basically, what this does is "click" on a parent element in 
@@ -492,10 +514,10 @@ namespace FaceBERN_
                          */
                         if (iefix == true && browser == Globals.IE)
                         {
-                            driver.FindElement(By.Name(elementname)).FindElement(By.XPath("..")).Click();
+                            _driver.FindElement(By.Name(elementname)).FindElement(By.XPath("..")).Click();
                         }
 
-                        return driver.FindElement(By.Name(elementname));
+                        return _driver.FindElement(By.Name(elementname));
                     case Globals.FIREFOX_HEADLESS:
                         return page.GetElementByName(elementname);
                 }
@@ -522,17 +544,13 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
-                        IWebDriver driver = GetDriver();
-
                         if (partial == true)
                         {
-                            return driver.FindElement(By.PartialLinkText(linktext));
+                            return _driver.FindElement(By.PartialLinkText(linktext));
                         }
                         else
                         {
-                            return driver.FindElement(By.LinkText(linktext));
+                            return _driver.FindElement(By.LinkText(linktext));
                         }
                     case Globals.FIREFOX_HEADLESS:
                         return page.GetAnchorByText(linktext);
@@ -558,23 +576,18 @@ namespace FaceBERN_
             try
             {
                 dynamic res;
-                IWebDriver driver;
 
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
-                        driver = GetDriver();
-
                         if (timeout >= 0)
                         {
-                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
+                            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
                         }
 
                         try
                         {
-                            res = driver.FindElement(By.XPath(xpath));
+                            res = _driver.FindElement(By.XPath(xpath));
                         }
                         catch (NoSuchElementException e)
                         {
@@ -584,7 +597,7 @@ namespace FaceBERN_
                         {
                             if (timeout >= 0)
                             {
-                                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                                _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
                             }
                         }
 
@@ -609,23 +622,18 @@ namespace FaceBERN_
             try
             {
                 dynamic res;
-                IWebDriver driver;
 
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
-                        driver = GetDriver();
-
                         if (timeout >= 0)
                         {
-                            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
+                            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeout));
                         }
 
                         try
                         {
-                            res = driver.FindElement(By.CssSelector(cssSelector));
+                            res = _driver.FindElement(By.CssSelector(cssSelector));
                         }
                         catch (NoSuchElementException e)
                         {
@@ -635,7 +643,7 @@ namespace FaceBERN_
                         {
                             if (timeout >= 0)
                             {
-                                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
+                                _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(30));
                             }
                         }
 
@@ -660,9 +668,7 @@ namespace FaceBERN_
         {
             try
             {
-                IWebDriver driver = GetDriver();
-
-                return new List<IWebElement>(driver.FindElements(By.TagName(tagName)));
+                return new List<IWebElement>(_driver.FindElements(By.TagName(tagName)));
             }
             catch (NoSuchElementException e)
             {
@@ -767,13 +773,9 @@ namespace FaceBERN_
         {
             try
             {
-                dynamic driver = GetDriver();
-
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
@@ -793,7 +795,7 @@ namespace FaceBERN_
 
                             script = "arguments[0].scrollIntoView(true);";
 
-                            ((IJavaScriptExecutor)driver).ExecuteScript(script, element);
+                            ((IJavaScriptExecutor)_driver).ExecuteScript(script, element);
                         }
 
                         if (viewportfix == true)
@@ -860,11 +862,9 @@ namespace FaceBERN_
         [Test]
         public void ScrollToBottom(string logFirstMsg = null, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000)
         {
-            IWebDriver driver = GetDriver();
+            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
 
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
-
-            IJavaScriptExecutor jse = (IJavaScriptExecutor)driver;
+            IJavaScriptExecutor jse = (IJavaScriptExecutor)_driver;
             //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
             const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
             const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
@@ -966,11 +966,9 @@ namespace FaceBERN_
             System.Threading.Thread.Sleep(3000);
 
             string state = string.Empty;
-            dynamic _driver = GetDriver();
             switch (browser)
             {
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
+                default:
                     try
                     {
                         WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
@@ -1031,7 +1029,6 @@ namespace FaceBERN_
         /* When all else fails, have JavaScript do it.  --Kris */
         public void JavaScriptClickElementId(string elementid, bool checkbox = false)
         {
-            dynamic driver = GetDriver();
             string script;
 
             script = (checkbox ? "document.getElementById( '" + elementid + "' ).checked = true;" : "document.getElementById( '" + elementid + "' ).Click();");
@@ -1039,9 +1036,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    ((IJavaScriptExecutor)driver).ExecuteScript(script);
+                    ((IJavaScriptExecutor) _driver).ExecuteScript(script);
                     break;
                 case Globals.FIREFOX_HEADLESS:
                     // TODO
@@ -1057,8 +1052,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementByLinkText(linktext, partial);
@@ -1116,8 +1109,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementByXPath(xpath);
@@ -1172,13 +1163,9 @@ namespace FaceBERN_
         {
             try
             {
-                dynamic driver = GetDriver();
-
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             //WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, Globals.__TIMEOUT__));
@@ -1221,8 +1208,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementByXPath(xpath);
@@ -1280,8 +1265,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementById(elementid, iefix);
@@ -1339,8 +1322,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementByName(elementname, iefix);
@@ -1395,13 +1376,9 @@ namespace FaceBERN_
         {
             try
             {
-                dynamic driver = GetDriver();
-
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
@@ -1438,8 +1415,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementByXPath(xpath);
@@ -1481,8 +1456,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementById(id, iefix);
@@ -1524,8 +1497,6 @@ namespace FaceBERN_
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         try
                         {
                             IWebElement element = GetElementByName(name, iefix);
@@ -1562,17 +1533,13 @@ namespace FaceBERN_
         [Test]
         public void SwitchToFrame(string frame, int retry = 2)
         {
-            dynamic driver = GetDriver();
-
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
                     try
                     {
-                        driver.SwitchTo().DefaultContent();
-                        driver.SwitchTo().Frame(Int32.Parse(frame));
+                        _driver.SwitchTo().DefaultContent();
+                        _driver.SwitchTo().Frame(Int32.Parse(frame));
                     }
                     catch (Exception e)
                     {
@@ -1597,16 +1564,12 @@ namespace FaceBERN_
         [Test]
         public void SwitchToTop(int retry = 2)
         {
-            dynamic driver = GetDriver();
-
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
                     try
                     {
-                        driver.SwitchTo().DefaultContent();
+                        _driver.SwitchTo().DefaultContent();
                     }
                     catch (Exception e)
                     {
@@ -1631,21 +1594,15 @@ namespace FaceBERN_
         [Test]
         public void CheckTextOnPage(string text, bool wait = false, long endticks = 0, int retrywait = 5)
         {
-            dynamic driver;
-
-            driver = GetDriver();
-
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
                     /* Recursively wait and retry if specified.  --Kris */
                     if (wait == true)
                     {
                         System.DateTime now = System.DateTime.Now;
 
-                        if (driver.PageSource.Contains(text) == true
+                        if (_driver.PageSource.Contains(text) == true
                             || now.Ticks >= endticks)
                         {
                             CheckTextOnPage(text);
@@ -1659,7 +1616,7 @@ namespace FaceBERN_
                     }
                     else
                     {
-                        Assert.IsTrue(driver.PageSource.Contains(text));
+                        Assert.IsTrue(_driver.PageSource.Contains(text));
                     }
                     break;
                 case Globals.FIREFOX_HEADLESS:
@@ -1671,16 +1628,10 @@ namespace FaceBERN_
         [Test]
         public void CheckTextOnPageRegex(string regex)
         {
-            dynamic driver;
-
-            driver = GetDriver();
-
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    Assert.IsTrue(Regex.IsMatch(regex, driver.PageSource));
+                    Assert.IsTrue(Regex.IsMatch(regex, _driver.PageSource));
                     break;
                 case Globals.FIREFOX_HEADLESS:
                     // TODO
@@ -1694,9 +1645,7 @@ namespace FaceBERN_
             switch (browser)
             {
                 default:
-                case Globals.FIREFOX_WINDOWED:
-                case Globals.FIREFOX_HIDDEN:
-                    Assert.AreEqual(title, _driverFirefox.Title);
+                    Assert.AreEqual(title, _driver.Title);
                     break;
                 case Globals.FIREFOX_HEADLESS:
                     // TODO
@@ -1709,15 +1658,9 @@ namespace FaceBERN_
         {
             try
             {
-                dynamic driver;
-
-                driver = GetDriver();
-
                 switch (browser)
                 {
                     default:
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
                         IWebElement element;
                         switch (by)
                         {
@@ -1757,13 +1700,12 @@ namespace FaceBERN_
             {
                 switch (browser)
                 {
-                    case Globals.FIREFOX_WINDOWED:
-                    case Globals.FIREFOX_HIDDEN:
-                        if (_driverFirefox != null)
+                    default:
+                        if (_driver != null)
                         {
                             ModWindow(true);
                             System.Threading.Thread.Sleep(500);
-                            _driverFirefox.Dispose();
+                            _driver.Dispose();
                         }
                         break;
                     case Globals.FIREFOX_HEADLESS:
