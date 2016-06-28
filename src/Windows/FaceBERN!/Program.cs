@@ -37,7 +37,7 @@ namespace FaceBERN_
                     }
                 }
 
-                Application.Run(new Form1(updated, logging, autoStart));
+                Application.Run(new Form1(updated, logging, autoStart, args));
             }
             else
             {

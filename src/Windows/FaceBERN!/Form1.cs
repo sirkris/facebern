@@ -39,6 +39,7 @@ namespace FaceBERN_
         private bool logging;
         private bool updated;
         private bool autoStart;
+        private string[] cliArgs;
 
         private RegistryKey softwareKey;
         private RegistryKey appKey;
@@ -56,7 +57,7 @@ namespace FaceBERN_
         public int activeUsers = 0;
         public int totalUsers = 0;
 
-        public Form1(bool updated = false, bool logging = true, bool autoStart = false)
+        public Form1(bool updated = false, bool logging = true, bool autoStart = false, string[] cliArgs = null)
         {
             InitializeComponent();
 
@@ -75,6 +76,7 @@ namespace FaceBERN_
             this.logging = logging;
             this.updated = updated;
             this.autoStart = autoStart;
+            this.cliArgs = cliArgs;
 
             /* Initialize the log.  --Kris */
             if (logging == true)
@@ -476,7 +478,8 @@ namespace FaceBERN_
             {
                 Process process = new Process();
                 process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName() + " /startafter /assumeUpdate";
+                process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName() 
+                    + " origArgs=\"" + String.Join( @",", cliArgs ) + "\" /startafter /assumeUpdate";
                 process.Start();
 
                 Exit();
