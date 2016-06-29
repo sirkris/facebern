@@ -49,6 +49,7 @@ namespace Installer
             catch (Exception e)
             {
                 SetStatus("ERROR!  Unable to delete temp exe!");
+                StoreException(e);
                 return;
             }
 
@@ -110,6 +111,7 @@ namespace Installer
                 catch (Exception e)
                 {
                     SetStatus("ERROR!  Unable to delete application directory!");
+                    StoreException(e);
                     return;
                 }
 
@@ -152,6 +154,7 @@ namespace Installer
             {
                 //SetStatus("ERROR:  Update FAILED!");
                 SetStatus(@"err=" + e.Message);  // Uncomment for DEBUG.  --Kris
+                StoreException(e);
                 return;
             }
 
@@ -185,6 +188,7 @@ namespace Installer
             catch (Exception ex)
             {
                 SetStatus("ERROR:  Installer re-launch FAILED!");
+                StoreException(ex);
                 return;
             }
 
@@ -264,6 +268,7 @@ namespace Installer
                 catch (Exception ex)
                 {
                     SetStatus("Directory creation FAILED : " + ex.Message);
+                    StoreException(ex);
                     return;
                 }
 
@@ -626,6 +631,7 @@ namespace Installer
             catch (Exception ex)
             {
                 SetStatus("ERROR:  SetACL launch FAILED!");
+                StoreException(ex);
                 return false;
             }
 
@@ -678,6 +684,22 @@ namespace Installer
             else
             {
                 Main.SetStatus(text, percent);
+            }
+
+            Main.Refresh();
+        }
+
+        private void StoreException(Exception e)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { StoreException(e); }));
+            }
+            else
+            {
+                Main.StoreException(e);
             }
 
             Main.Refresh();
