@@ -36,7 +36,7 @@ namespace FaceBERN_
             pinTextbox.Text = pin;
             if (pinTextbox.Text.Length > 0)
             {
-                pinTextbox.SelectionStart = pinTextbox.Text.Length - 1;
+                pinTextbox.SelectionStart = pinTextbox.Text.Length;
                 pinTextbox.SelectionLength = 0;
             }
         }

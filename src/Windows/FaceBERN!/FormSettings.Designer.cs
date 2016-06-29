@@ -87,6 +87,8 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.label6 = new System.Windows.Forms.Label();
+            this.hideWebBrowserCheckbox = new System.Windows.Forms.CheckBox();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
@@ -381,6 +383,8 @@
             // 
             // tabFacebook
             // 
+            this.tabFacebook.Controls.Add(this.hideWebBrowserCheckbox);
+            this.tabFacebook.Controls.Add(this.label6);
             this.tabFacebook.Controls.Add(this.button3);
             this.tabFacebook.Controls.Add(this.enableFacebankingCheckbox);
             this.tabFacebook.Controls.Add(this.label7);
@@ -400,7 +404,7 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(208, 132);
+            this.button3.Location = new System.Drawing.Point(208, 157);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(198, 23);
             this.button3.TabIndex = 18;
@@ -756,6 +760,29 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label6.Location = new System.Drawing.Point(115, 112);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(270, 16);
+            this.label6.TabIndex = 19;
+            this.label6.Text = "Hide the Web Browser for Facebanking:";
+            this.label6.Click += new System.EventHandler(this.label6_Click);
+            // 
+            // hideWebBrowserCheckbox
+            // 
+            this.hideWebBrowserCheckbox.AutoSize = true;
+            this.hideWebBrowserCheckbox.Checked = true;
+            this.hideWebBrowserCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.hideWebBrowserCheckbox.Location = new System.Drawing.Point(391, 114);
+            this.hideWebBrowserCheckbox.Name = "hideWebBrowserCheckbox";
+            this.hideWebBrowserCheckbox.Size = new System.Drawing.Size(15, 14);
+            this.hideWebBrowserCheckbox.TabIndex = 20;
+            this.hideWebBrowserCheckbox.UseVisualStyleBackColor = true;
+            this.hideWebBrowserCheckbox.CheckedChanged += new System.EventHandler(this.hideWebBrowserCheckbox_CheckedChanged);
+            // 
             // FormSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -846,5 +873,7 @@
         private System.Windows.Forms.CheckBox cMediaBlackoutCompensatorForS4PCheckbox;
         private System.Windows.Forms.CheckBox cRunBernieRunCheckbox;
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.CheckBox hideWebBrowserCheckbox;
+        private System.Windows.Forms.Label label6;
     }
 }

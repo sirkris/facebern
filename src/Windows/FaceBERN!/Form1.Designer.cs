@@ -38,13 +38,14 @@
             this.exitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.donateToBernieToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outBox = new System.Windows.Forms.RichTextBox();
             this.buttonStart = new System.Windows.Forms.Button();
-            this.label2 = new System.Windows.Forms.Label();
             this.browserModeComboBox = new System.Windows.Forms.ComboBox();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -60,8 +61,7 @@
             this.labelTweetsTweeted = new System.Windows.Forms.Label();
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
-            this.DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.label2 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -141,9 +141,24 @@
             // 
             this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            // 
+            // DEBUGToolStripMenuItem
+            // 
+            this.DEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.launchPostInstallerToolStripMenuItem});
+            this.DEBUGToolStripMenuItem.Name = "DEBUGToolStripMenuItem";
+            this.DEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+            this.DEBUGToolStripMenuItem.Text = "DEBUG";
+            // 
+            // launchPostInstallerToolStripMenuItem
+            // 
+            this.launchPostInstallerToolStripMenuItem.Name = "launchPostInstallerToolStripMenuItem";
+            this.launchPostInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.launchPostInstallerToolStripMenuItem.Text = "Launch Post-Installer";
+            this.launchPostInstallerToolStripMenuItem.Click += new System.EventHandler(this.launchPostInstallerToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem1
             // 
@@ -203,28 +218,19 @@
             this.buttonStart.UseVisualStyleBackColor = false;
             this.buttonStart.Click += new System.EventHandler(this.buttonStart_Click);
             // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.BackColor = System.Drawing.Color.Transparent;
-            this.label2.Font = new System.Drawing.Font("Montserrat", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(207, 310);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(131, 19);
-            this.label2.TabIndex = 28;
-            this.label2.Text = "Browser Mode:";
-            // 
             // browserModeComboBox
             // 
             this.browserModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
-            "Invisible",
-            "Visible"});
+            "-- Please Select a Web Browser --",
+            "Mozilla Firefox",
+            "Google Chrome"});
             this.browserModeComboBox.Location = new System.Drawing.Point(340, 310);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
             this.browserModeComboBox.TabIndex = 29;
+            this.browserModeComboBox.SelectedIndexChanged += new System.EventHandler(this.browserModeComboBox_SelectedIndexChanged);
             // 
             // notifyIcon1
             // 
@@ -362,20 +368,16 @@
             this.label6.TabIndex = 36;
             this.label6.Text = "Active Users:";
             // 
-            // DEBUGToolStripMenuItem
+            // label2
             // 
-            this.DEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.launchPostInstallerToolStripMenuItem});
-            this.DEBUGToolStripMenuItem.Name = "DEBUGToolStripMenuItem";
-            this.DEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
-            this.DEBUGToolStripMenuItem.Text = "DEBUG";
-            // 
-            // launchPostInstallerToolStripMenuItem
-            // 
-            this.launchPostInstallerToolStripMenuItem.Name = "launchPostInstallerToolStripMenuItem";
-            this.launchPostInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-            this.launchPostInstallerToolStripMenuItem.Text = "Launch Post-Installer";
-            this.launchPostInstallerToolStripMenuItem.Click += new System.EventHandler(this.launchPostInstallerToolStripMenuItem_Click);
+            this.label2.AutoSize = true;
+            this.label2.BackColor = System.Drawing.Color.Transparent;
+            this.label2.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Location = new System.Drawing.Point(203, 310);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(134, 18);
+            this.label2.TabIndex = 38;
+            this.label2.Text = "Web Browser:";
             // 
             // Form1
             // 
@@ -383,6 +385,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.labelActiveUsers);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.labelTweetsTweeted);
@@ -392,7 +395,6 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.alwaysOnTopCheckBox);
             this.Controls.Add(this.browserModeComboBox);
-            this.Controls.Add(this.label2);
             this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.outBox);
             this.Controls.Add(this.menuStrip1);
@@ -431,7 +433,6 @@
         private System.Windows.Forms.ToolStripMenuItem donateToBernieToolStripMenuItem;
         internal System.Windows.Forms.RichTextBox outBox;
         private System.Windows.Forms.Button buttonStart;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem openControlCenterToolStripMenuItem;
@@ -450,6 +451,7 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.ToolStripMenuItem DEBUGToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem launchPostInstallerToolStripMenuItem;
+        private System.Windows.Forms.Label label2;
     }
 }
 

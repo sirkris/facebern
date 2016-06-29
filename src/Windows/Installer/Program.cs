@@ -23,6 +23,7 @@ namespace Installer
             bool uninstall = false;
             string githubRemoteName = null;
             string branchName = null;
+            string[] origArgs = new string[99];
             int retry = 0;
             if (args.Length > 0)
             {
@@ -38,6 +39,10 @@ namespace Installer
                                 break;
                             case "githubremotename":
                                 githubRemoteName = s[1];
+                                break;
+                            case "origargs":
+                                s[1] = s[1].Trim('"');
+                                origArgs = s[1].Split(',');
                                 break;
                             case "retry":
                                 retry = Int32.Parse(s[1]);

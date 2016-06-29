@@ -21,7 +21,8 @@ namespace Installer
 {
     public partial class Form1 : Form
     {
-        public string[] cliArgs;
+        public string[] cliArgs;  // Command-line arguments used to launch the installer.  --Kris
+        public string[] origArgs;  // Command-line arguments that were used to launch the application that launched this installer (used for re-launching).  --Kris
 
         public string repoBaseDir;
         public string githubRemoteName;
@@ -43,7 +44,8 @@ namespace Installer
 
         public string installerVersion = "1.0.0.b";
 
-        public Form1(string[] cliArgs, string githubRemoteName, string branchName, bool startAfter, bool cleanup = false, bool assumeUpdate = false, bool uninstall = false, int retry = 0)
+        public Form1(string[] cliArgs, string githubRemoteName, string branchName, bool startAfter, bool cleanup = false, bool assumeUpdate = false, 
+            bool uninstall = false, int retry = 0, string[] origArgs = null)
         {
             InitializeComponent();
             this.githubRemoteName = githubRemoteName;
@@ -54,6 +56,7 @@ namespace Installer
             this.uninstall = uninstall;
             this.retry = retry;
             this.cliArgs = cliArgs;
+            this.origArgs = origArgs;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -191,7 +194,7 @@ namespace Installer
 
                     Process process = new Process();
                     process.StartInfo.FileName = executingAssembly;
-                    process.StartInfo.Arguments = args + (args != "" ? " " : "") + "retry=" + retry.ToString();
+                    process.StartInfo.Arguments = args + (args != "" ? " " : "") + "retry=" + retry.ToString() + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
                     process.StartInfo.UseShellExecute = true;
                     process.StartInfo.Verb = "runas";  // Run as Administrator.  --Kris
                     process.Start();
@@ -215,7 +218,7 @@ namespace Installer
             }
             else if (assumeUpdate)
             {
-                Update();
+                Update(origArgs);
             }
             else if (uninstall)
             {
@@ -305,7 +308,7 @@ namespace Installer
                 }
         }
 
-        private void Update()
+        private void Update(string[] origArgs = null)
         {
             /* Already installed so check for updates without user input.  --Kris */
             repoBaseDir = installed;
@@ -340,7 +343,8 @@ namespace Installer
                     {
                         Process process = new Process();
                         process.StartInfo.FileName = updaterPath;
-                        process.StartInfo.Arguments = "githubRemoteName=" + githubRemoteName + " branchName=" + branchName + (startAfter ? " /startAfter" : "") + " /assumeUpdate";
+                        process.StartInfo.Arguments = "githubRemoteName=" + githubRemoteName + " branchName=" + branchName + (startAfter ? " /startAfter" : "") 
+                            + " /assumeUpdate" + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
                         process.Start();
                     }
                     catch (Exception ex)
@@ -356,8 +360,13 @@ namespace Installer
                     /* Perform the update!  --Kris */
                     SetStatus("Update found!  Preparing to install....");
 
+                    if (origArgs == null)
+                    {
+                        origArgs = new string[99];
+                    }
+
                     Workflow workflow = new Workflow(this);
-                    workflow.ExecuteUpdateThread(startAfter);
+                    workflow.ExecuteUpdateThread(startAfter, origArgs);
                 }
             }
         }
@@ -411,9 +420,20 @@ namespace Installer
             string appPath = GetAppPath();
             if (startAfter && appPath != null)
             {
+                string args;
+                if (origArgs == null || origArgs.Length == 0)
+                {
+                    args = "";
+                }
+                else
+                {
+                    args = String.Join(" ", origArgs);
+                }
+
                 Process process = new Process();
                 process.StartInfo.FileName = appPath;
-                process.StartInfo.Arguments = @"/updated";  // This will prevent infinite cross-process loops in the event of an unforseen error.  --Kris
+                process.StartInfo.Arguments = @"/updated " // This will prevent infinite cross-process loops in the event of an unforseen error.  --Kris
+                    + args;
                 process.StartInfo.LoadUserProfile = true;
                 process.StartInfo.UseShellExecute = true;
                 process.StartInfo.WorkingDirectory = Path.GetDirectoryName(appPath);

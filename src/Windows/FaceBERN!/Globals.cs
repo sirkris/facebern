@@ -77,10 +77,13 @@ namespace FaceBERN_
 
         /* Browser constants.  --Kris */
         public const int FIREFOX_HEADLESS = -1;  // Open a headless browser instance using NHtmlUnit.  Not working with Facebook.
-        public const int FIREFOX_HIDDEN = 0;  // Hide using AutoIt.
-        public const int FIREFOX_WINDOWED = 1;  // Open in a visible, maximized Firefox browser window.
-        public const int CHROME = 2;  // In case we ever decide to support Chrome in the future.
-        public const int IE = 3;  // Doubtful, but what the hell.
+        public const int NO_BROWSER = 0;  // User has not selected a web browser.
+        public const int FIREFOX = 1;  // Open in a Firefox browser window.
+        public const int CHROME = 2;  // Open in a Chrome browser window.
+        public const int IE = 3;  // Open in an Internet Explorer window.
+        public const int EDGE = 4;  // Open in an Edge browser window.
+        public const int OPERA = 5;  // Open in an Opera browser window.
+        public const int PHANTOMJS = 6;  // In case someone ever writes a driver that actually works in .NET.
 
         /* Progress bar function constants.  --Kris */
         public const int PROGRESSBAR_HIDDEN = -2;
@@ -123,10 +126,13 @@ namespace FaceBERN_
         {
             string[] names = new string[99];
 
-            names[FIREFOX_WINDOWED] = "Firefox";
+            names[FIREFOX] = "Firefox";
             names[IE] = "Internet Explorer";
             names[CHROME] = "Chrome";
-            names[FIREFOX_HEADLESS] = "Awesomium";
+            names[EDGE] = "Edge";
+            names[OPERA] = "Opera";
+            names[PHANTOMJS] = "PhantomJS";
+            names[NO_BROWSER] = "(none)";
 
             return names;
         }
@@ -146,11 +152,13 @@ namespace FaceBERN_
         {
             string[] names = new string[99];
 
-            names[FIREFOX_WINDOWED] = "Mozilla Firefox";
+            names[FIREFOX] = "Mozilla Firefox";
             names[IE] = "Windows Internet Explorer";
             names[CHROME] = "Google Chrome";
-            //names[FIREFOX_HEADLESS] = "Mozilla Firefox";
-            names[FIREFOX_HIDDEN] = "Mozilla Firefox";
+            names[EDGE] = "Microsoft Edge";  // TODO - Verify.
+            names[OPERA] = "Opera";  // TODO - Verify.
+            names[PHANTOMJS] = "PhantomJS";  // TODO - Verify.
+            names[NO_BROWSER] = null;
 
             return names;
         }
@@ -170,11 +178,13 @@ namespace FaceBERN_
         {
             Dictionary<string, Int32> consts = new Dictionary<string, Int32>();
 
-            consts["firefox"] = FIREFOX_WINDOWED;
+            consts["firefox"] = FIREFOX;
             consts["ie"] = IE;
             consts["internet explorer"] = IE;
             consts["chrome"] = CHROME;
-            consts["awesomium"] = FIREFOX_HEADLESS;
+            consts["edge"] = EDGE;
+            consts["opera"] = OPERA;
+            consts["phantomjs"] = PHANTOMJS;
 
             return consts;
         }

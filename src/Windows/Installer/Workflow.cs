@@ -117,16 +117,16 @@ namespace Installer
             }
         }
 
-        public Thread ExecuteUpdateThread(bool startAfter)
+        public Thread ExecuteUpdateThread(bool startAfter, string[] origArgs)
         {
-            Thread thread = new Thread(() => ExecuteUpdate(startAfter));
+            Thread thread = new Thread(() => ExecuteUpdate(startAfter, origArgs));
             thread.Start();
             while (!thread.IsAlive) { }
 
             return thread;
         }
 
-        public void ExecuteUpdate(bool startAfter)
+        public void ExecuteUpdate(bool startAfter, string[] origArgs)
         {
             SetStatus("Updating FaceBERN!....");
 
@@ -179,7 +179,7 @@ namespace Installer
             {
                 Process process = new Process();
                 process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " " + (startAfter ? " /startAfter " : "") + "/cleanup";
+                process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " " + (startAfter ? " /startAfter " : "") + "/cleanup" + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
                 process.Start();
             }
             catch (Exception ex)
