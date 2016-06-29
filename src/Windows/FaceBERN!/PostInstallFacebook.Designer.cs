@@ -45,6 +45,8 @@
             this.label6 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
             this.weCanDoThisTogether = new System.Windows.Forms.PictureBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.browserModeComboBox = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).BeginInit();
             this.SuspendLayout();
             // 
@@ -206,11 +208,36 @@
             this.weCanDoThisTogether.TabIndex = 16;
             this.weCanDoThisTogether.TabStop = false;
             // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(449, 305);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(74, 13);
+            this.label7.TabIndex = 32;
+            this.label7.Text = "Web Browser:";
+            // 
+            // browserModeComboBox
+            // 
+            this.browserModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.browserModeComboBox.FormattingEnabled = true;
+            this.browserModeComboBox.Items.AddRange(new object[] {
+            "-- Please Select a Web Browser --",
+            "Mozilla Firefox",
+            "Google Chrome"});
+            this.browserModeComboBox.Location = new System.Drawing.Point(529, 302);
+            this.browserModeComboBox.Name = "browserModeComboBox";
+            this.browserModeComboBox.Size = new System.Drawing.Size(291, 21);
+            this.browserModeComboBox.TabIndex = 33;
+            this.browserModeComboBox.SelectedIndexChanged += new System.EventHandler(this.browserModeComboBox_SelectedIndexChanged);
+            // 
             // PostInstallFacebook
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(924, 401);
+            this.Controls.Add(this.browserModeComboBox);
+            this.Controls.Add(this.label7);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.facebookPasswordTextbox);
@@ -235,6 +262,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "First-Run Setup Wizard : Facebook";
             this.TopMost = true;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PostInstallFacebook_FormClosed);
             this.Load += new System.EventHandler(this.PostInstallFacebook_Load);
             this.Shown += new System.EventHandler(this.PostInstallFacebook_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
@@ -261,5 +289,7 @@
         private System.Windows.Forms.TextBox facebookPasswordTextbox;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Label label7;
+        internal System.Windows.Forms.ComboBox browserModeComboBox;
     }
 }

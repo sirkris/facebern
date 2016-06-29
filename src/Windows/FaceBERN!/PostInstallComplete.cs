@@ -16,6 +16,8 @@ namespace FaceBERN_
         private Form1 Main;
         private string appVersion;
 
+        bool next = false;
+
         public PostInstallComplete(Form1 Main, string appVersion)
         {
             InitializeComponent();
@@ -33,6 +35,7 @@ namespace FaceBERN_
             PostInstallTwitter postInstallTwitter = new PostInstallTwitter(Main, appVersion);
             postInstallTwitter.Show();
 
+            next = true;
             this.Close();
         }
 
@@ -56,7 +59,16 @@ namespace FaceBERN_
             Main.UseWaitCursor = false;
             Main.Enabled = true;
 
+            next = true;
             this.Close();
+        }
+
+        private void PostInstallComplete_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (next == false)
+            {
+                Main.Exit();
+            }
         }
     }
 }

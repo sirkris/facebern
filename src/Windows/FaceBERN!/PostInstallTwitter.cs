@@ -17,6 +17,8 @@ namespace FaceBERN_
 
         private Credentials twitterCredentials = null;
 
+        bool next = false;
+
         public PostInstallTwitter(Form1 Main, string appVersion)
         {
             InitializeComponent();
@@ -68,13 +70,13 @@ namespace FaceBERN_
             PostInstallFacebook postInstallFacebook = new PostInstallFacebook(Main, appVersion);
             postInstallFacebook.Show();
 
+            next = true;
             this.Close();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            this.Close();
-            Main.Exit();
+            Application.Exit();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -96,6 +98,7 @@ namespace FaceBERN_
             PostInstallComplete postInstallComplete = new PostInstallComplete(Main, appVersion);
             postInstallComplete.Show();
 
+            next = true;
             this.Close();
         }
 
@@ -231,6 +234,14 @@ namespace FaceBERN_
                 HideCampaignsForm();
 
                 button2.Enabled = true;  // We don't have to have an account if Twitter is disabled.  --Kris
+            }
+        }
+
+        private void PostInstallTwitter_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (next == false)
+            {
+                Main.Exit();
             }
         }
     }

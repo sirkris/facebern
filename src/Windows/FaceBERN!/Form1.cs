@@ -488,12 +488,10 @@ namespace FaceBERN_
 
         internal void Exit()
         {
-            // TODO - Save configs.  --Kris
-
             appKey.Close();
             softwareKey.Close();
 
-            this.Close();
+            Application.Exit();
         }
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
