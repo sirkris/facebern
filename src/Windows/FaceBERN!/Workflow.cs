@@ -113,6 +113,9 @@ namespace FaceBERN_
             /* Load any invitations persisted in the registry from a previous run.  --Kris */
             LoadLatestInvitesQueue();
 
+            /* If we relaunched due to an unhandled exception, log/report it.  --Kris */
+            ReportPreRecoveryError();
+
             /* The main InterCom loop.  --Kris */
             int i = 0;
             while (true)
@@ -137,6 +140,44 @@ namespace FaceBERN_
                 System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
 
                 i++;
+            }
+        }
+
+        private void ReportPreRecoveryError()
+        {
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+            ExceptionReport preRecoveryException = JsonConvert.DeserializeObject<ExceptionReport>((string) appKey.GetValue("preRecoveryException", @"{}"));
+            appKey.DeleteValue("preRecoveryException", false);
+
+            appKey.Close();
+            softwareKey.Close();
+
+            /* If we relaunched due to an exception, log/report it.  --Kris */
+            if (preRecoveryException != null 
+                && preRecoveryException.ex != null)
+            {
+                try
+                {
+                    Log("Recovered from error.  Reporting....");
+
+                    preRecoveryException.Main = Main;
+                    preRecoveryException.Send();
+                }
+                catch (Exception ex)
+                {
+                    Log("Warning:  Unable to report previous exception : " + ex.Message);
+
+                    try
+                    {
+                        preRecoveryException = new ExceptionReport(Main, ex, "Failed to report:  Application recovered from unhandled exception.");
+                    }
+                    catch (Exception ex2)
+                    {
+                        Log("Warning:  Error reporting appears to be broken : " + ex2.ToString());
+                    }
+                }
             }
         }
 

@@ -15,6 +15,8 @@ namespace FaceBERN_
         private Form1 Main;
         private string appVersion;
 
+        bool next = false;
+
         public PostInstall(Form1 Main, string appVersion)
         {
             InitializeComponent();
@@ -27,8 +29,7 @@ namespace FaceBERN_
 
         private void button1_Click(object sender, EventArgs e)
         {
-            this.Close();
-            Main.Exit();
+            Application.Exit();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -36,6 +37,7 @@ namespace FaceBERN_
             PostInstallFacebook postInstallFacebook = new PostInstallFacebook(Main, appVersion);
             postInstallFacebook.Show();
 
+            next = true;
             this.Close();
         }
 
@@ -43,6 +45,14 @@ namespace FaceBERN_
         {
             labelVersion.Text = appVersion;
             Main.UseWaitCursor = true;
+        }
+
+        private void PostInstall_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (next == false)
+            {
+                Main.Exit();
+            }
         }
     }
 }

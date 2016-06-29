@@ -273,6 +273,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "First-Run Setup Wizard : Twitter";
             this.TopMost = true;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PostInstallTwitter_FormClosed);
             this.Load += new System.EventHandler(this.PostInstallTwitter_Load);
             this.Shown += new System.EventHandler(this.PostInstallTwitter_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();

@@ -141,6 +141,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "First-Run Setup Wizard";
             this.TopMost = true;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PostInstall_FormClosed);
             this.Load += new System.EventHandler(this.PostInstall_Load);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
             this.ResumeLayout(false);

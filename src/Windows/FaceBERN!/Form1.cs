@@ -2,6 +2,7 @@
 using LibGit2Sharp.Core;
 using LibGit2Sharp.Handlers;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -488,12 +489,10 @@ namespace FaceBERN_
 
         internal void Exit()
         {
-            // TODO - Save configs.  --Kris
-
             appKey.Close();
             softwareKey.Close();
 
-            this.Close();
+            Application.Exit();
         }
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
@@ -1095,6 +1094,11 @@ namespace FaceBERN_
         {
             Globals.Config["SelectedBrowser"] = Globals.BrowserName(browserModeComboBox.SelectedIndex);
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
+        }
+
+        private void throwExceptionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            throw new Exception("DEBUG Exception Thrown by User.");
         }
     }
 }
