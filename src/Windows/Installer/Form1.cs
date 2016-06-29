@@ -67,8 +67,22 @@ namespace Installer
             RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
 
             installed = (string) appKey.GetValue("Installed", null);
+
+            appKey.Close();
+            softwareKey.Close();
             
             SetStatus("Please wait....");
+        }
+
+        internal void StoreException(Exception e)
+        {
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+            appKey.SetValue("lastInstallerException", e.ToString(), RegistryValueKind.String);
+
+            appKey.Close();
+            softwareKey.Close();
         }
 
         public static byte[] ReadToEnd(System.IO.Stream stream)
@@ -133,6 +147,7 @@ namespace Installer
                 }
                 catch (Exception e)
                 {
+                    StoreException(e);
                     return;
                 }
             }
@@ -206,6 +221,7 @@ namespace Installer
                 catch (Exception ex)
                 {
                     SetStatus("ERROR:  Updater launch FAILED!");
+                    StoreException(ex);
                     return;
                 }
             }
@@ -278,6 +294,7 @@ namespace Installer
                     catch (Exception ex)
                     {
                         SetStatus("ERROR:  Installer copy FAILED!");
+                        StoreException(ex);
                         return;
                     }
 
@@ -293,6 +310,7 @@ namespace Installer
                     catch (Exception ex)
                     {
                         SetStatus("ERROR:  Uninstaller launch FAILED!");
+                        StoreException(ex);
                         return;
                     }
 
@@ -336,6 +354,7 @@ namespace Installer
                     catch (Exception ex)
                     {
                         SetStatus("ERROR:  Installer copy FAILED!");
+                        StoreException(ex);
                         return;
                     }
 
@@ -350,6 +369,7 @@ namespace Installer
                     catch (Exception ex)
                     {
                         SetStatus("ERROR:  Updater launch FAILED!");
+                        StoreException(ex);
                         return;
                     }
 
