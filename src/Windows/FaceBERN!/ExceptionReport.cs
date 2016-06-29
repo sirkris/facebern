@@ -10,24 +10,25 @@ using System.Windows.Forms;
 
 namespace FaceBERN_
 {
+    [Serializable]
     public class ExceptionReport
     {
         private string logName = "ExceptionReport";
-        public Log ExceptionReportLog;
+        internal Log ExceptionReportLog;
 
-        private Form1 Main;
+        internal Form1 Main;
 
-        internal Exception ex;
+        public Exception ex = null;
 
-        internal string message = null;
-        internal string stackTrace = null;
-        internal string source = null;
-        internal string type = null;
-        internal DateTime discovered;
+        public string message = null;
+        public string stackTrace = null;
+        public string source = null;
+        public string type = null;
+        public DateTime discovered;
 
-        internal string logMsg = null;
+        public string logMsg = null;
 
-        bool error = false;
+        internal bool error = false;
 
         private string lastLogMsg = null;
 
@@ -68,6 +69,11 @@ namespace FaceBERN_
 
         public bool Send()
         {
+            if (Main == null)
+            {
+                return false;
+            }
+
             try
             {
                 Workflow workflow = new Workflow(Main);
@@ -109,6 +115,11 @@ namespace FaceBERN_
 
         private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
         {
+            if (Main == null)
+            {
+                return;
+            }
+            
             if (Main.InvokeRequired)
             {
                 Main.BeginInvoke(
