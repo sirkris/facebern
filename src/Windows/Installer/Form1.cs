@@ -209,7 +209,7 @@ namespace Installer
 
                     Process process = new Process();
                     process.StartInfo.FileName = executingAssembly;
-                    process.StartInfo.Arguments = args + (args != "" ? " " : "") + "retry=" + retry.ToString() + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
+                    process.StartInfo.Arguments = args + (args != "" ? " " : "") + "retry=" + retry.ToString() + (origArgs != null ? " origArgs=\"" + String.Join(@",", origArgs) + "\"" : "");
                     process.StartInfo.UseShellExecute = true;
                     process.StartInfo.Verb = "runas";  // Run as Administrator.  --Kris
                     process.Start();
