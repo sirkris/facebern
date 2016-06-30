@@ -63,6 +63,7 @@
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.executeInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -150,7 +151,8 @@
             // 
             this.DEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.launchPostInstallerToolStripMenuItem,
-            this.throwExceptionToolStripMenuItem});
+            this.throwExceptionToolStripMenuItem,
+            this.executeInstallerToolStripMenuItem});
             this.DEBUGToolStripMenuItem.Name = "DEBUGToolStripMenuItem";
             this.DEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
             this.DEBUGToolStripMenuItem.Text = "DEBUG";
@@ -388,6 +390,13 @@
             this.label2.TabIndex = 38;
             this.label2.Text = "Web Browser:";
             // 
+            // executeInstallerToolStripMenuItem
+            // 
+            this.executeInstallerToolStripMenuItem.Name = "executeInstallerToolStripMenuItem";
+            this.executeInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.executeInstallerToolStripMenuItem.Text = "Execute Installer";
+            this.executeInstallerToolStripMenuItem.Click += new System.EventHandler(this.executeInstallerToolStripMenuItem_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -462,6 +471,7 @@
         private System.Windows.Forms.ToolStripMenuItem launchPostInstallerToolStripMenuItem;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ToolStripMenuItem throwExceptionToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem executeInstallerToolStripMenuItem;
     }
 }
 
