@@ -155,6 +155,7 @@
             this.TopMost = true;
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PostInstallComplete_FormClosed);
             this.Load += new System.EventHandler(this.PostInstallComplete_Load);
+            this.Shown += new System.EventHandler(this.PostInstallComplete_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

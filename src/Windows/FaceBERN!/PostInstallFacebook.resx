@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>Certain tasks, like get-out-the-vote and promoting events, require a Facebook account and a Firefox web browser.  If you do not meet these requirements or do not wish to participate in facebanking activism, you can uncheck the box below to disable.  
+    <value>Certain tasks, like get-out-the-vote and promoting events, require a Facebook account and a compatible web browser.  If you do not meet these requirements or do not wish to participate in facebanking activism, you can uncheck the box below to disable.  
 
 If you want the client to not have to prompt you each time it needs to login to Facebook, you can enter your login information now and it will be remembered.  This information is encrypted and stored in your system registry and is never used for any other purpose.  This is safe but not recommended on shared computers.</value>
   </data>
