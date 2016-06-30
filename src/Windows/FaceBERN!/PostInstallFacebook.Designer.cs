@@ -225,8 +225,8 @@
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
             "-- Please Select a Web Browser --",
-            "Mozilla Firefox",
-            "Google Chrome"});
+            "Google Chrome",
+            "Mozilla Firefox"});
             this.browserModeComboBox.Location = new System.Drawing.Point(529, 302);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(291, 21);

@@ -41,6 +41,7 @@
             this.DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.throwExceptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.executeInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -63,7 +64,6 @@
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.executeInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -171,6 +171,13 @@
             this.throwExceptionToolStripMenuItem.Text = "Throw Exception";
             this.throwExceptionToolStripMenuItem.Click += new System.EventHandler(this.throwExceptionToolStripMenuItem_Click);
             // 
+            // executeInstallerToolStripMenuItem
+            // 
+            this.executeInstallerToolStripMenuItem.Name = "executeInstallerToolStripMenuItem";
+            this.executeInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.executeInstallerToolStripMenuItem.Text = "Execute Installer";
+            this.executeInstallerToolStripMenuItem.Click += new System.EventHandler(this.executeInstallerToolStripMenuItem_Click);
+            // 
             // helpToolStripMenuItem1
             // 
             this.helpToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -235,8 +242,8 @@
             this.browserModeComboBox.FormattingEnabled = true;
             this.browserModeComboBox.Items.AddRange(new object[] {
             "-- Please Select a Web Browser --",
-            "Mozilla Firefox",
-            "Google Chrome"});
+            "Google Chrome",
+            "Mozilla Firefox"});
             this.browserModeComboBox.Location = new System.Drawing.Point(340, 404);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
@@ -389,13 +396,6 @@
             this.label2.Size = new System.Drawing.Size(134, 18);
             this.label2.TabIndex = 38;
             this.label2.Text = "Web Browser:";
-            // 
-            // executeInstallerToolStripMenuItem
-            // 
-            this.executeInstallerToolStripMenuItem.Name = "executeInstallerToolStripMenuItem";
-            this.executeInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-            this.executeInstallerToolStripMenuItem.Text = "Execute Installer";
-            this.executeInstallerToolStripMenuItem.Click += new System.EventHandler(this.executeInstallerToolStripMenuItem_Click);
             // 
             // Form1
             // 
