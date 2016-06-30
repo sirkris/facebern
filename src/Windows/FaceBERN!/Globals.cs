@@ -78,8 +78,8 @@ namespace FaceBERN_
         /* Browser constants.  --Kris */
         public const int FIREFOX_HEADLESS = -1;  // Open a headless browser instance using NHtmlUnit.  Not working with Facebook.
         public const int NO_BROWSER = 0;  // User has not selected a web browser.
-        public const int FIREFOX = 1;  // Open in a Firefox browser window.
-        public const int CHROME = 2;  // Open in a Chrome browser window.
+        public const int CHROME = 1;  // Open in a Chrome browser window.
+        public const int FIREFOX = 2;  // Open in a Firefox browser window.
         public const int IE = 3;  // Open in an Internet Explorer window.
         public const int EDGE = 4;  // Open in an Edge browser window.
         public const int OPERA = 5;  // Open in an Opera browser window.
