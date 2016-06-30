@@ -325,8 +325,16 @@ namespace FaceBERN_
             if (installed != null)
             {
                 guesses.Add(installed);
+                guesses.Add(Path.Combine(installed, "program"));
             }
             guesses.Add(Environment.CurrentDirectory);
+            guesses.Add(Path.Combine(Environment.CurrentDirectory, "program"));
+            string relPath = Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+            for (int i = 1; i <= 5; i++)
+            {
+                relPath += @".." + Path.DirectorySeparatorChar;
+            }
+            guesses.Add(Path.Combine(Path.GetFullPath(relPath), "program"));
 
             string mainBin = Path.DirectorySeparatorChar + Path.Combine(@"FaceBERN!", "bin") + Path.DirectorySeparatorChar;
             string instBin = Path.DirectorySeparatorChar + Path.Combine("Installer", "bin") + Path.DirectorySeparatorChar;
@@ -340,6 +348,7 @@ namespace FaceBERN_
             string executable = Path.DirectorySeparatorChar + "BirdieSetup.exe";
             foreach (string guess in guesses)
             {
+                LogW("DEBUG - " + guess + executable);
                 if (File.Exists(guess + executable))
                 {
                     return guess + executable;
@@ -471,20 +480,29 @@ namespace FaceBERN_
 
         private void ExecuteInstaller()
         {
-            string installerPath = GetInstallerPath();
-            if (installerPath == null)
+            try
             {
-                LogW("Unable to run installer.  Aborted.");
-            }
-            else
-            {
-                Process process = new Process();
-                process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName() 
-                    + ( cliArgs != null ? " origArgs=\"" + String.Join( @",", cliArgs ) + "\"" : "" ) + " /startafter /assumeUpdate";
-                process.Start();
+                string installerPath = GetInstallerPath();
+                if (installerPath == null)
+                {
+                    LogW("Unable to run installer.  Aborted.");
+                }
+                else
+                {
+                    Process process = new Process();
+                    process.StartInfo.FileName = installerPath;
+                    process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName()
+                        + (cliArgs != null ? " origArgs=\"" + String.Join(@",", cliArgs) + "\"" : "") + " /startafter /assumeUpdate";
+                    process.Start();
 
-                Exit();
+                    Exit();
+                }
+            }
+            catch (Exception e)
+            {
+                LogW("ERROR launching installer : " + e.Message);
+
+                ExceptionReport exceptionReport = new ExceptionReport(this, e, "Error launching installer.");
             }
         }
 
@@ -1100,6 +1118,11 @@ namespace FaceBERN_
         private void throwExceptionToolStripMenuItem_Click(object sender, EventArgs e)
         {
             throw new Exception("DEBUG Exception Thrown by User.");
+        }
+
+        private void executeInstallerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ExecuteInstaller();
         }
     }
 }
