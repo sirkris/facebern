@@ -169,6 +169,7 @@
             this.facebookUsernameTextbox.Name = "facebookUsernameTextbox";
             this.facebookUsernameTextbox.Size = new System.Drawing.Size(286, 20);
             this.facebookUsernameTextbox.TabIndex = 0;
+            this.facebookUsernameTextbox.TextChanged += new System.EventHandler(this.facebookUsernameTextbox_TextChanged);
             // 
             // facebookPasswordTextbox
             // 
@@ -177,6 +178,7 @@
             this.facebookPasswordTextbox.Size = new System.Drawing.Size(286, 20);
             this.facebookPasswordTextbox.TabIndex = 1;
             this.facebookPasswordTextbox.UseSystemPasswordChar = true;
+            this.facebookPasswordTextbox.TextChanged += new System.EventHandler(this.facebookPasswordTextbox_TextChanged);
             // 
             // label6
             // 
