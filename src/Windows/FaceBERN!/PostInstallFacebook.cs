@@ -84,6 +84,10 @@ namespace FaceBERN_
 
         private void PostInstallFacebook_Shown(object sender, EventArgs e)
         {
+            this.Focus();
+            this.BringToFront();
+            this.Activate();
+
             // Populate if they're already in the registry.  Mainly used for DEBUG operations.  --Kris
             Credentials credentials = new Credentials(true);
 

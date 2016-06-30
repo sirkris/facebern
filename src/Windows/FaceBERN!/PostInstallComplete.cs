@@ -70,5 +70,12 @@ namespace FaceBERN_
                 Main.Exit();
             }
         }
+
+        private void PostInstallComplete_Shown(object sender, EventArgs e)
+        {
+            this.Focus();
+            this.BringToFront();
+            this.Activate();
+        }
     }
 }

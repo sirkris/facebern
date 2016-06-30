@@ -39,6 +39,10 @@ namespace FaceBERN_
 
         private void PostInstallTwitter_Shown(object sender, EventArgs e)
         {
+            this.Focus();
+            this.BringToFront();
+            this.Activate();
+
             if (twitterCredentials.IsAssociated())
             {
                 ShowTwitterCredentials();
