@@ -348,7 +348,7 @@ namespace FaceBERN_
             string executable = Path.DirectorySeparatorChar + "BirdieSetup.exe";
             foreach (string guess in guesses)
             {
-                LogW("DEBUG - " + guess + executable);
+                //LogW("DEBUG - " + guess + executable);
                 if (File.Exists(guess + executable))
                 {
                     return guess + executable;
