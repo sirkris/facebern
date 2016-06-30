@@ -362,8 +362,8 @@ namespace Installer
                     {
                         Process process = new Process();
                         process.StartInfo.FileName = updaterPath;
-                        process.StartInfo.Arguments = "githubRemoteName=" + githubRemoteName + " branchName=" + branchName + (startAfter ? " /startAfter" : "") 
-                            + " /assumeUpdate" + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
+                        process.StartInfo.Arguments = "githubRemoteName=" + githubRemoteName + " branchName=" + branchName + (startAfter ? " /startAfter" : "")
+                            + " /assumeUpdate" + (origArgs != null ? " origArgs=\"" + String.Join(@",", origArgs) + "\"" : "");
                         process.Start();
                     }
                     catch (Exception ex)
