@@ -208,5 +208,15 @@ namespace FaceBERN_
                 Main.Exit();
             }
         }
+
+        private void facebookUsernameTextbox_TextChanged(object sender, EventArgs e)
+        {
+            ToggleNextButton();
+        }
+
+        private void facebookPasswordTextbox_TextChanged(object sender, EventArgs e)
+        {
+            ToggleNextButton();
+        }
     }
 }
