@@ -99,9 +99,9 @@
             this.label1.Font = new System.Drawing.Font("Montserrat", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(451, 15);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(462, 25);
+            this.label1.Size = new System.Drawing.Size(406, 25);
             this.label1.TabIndex = 9;
-            this.label1.Text = "Welcome to the FaceBERN! Setup Wizard!";
+            this.label1.Text = "Welcome to the Birdie Setup Wizard!";
             // 
             // weCanDoThisTogether
             // 
@@ -118,9 +118,9 @@
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.Location = new System.Drawing.Point(453, 59);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(208, 13);
+            this.label4.Size = new System.Drawing.Size(174, 13);
             this.label4.TabIndex = 16;
-            this.label4.Text = "FaceBERN! is currently installed in:";
+            this.label4.Text = "Birdie is currently installed in:";
             // 
             // labelInstalledPath
             // 
@@ -148,10 +148,10 @@
             this.updateRadioButton.ForeColor = System.Drawing.Color.Green;
             this.updateRadioButton.Location = new System.Drawing.Point(0, 3);
             this.updateRadioButton.Name = "updateRadioButton";
-            this.updateRadioButton.Size = new System.Drawing.Size(136, 17);
+            this.updateRadioButton.Size = new System.Drawing.Size(102, 17);
             this.updateRadioButton.TabIndex = 19;
             this.updateRadioButton.TabStop = true;
-            this.updateRadioButton.Text = "Update FaceBERN!";
+            this.updateRadioButton.Text = "Update Birdie";
             this.updateRadioButton.UseVisualStyleBackColor = true;
             // 
             // panel1
@@ -170,18 +170,18 @@
             this.label7.AutoSize = true;
             this.label7.Location = new System.Drawing.Point(16, 108);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(191, 13);
+            this.label7.Size = new System.Drawing.Size(160, 13);
             this.label7.TabIndex = 22;
-            this.label7.Text = "Remove FaceBERN! from your system.";
+            this.label7.Text = "Remove Birdie from your system.";
             // 
             // label6
             // 
             this.label6.AutoSize = true;
             this.label6.Location = new System.Drawing.Point(16, 26);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(389, 13);
+            this.label6.Size = new System.Drawing.Size(361, 13);
             this.label6.TabIndex = 21;
-            this.label6.Text = "Check for a newer version of FaceBERN!  If one is available, perform the update.";
+            this.label6.Text = "Check for a newer version of Birdie.  If one is available, perform the update.";
             // 
             // uninstallRadioButton
             // 
@@ -189,9 +189,9 @@
             this.uninstallRadioButton.ForeColor = System.Drawing.Color.Red;
             this.uninstallRadioButton.Location = new System.Drawing.Point(0, 85);
             this.uninstallRadioButton.Name = "uninstallRadioButton";
-            this.uninstallRadioButton.Size = new System.Drawing.Size(125, 17);
+            this.uninstallRadioButton.Size = new System.Drawing.Size(94, 17);
             this.uninstallRadioButton.TabIndex = 20;
-            this.uninstallRadioButton.Text = "Uninstall FaceBERN!";
+            this.uninstallRadioButton.Text = "Uninstall Birdie";
             this.uninstallRadioButton.UseVisualStyleBackColor = true;
             // 
             // UserPromptForm
@@ -218,7 +218,7 @@
             this.Name = "UserPromptForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "FaceBERN! Installation Wizard";
+            this.Text = "Birdie Installation Wizard";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.UserPromptForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();

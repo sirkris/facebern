@@ -48,7 +48,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(462, 25);
             this.label1.TabIndex = 1;
-            this.label1.Text = "Welcome to the FaceBERN! Setup Wizard!";
+            this.label1.Text = "Welcome to the Birdie Setup Wizard!";
             // 
             // label2
             // 
@@ -140,7 +140,7 @@
             this.Name = "WorkflowForm1";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "FaceBERN! Installation Wizard";
+            this.Text = "Birdie Installation Wizard";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.WorkflowForm1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();

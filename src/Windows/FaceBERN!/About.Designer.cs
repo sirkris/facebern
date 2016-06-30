@@ -45,15 +45,15 @@
             this.label1.Font = new System.Drawing.Font("Montserrat", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(406, 9);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(169, 33);
+            this.label1.Size = new System.Drawing.Size(96, 33);
             this.label1.TabIndex = 1;
-            this.label1.Text = "FaceBERN!";
+            this.label1.Text = "Birdie";
             // 
             // labelVersion
             // 
             this.labelVersion.AutoSize = true;
             this.labelVersion.ForeColor = System.Drawing.Color.Black;
-            this.labelVersion.Location = new System.Drawing.Point(453, 46);
+            this.labelVersion.Location = new System.Drawing.Point(543, 46);
             this.labelVersion.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.labelVersion.Name = "labelVersion";
             this.labelVersion.Size = new System.Drawing.Size(0, 13);
@@ -65,9 +65,9 @@
             this.label2.ForeColor = System.Drawing.Color.Black;
             this.label2.Location = new System.Drawing.Point(412, 46);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(42, 13);
+            this.label2.Size = new System.Drawing.Size(131, 13);
             this.label2.TabIndex = 25;
-            this.label2.Text = "Version";
+            this.label2.Text = "FaceBERN! Client Version";
             // 
             // richTextBox1
             // 
@@ -77,7 +77,7 @@
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
-            this.richTextBox1.Size = new System.Drawing.Size(360, 196);
+            this.richTextBox1.Size = new System.Drawing.Size(460, 196);
             this.richTextBox1.TabIndex = 27;
             this.richTextBox1.TabStop = false;
             this.richTextBox1.Text = resources.GetString("richTextBox1.Text");
@@ -98,7 +98,7 @@
             this.dontclickme.Font = new System.Drawing.Font("Arial Narrow", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.dontclickme.LinkBehavior = System.Windows.Forms.LinkBehavior.NeverUnderline;
             this.dontclickme.LinkColor = System.Drawing.Color.Navy;
-            this.dontclickme.Location = new System.Drawing.Point(723, 295);
+            this.dontclickme.Location = new System.Drawing.Point(823, 295);
             this.dontclickme.Name = "dontclickme";
             this.dontclickme.Size = new System.Drawing.Size(59, 13);
             this.dontclickme.TabIndex = 29;
@@ -120,7 +120,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(784, 310);
+            this.ClientSize = new System.Drawing.Size(884, 310);
             this.Controls.Add(this.dontclickme);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.richTextBox1);
@@ -135,7 +135,7 @@
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "About FaceBERN!";
+            this.Text = "About Birdie";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.About_Load);
             this.Click += new System.EventHandler(this.About_Close);
