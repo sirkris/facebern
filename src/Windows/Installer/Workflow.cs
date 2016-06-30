@@ -366,10 +366,7 @@ namespace Installer
 
                 foreach (string s in files)
                 {
-                    if (Path.GetExtension(s).ToLower().Equals(".dll"))
-                    {
-                        CopyFile(s, Path.Combine(installPath, Path.GetFileName(s)));
-                    }
+                    CopyFile(s, Path.Combine(installPath, Path.GetFileName(s)));
                 }
             }
             else
