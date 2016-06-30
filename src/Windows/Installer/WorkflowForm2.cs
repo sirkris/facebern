@@ -71,7 +71,7 @@ namespace Installer
             fbd.RootFolder = Environment.SpecialFolder.MyComputer;
             fbd.SelectedPath = installPath;
             fbd.ShowNewFolderButton = true;
-            fbd.Description = "Please specify where you would like to install FaceBERN! on your computer.";
+            fbd.Description = "Please specify where you would like to install Birdie on your computer.";
 
             if (fbd.ShowDialog() == DialogResult.OK)
             {

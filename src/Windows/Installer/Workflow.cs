@@ -44,7 +44,7 @@ namespace Installer
 
             try
             {
-                System.IO.File.Delete(Path.Combine(Main.repoBaseDir, "Updater.exe"));
+                System.IO.File.Delete(Path.Combine(Main.repoBaseDir, "BirdieUpdater.exe"));
             }
             catch (Exception e)
             {
@@ -130,7 +130,7 @@ namespace Installer
 
         public void ExecuteUpdate(bool startAfter, string[] origArgs)
         {
-            SetStatus("Updating FaceBERN!....");
+            SetStatus("Updating Birdie....");
 
             bool keepSrc = Directory.Exists(Path.Combine(Main.repoBaseDir, "src"));
             try
@@ -177,7 +177,7 @@ namespace Installer
 
             System.Threading.Thread.Sleep(1000);
 
-            string installerPath = Path.Combine(Main.repoBaseDir, "Installer.exe");
+            string installerPath = Path.Combine(Main.repoBaseDir, "BirdieSetup.exe");
             try
             {
                 Process process = new Process();
@@ -454,8 +454,8 @@ namespace Installer
         private void CopyExecutables(string installPath)
         {
             List<string> executables = new List<string>();
-            executables.Add(@"FaceBERN!");
-            executables.Add(@"Installer");
+            executables.Add(@"Birdie");
+            executables.Add(@"BirdieSetup");
             foreach (string program in executables)
             {
                 string exe = program + ".exe";
@@ -535,7 +535,7 @@ namespace Installer
             IWshShortcut shortcut = (IWshShortcut) shell.CreateShortcut(shortcutPath);
 
             shortcut.Description = "Birdie - Because the political revolution begins at home";
-            shortcut.TargetPath = Path.Combine(installPath, @"FaceBERN!.exe");
+            shortcut.TargetPath = Path.Combine(installPath, @"Birdie.exe");
             shortcut.WorkingDirectory = installPath;
             shortcut.Save();
         }

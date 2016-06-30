@@ -881,7 +881,7 @@ namespace FaceBERN_
 
                     /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
                     int timeoutSeconds = 30;
-                    Log("Waiting for PIN detection.  Please wait until FaceBERN! asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
+                    Log("Waiting for PIN detection.  Please wait until " + Globals.__APPNAME__ + " asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
                     DateTime start = DateTime.Now;
                     do
                     {
@@ -1121,7 +1121,7 @@ namespace FaceBERN_
                     }
                     else
                     {
-                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart " + Globals.__APPNAME__ + " to recover from the error.");
                     }
                 }
                 catch (Exception ex)
@@ -1136,7 +1136,7 @@ namespace FaceBERN_
                         }
                         while (Globals.thread.IsAlive) { }
 
-                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart FaceBERN! to recover from the error.");
+                        Log("Broken workflow detected!  Workflow is now disabled for safety reasons.  Please restart " + Globals.__APPNAME__ + " to recover from the error.");
                     }
                     catch (Exception ex2)
                     {
@@ -1173,7 +1173,7 @@ namespace FaceBERN_
             if (twitterAccessCredentials.IsAssociated() == false)
             {
                 Log("Warning:  Twitter is enabled but you don't have your Twitter account associated!  Twitter workflow aborted.");
-                Log(@"You can link FaceBERN! to your Twitter account under Tools->Settings.");
+                Log(@"You can link " + Globals.__APPNAME__ + " to your Twitter account under Tools->Settings.");
 
                 return;
             }

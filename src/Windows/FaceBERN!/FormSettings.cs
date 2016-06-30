@@ -452,7 +452,7 @@ namespace FaceBERN_
 
         private void button1_Click(object sender, EventArgs e)
         {
-            DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to forget your account information for ALL sites?", "Confirm Deletion", MessageBoxButtons.YesNo);
+            DialogResult dr = MessageBox.Show("Are you sure you want Birdie to forget your account information for ALL sites?", "Confirm Deletion", MessageBoxButtons.YesNo);
             if (dr == DialogResult.Yes)
             {
                 Credentials c = new Credentials();
@@ -500,7 +500,7 @@ namespace FaceBERN_
 
         private void button3_Click(object sender, EventArgs e)
         {
-            DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to forget your Facebook username/password?", "Confirm Deletion", MessageBoxButtons.YesNo);
+            DialogResult dr = MessageBox.Show("Are you sure you want " + Globals.__APPNAME__ + " to forget your Facebook username/password?", "Confirm Deletion", MessageBoxButtons.YesNo);
             if (dr == DialogResult.Yes)
             {
                 Credentials c = new Credentials();
@@ -515,7 +515,7 @@ namespace FaceBERN_
         {
             if (Globals.executionState != Globals.STATE_READY)
             {
-                MessageBox.Show("This operation can only be performed when FaceBERN! is not executing its workflow.  Please click the STOP button then try again.");
+                MessageBox.Show("This operation can only be performed when " + Globals.__APPNAME__ + " is not executing its workflow.  Please click the STOP button then try again.");
                 return;
             }
             
@@ -524,7 +524,7 @@ namespace FaceBERN_
             if (twitterCredentials.IsAssociated())
             {
                 /* De-associate Twitter account.  --Kris */
-                DialogResult dr = MessageBox.Show("Are you sure you want FaceBERN! to de-associate your Twitter account?", "Confirm De-Association", MessageBoxButtons.YesNo);
+                DialogResult dr = MessageBox.Show("Are you sure you want " + Globals.__APPNAME__ + " to de-associate your Twitter account?", "Confirm De-Association", MessageBoxButtons.YesNo);
                 if (dr == DialogResult.Yes)
                 {
                     twitterCredentials.DestroyTwitter(true);
@@ -538,7 +538,7 @@ namespace FaceBERN_
             else
             {
                 /* Associate new Twitter account.  --Kris */
-                DialogResult dr = MessageBox.Show("FaceBERN! will open Twitter in a browser window.  You will be asked to enter the PIN you see there.  Are you ready?", "Confirm Twitter Account Association", MessageBoxButtons.YesNo);
+                DialogResult dr = MessageBox.Show(Globals.__APPNAME__ + " will open Twitter in a browser window.  You will be asked to enter the PIN you see there.  Are you ready?", "Confirm Twitter Account Association", MessageBoxButtons.YesNo);
                 if (dr == DialogResult.Yes)
                 {
                     MessageBox.Show("The Settings window will now close and a browser window will open with a temporary PIN.  You will then be prompted to enter that PIN here.");

@@ -40,6 +40,7 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.throwExceptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -62,7 +63,6 @@
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.throwExceptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -71,10 +71,10 @@
             // pictureBox1
             // 
             this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BackgroundImage = global::FaceBERN_.Properties.Resources.FaceBERN_;
-            this.pictureBox1.Location = new System.Drawing.Point(123, 27);
+            this.pictureBox1.BackgroundImage = global::FaceBERN_.Properties.Resources.Birdie_sticker;
+            this.pictureBox1.Location = new System.Drawing.Point(227, 26);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(430, 105);
+            this.pictureBox1.Size = new System.Drawing.Size(220, 200);
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
             // 
@@ -83,7 +83,7 @@
             this.label1.AutoSize = true;
             this.label1.BackColor = System.Drawing.Color.Transparent;
             this.label1.ForeColor = System.Drawing.Color.Blue;
-            this.label1.Location = new System.Drawing.Point(296, 135);
+            this.label1.Location = new System.Drawing.Point(276, 229);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(42, 13);
             this.label1.TabIndex = 1;
@@ -94,7 +94,7 @@
             this.labelVersion.AutoSize = true;
             this.labelVersion.BackColor = System.Drawing.Color.Transparent;
             this.labelVersion.ForeColor = System.Drawing.Color.Blue;
-            this.labelVersion.Location = new System.Drawing.Point(337, 135);
+            this.labelVersion.Location = new System.Drawing.Point(317, 229);
             this.labelVersion.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.labelVersion.Name = "labelVersion";
             this.labelVersion.Size = new System.Drawing.Size(0, 13);
@@ -162,6 +162,13 @@
             this.launchPostInstallerToolStripMenuItem.Text = "Launch Post-Installer";
             this.launchPostInstallerToolStripMenuItem.Click += new System.EventHandler(this.launchPostInstallerToolStripMenuItem_Click);
             // 
+            // throwExceptionToolStripMenuItem
+            // 
+            this.throwExceptionToolStripMenuItem.Name = "throwExceptionToolStripMenuItem";
+            this.throwExceptionToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.throwExceptionToolStripMenuItem.Text = "Throw Exception";
+            this.throwExceptionToolStripMenuItem.Click += new System.EventHandler(this.throwExceptionToolStripMenuItem_Click);
+            // 
             // helpToolStripMenuItem1
             // 
             this.helpToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -197,7 +204,7 @@
             // outBox
             // 
             this.outBox.Font = new System.Drawing.Font("Courier New", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.outBox.Location = new System.Drawing.Point(90, 150);
+            this.outBox.Location = new System.Drawing.Point(90, 244);
             this.outBox.Margin = new System.Windows.Forms.Padding(2);
             this.outBox.Name = "outBox";
             this.outBox.ReadOnly = true;
@@ -228,7 +235,7 @@
             "-- Please Select a Web Browser --",
             "Mozilla Firefox",
             "Google Chrome"});
-            this.browserModeComboBox.Location = new System.Drawing.Point(340, 310);
+            this.browserModeComboBox.Location = new System.Drawing.Point(340, 404);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
             this.browserModeComboBox.TabIndex = 29;
@@ -237,10 +244,10 @@
             // notifyIcon1
             // 
             this.notifyIcon1.BalloonTipText = resources.GetString("notifyIcon1.BalloonTipText");
-            this.notifyIcon1.BalloonTipTitle = "FaceBERN! will continue running in the background";
+            this.notifyIcon1.BalloonTipTitle = "Birdie will continue running in the background";
             this.notifyIcon1.ContextMenuStrip = this.contextMenuStrip1;
             this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
-            this.notifyIcon1.Text = "FaceBERN!";
+            this.notifyIcon1.Text = "Birdie";
             this.notifyIcon1.Visible = true;
             // 
             // contextMenuStrip1
@@ -285,7 +292,7 @@
             // 
             this.alwaysOnTopCheckBox.AutoSize = true;
             this.alwaysOnTopCheckBox.BackColor = System.Drawing.Color.Transparent;
-            this.alwaysOnTopCheckBox.Location = new System.Drawing.Point(299, 359);
+            this.alwaysOnTopCheckBox.Location = new System.Drawing.Point(299, 433);
             this.alwaysOnTopCheckBox.Name = "alwaysOnTopCheckBox";
             this.alwaysOnTopCheckBox.Size = new System.Drawing.Size(92, 17);
             this.alwaysOnTopCheckBox.TabIndex = 30;
@@ -318,7 +325,7 @@
             // 
             // mainProgressBar
             // 
-            this.mainProgressBar.Location = new System.Drawing.Point(90, 284);
+            this.mainProgressBar.Location = new System.Drawing.Point(90, 378);
             this.mainProgressBar.Name = "mainProgressBar";
             this.mainProgressBar.Size = new System.Drawing.Size(496, 10);
             this.mainProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
@@ -375,18 +382,11 @@
             this.label2.AutoSize = true;
             this.label2.BackColor = System.Drawing.Color.Transparent;
             this.label2.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(203, 310);
+            this.label2.Location = new System.Drawing.Point(203, 404);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(134, 18);
             this.label2.TabIndex = 38;
             this.label2.Text = "Web Browser:";
-            // 
-            // throwExceptionToolStripMenuItem
-            // 
-            this.throwExceptionToolStripMenuItem.Name = "throwExceptionToolStripMenuItem";
-            this.throwExceptionToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-            this.throwExceptionToolStripMenuItem.Text = "Throw Exception";
-            this.throwExceptionToolStripMenuItem.Click += new System.EventHandler(this.throwExceptionToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -415,7 +415,7 @@
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "FaceBERN!";
+            this.Text = "Birdie Client for Windows";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Shown += new System.EventHandler(this.Form1_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

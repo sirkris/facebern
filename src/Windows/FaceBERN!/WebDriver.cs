@@ -1716,7 +1716,7 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                Log("FATAL ERROR:  Unable to close browser!  Please restart FaceBERN! and try again.");
+                Log("FATAL ERROR:  Unable to close browser!  Please restart " + Globals.__APPNAME__ + " and try again.");
 
                 SetExecState(Globals.STATE_BROKEN);
             }

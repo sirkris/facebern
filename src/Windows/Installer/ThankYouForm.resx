@@ -118,13 +118,16 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>You have successfully installed FaceBERN!
+    <value>You have successfully installed Birdie!
 
-FaceBERN! is designed to run in the background, unattended.  It will automatically perform facebanking GOTV for upcoming primary states; all you have to do is start it and let it run!
+Birdie is designed to run in the background, unattended.  It will automatically perform facebanking GOTV for upcoming primary states, tweet out news/posts from the political revolution, etc; all you have to do is start it and let it run!
 
-IMPORTANT:  The first time you run FaceBERN!, it will ask for your Facebook username and password.  Just like in a web browser, you can choose to securely store those values in the system registry or opt to enter them each time (though that may get tedious, after awhile).  Assuming you leave the remember password box checked, you won't have to worry about that after the first run.
+There is no documentation right now.  In the meantime, if you need help, please post your questions to /r/CodersForSanders.  The author's contact information can be found by clicking Help-&gt;About in Birdie and clicking the "About the Author" link.
 
-There is no documentation right now.  In the meantime, if you need help, please post your questions to /r/CodersForSanders.  The author's contact information can be found by clicking Help-&gt;About in FaceBERN! and clicking the "About the Author" link.
+
+
+
+
 
 
 

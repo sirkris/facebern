@@ -118,19 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>The Setup Wizard will install the latest version of FaceBERN! on your computer. Click Next to continue or Cancel to exit the Setup Wizard.
+    <value>The Setup Wizard will install the latest version of the Birdie client for Windows on your computer. Click Next to continue or Cancel to exit the Setup Wizard.
 
-FaceBERN! is a tool designed to help the average person participate in the political process through streamlined online activism. In short, this tool essentially automates the Facebanking process so that even a person with a busy schedule or not much tech savvy can make a difference! This application should also help reduce unintended spam and account lockouts, as it contains built-in ratelimiting and automatically prevents duplicate invitations from being sent.
+Birdie is an Automated Social Media Helper application designed to make online progressive activism accessible to everyone.  You need neither a technical background nor an abundance of time to make a positive impact on the world using Birdie.
 
-Please note that this software is still under development and will require more time to fully realize its potential. Some features will not be present or may not function correctly. More information about this program can be found on Reddit in /r/CodersForSanders and /r/SandersForPresident. This software was not developed by the Sanders campaign. I'm just a supporter with some time to bern.
+This software works by automating social media activism that you may already be doing manually.   Birdie is the first application to fully automate these tasks, including:  Inviting Facebook friends to events (get-out-the-vote, etc), sending out tweets to compensate for the media blackout against Bernie and other progressives, etc.
+
+This software is free and open source.  Care has been taken to ensure that this application does not violate any ToS.  Please direct any questions to Reddit.com/r/CodersForSanders.
 
 System Requirements:
 
 Microsoft Windows (tested/built on Windows 7)
 .NET Framework 4.5 or newer
-Mozilla Firefox
+Mozilla Firefox OR Google Chrome
 
-WARNING: THIS IS AN EARLY BETA BUILD! USE AT YOUR OWN RISK!</value>
+WARNING: THIS IS A LATE BETA BUILD! USE AT YOUR OWN RISK!</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">

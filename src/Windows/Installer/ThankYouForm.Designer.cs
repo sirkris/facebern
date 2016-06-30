@@ -116,9 +116,9 @@
             this.launchFacebernCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.launchFacebernCheckbox.Location = new System.Drawing.Point(452, 366);
             this.launchFacebernCheckbox.Name = "launchFacebernCheckbox";
-            this.launchFacebernCheckbox.Size = new System.Drawing.Size(122, 17);
+            this.launchFacebernCheckbox.Size = new System.Drawing.Size(91, 17);
             this.launchFacebernCheckbox.TabIndex = 15;
-            this.launchFacebernCheckbox.Text = "Launch FaceBERN!";
+            this.launchFacebernCheckbox.Text = "Launch Birdie";
             this.launchFacebernCheckbox.UseVisualStyleBackColor = true;
             // 
             // ThankYouForm
@@ -141,7 +141,7 @@
             this.Name = "ThankYouForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "FaceBERN! Installation Complete!";
+            this.Text = "Birdie Installation Complete!";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.ThankYouForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.weCanDoThisTogether)).EndInit();

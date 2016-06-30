@@ -259,7 +259,7 @@ namespace Installer
                         }
                         else if (userPromptForm.uninstallRadioButton.Checked)
                         {
-                            DialogResult dr = MessageBox.Show("Are you sure you want to remove FaceBERN! from your system?", "Confirm Uninstallation", MessageBoxButtons.YesNo);
+                            DialogResult dr = MessageBox.Show("Are you sure you want to remove Birdie from your system?", "Confirm Uninstallation", MessageBoxButtons.YesNo);
                             if (dr == DialogResult.Yes)
                             {
                                 Uninstall();
@@ -278,7 +278,7 @@ namespace Installer
         {
                 /* Copy this executable to an untracked name and run that.  This will enable the installer to uninstall itself, as well.  --Kris */
                 string executingAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                string uninstallerName = "Uninstaller.exe";
+                string uninstallerName = "BirdieUninstall.exe";
 
                 if (executingAssembly.IndexOf(uninstallerName) == -1)
                 {
@@ -340,7 +340,7 @@ namespace Installer
             {
                 /* Copy this executable to an untracked name and run that.  This will enable the installer to update itself, as well.  --Kris */
                 string executingAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                string updaterName = "Updater.exe";
+                string updaterName = "BirdieUpdater.exe";
 
                 if (executingAssembly.IndexOf(updaterName) == -1)
                 {
@@ -423,12 +423,21 @@ namespace Installer
                 }
             }
 
-            string executable = Path.DirectorySeparatorChar + "FaceBERN!.exe";
-            foreach (string guess in guesses)
+            return CheckAppPathForAppNames(new List<string> { @"Birdie.exe", @"FaceBERN!.exe" }, guesses);
+        }
+
+        /* In case they're running an older version from before the name change.  --Kris */
+        public string CheckAppPathForAppNames(List<string> possibleNames, List<string> guesses)
+        {
+            foreach (string name in possibleNames)
             {
-                if (File.Exists(guess + executable))
+                string executable = Path.DirectorySeparatorChar + name;
+                foreach (string guess in guesses)
                 {
-                    return guess + executable;
+                    if (File.Exists(guess + executable))
+                    {
+                        return guess + executable;
+                    }
                 }
             }
 
