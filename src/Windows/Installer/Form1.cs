@@ -37,6 +37,7 @@ namespace Installer
         private bool assumeUpdate;
         private bool uninstall;
         private int retry;
+        private bool autoStart;
 
         private string installed;
 
@@ -45,7 +46,7 @@ namespace Installer
         public string installerVersion = "1.0.0.b";
 
         public Form1(string[] cliArgs, string githubRemoteName, string branchName, bool startAfter, bool cleanup = false, bool assumeUpdate = false, 
-            bool uninstall = false, int retry = 0, string[] origArgs = null)
+            bool uninstall = false, int retry = 0, bool autoStart = false, string[] origArgs = null)
         {
             InitializeComponent();
             this.githubRemoteName = githubRemoteName;
@@ -57,6 +58,7 @@ namespace Installer
             this.retry = retry;
             this.cliArgs = cliArgs;
             this.origArgs = origArgs;
+            this.autoStart = autoStart;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -462,6 +464,7 @@ namespace Installer
                 Process process = new Process();
                 process.StartInfo.FileName = appPath;
                 process.StartInfo.Arguments = @"/updated " // This will prevent infinite cross-process loops in the event of an unforseen error.  --Kris
+                    + ( autoStart ? @"/autoStart " : "" ) 
                     + args;
                 process.StartInfo.LoadUserProfile = true;
                 process.StartInfo.UseShellExecute = true;

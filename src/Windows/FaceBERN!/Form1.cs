@@ -489,10 +489,18 @@ namespace FaceBERN_
                 }
                 else
                 {
+                    string autoStart = "";
+                    if (Globals.executionState > Globals.STATE_READY
+                        && Globals.executionState != Globals.STATE_STOPPING
+                        && Globals.executionState != Globals.STATE_RESTARTING)
+                    {
+                        autoStart = " /autoStart";
+                    }
+
                     Process process = new Process();
                     process.StartInfo.FileName = installerPath;
                     process.StartInfo.Arguments = "githubRemoteName=" + getGithubRemoteName() + " branchName=" + getBranchName()
-                        + (cliArgs != null ? " origArgs=\"" + String.Join(@",", cliArgs) + "\"" : "") + " /startafter /assumeUpdate";
+                        + (cliArgs != null ? " origArgs=\"" + String.Join(@",", cliArgs) + "\"" : "") + " /startafter /assumeUpdate" + autoStart;
                     process.Start();
 
                     Exit();
