@@ -38,7 +38,15 @@ namespace Installer
 
         private void WorkflowForm2_Load(object sender, EventArgs e)
         {
-            SetLocation(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) + Path.DirectorySeparatorChar + @"FaceBERN!");
+            if (!(Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) + Path.DirectorySeparatorChar + "Birdie")))
+            {
+                SetLocation(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) + Path.DirectorySeparatorChar + "Birdie");
+            }
+            else
+            {
+                SetLocation(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) + Path.DirectorySeparatorChar + @"FaceBERN!");
+            }
+
             branchName = "master";
 
             branchComboBox.SelectedIndex = 1;  // TODO - Set back to 0 (master) after the first production release.  --Kris
