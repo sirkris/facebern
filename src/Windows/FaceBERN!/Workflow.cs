@@ -3199,24 +3199,31 @@ namespace FaceBERN_
 
         private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { Log(text, show, appendW, newline, timestamp); }));
-            }
-            else
-            {
-                if (suppressDups == true && text.Equals(lastLogMsg))
+                if (Main.InvokeRequired)
                 {
-                    return;
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { Log(text, show, appendW, newline, timestamp); }));
                 }
+                else
+                {
+                    if (suppressDups == true && text.Equals(lastLogMsg))
+                    {
+                        return;
+                    }
 
-                lastLogMsg = text;
+                    lastLogMsg = text;
 
-                Main.LogW(text, show, appendW, newline, timestamp, logName, WorkflowLog);
+                    Main.LogW(text, show, appendW, newline, timestamp, logName, WorkflowLog);
 
-                Main.Refresh();
+                    Main.Refresh();
+                }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception raised in Workflow Log method.");
             }
         }
 
