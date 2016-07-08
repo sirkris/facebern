@@ -178,6 +178,7 @@
     <Compile Include="About.Designer.cs">
       <DependentUpon>About.cs</DependentUpon>
     </Compile>
+    <Compile Include="Campaign.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="ExceptionReport.cs" />
     <Compile Include="FacebookUser.cs" />

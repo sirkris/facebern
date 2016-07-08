@@ -55,6 +55,8 @@ namespace FaceBERN_
 
         private List<ExceptionReport> exceptions;
 
+        private List<Campaign> campaigns = null;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             exceptions = new List<ExceptionReport>();
@@ -122,6 +124,9 @@ namespace FaceBERN_
             {
                 /* Send a keep-alive to the Birdie API.  --Kris */
                 KeepAlive();
+
+                /* Update our list of active campaigns.  --Kris */
+                LoadCampaigns();
                 
                 /* Process the remote update queue and send it to Birdie.  --Kris */
                 PostLatestInvites((i == 0));
@@ -437,6 +442,14 @@ namespace FaceBERN_
             UpdateTweetsCount(myTweets.Value, totalTweets.Value);
         }
 
+        /* Get the active campaigns.  --Kris */
+        private void LoadCampaigns()
+        {
+            IRestResponse res = BirdieQuery(@"/campaigns?showActiveOnly", "GET");
+
+            campaigns = BirdieToCampaigns(JsonConvert.DeserializeObject(res.Content));
+        }
+
         /* Report one or more new tweets to Birdie.  --Kris */
         private void ReportNewTweets(List<TweetsQueue> tweets)
         {
@@ -486,6 +499,30 @@ namespace FaceBERN_
             }
 
             return tweetsQueue;
+        }
+
+        private List<Campaign> BirdieToCampaigns(dynamic deserializedJSON, bool overwrite = true)
+        {
+            if (overwrite || campaigns == null)
+            {
+                campaigns = new List<Campaign>();
+            }
+
+            foreach (dynamic o in deserializedJSON)
+            {
+                if (o != null
+                    && o["campaignId"] != null
+                    && o["campaignTitle"] != null
+                    && o["createdByAdminUsername"] != null
+                    && o["createdAt"] != null
+                    && o["start"] != null)
+                {
+                    campaigns.Add(new Campaign((int) o["campaignId"], (string) o["campaignTitle"], (string) o["createdByAdminUsername"], (DateTime) o["createdAt"], (DateTime) o["start"],
+                                                (string) o["campaignDescription"], (string) o["campaignURL"], (int?) o["parentCampaignId"], (DateTime?) o["end"]));
+                }
+            }
+
+            return campaigns;
         }
 
         /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
