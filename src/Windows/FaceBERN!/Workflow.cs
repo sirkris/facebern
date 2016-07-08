@@ -1272,7 +1272,7 @@ namespace FaceBERN_
             foreach (RedditPost redditPost in redditPosts)
             {
                 res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
-                    redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
+                    @"/u/" + redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
             }
 
             return res;
