@@ -55,6 +55,8 @@
             this.labelAbbreviation = new System.Windows.Forms.Label();
             this.statesComboBox = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
+            this.tabCampaigns = new System.Windows.Forms.TabPage();
+            this.label16 = new System.Windows.Forms.Label();
             this.tabFacebook = new System.Windows.Forms.TabPage();
             this.hideWebBrowserCheckbox = new System.Windows.Forms.CheckBox();
             this.label6 = new System.Windows.Forms.Label();
@@ -89,15 +91,13 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.tabCampaigns = new System.Windows.Forms.TabPage();
-            this.label16 = new System.Windows.Forms.Label();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
+            this.tabCampaigns.SuspendLayout();
             this.tabFacebook.SuspendLayout();
             this.tabTwitter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).BeginInit();
-            this.tabCampaigns.SuspendLayout();
             this.SuspendLayout();
             // 
             // settingsTabControl
@@ -112,7 +112,7 @@
             this.settingsTabControl.SelectedIndex = 0;
             this.settingsTabControl.Size = new System.Drawing.Size(760, 475);
             this.settingsTabControl.TabIndex = 0;
-            this.settingsTabControl.Enter += new System.EventHandler(this.tabTwitter_Load);
+            this.settingsTabControl.Enter += new System.EventHandler(this.tabCampaign_Load);
             // 
             // tabGeneral
             // 
@@ -385,6 +385,27 @@
             this.label5.TabIndex = 1;
             this.label5.Text = "Please Select a State:";
             // 
+            // tabCampaigns
+            // 
+            this.tabCampaigns.AutoScroll = true;
+            this.tabCampaigns.Controls.Add(this.label16);
+            this.tabCampaigns.Location = new System.Drawing.Point(4, 22);
+            this.tabCampaigns.Name = "tabCampaigns";
+            this.tabCampaigns.Size = new System.Drawing.Size(752, 449);
+            this.tabCampaigns.TabIndex = 4;
+            this.tabCampaigns.Text = "Campaigns";
+            this.tabCampaigns.UseVisualStyleBackColor = true;
+            // 
+            // label16
+            // 
+            this.label16.AutoSize = true;
+            this.label16.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label16.Location = new System.Drawing.Point(15, 15);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(165, 16);
+            this.label16.TabIndex = 31;
+            this.label16.Text = "Available Campaigns:";
+            // 
             // tabFacebook
             // 
             this.tabFacebook.Controls.Add(this.hideWebBrowserCheckbox);
@@ -554,13 +575,14 @@
             this.tabTwitter.TabIndex = 3;
             this.tabTwitter.Text = "Twitter";
             this.tabTwitter.UseVisualStyleBackColor = true;
+            this.tabTwitter.Enter += new System.EventHandler(this.tabTwitter_Load);
             // 
             // cMediaBlackoutCompensatorForPolRevCheckbox
             // 
             this.cMediaBlackoutCompensatorForPolRevCheckbox.AutoSize = true;
             this.cMediaBlackoutCompensatorForPolRevCheckbox.Checked = true;
             this.cMediaBlackoutCompensatorForPolRevCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cMediaBlackoutCompensatorForPolRevCheckbox.Location = new System.Drawing.Point(306, 134);
+            this.cMediaBlackoutCompensatorForPolRevCheckbox.Location = new System.Drawing.Point(306, 135);
             this.cMediaBlackoutCompensatorForPolRevCheckbox.Name = "cMediaBlackoutCompensatorForPolRevCheckbox";
             this.cMediaBlackoutCompensatorForPolRevCheckbox.Size = new System.Drawing.Size(289, 17);
             this.cMediaBlackoutCompensatorForPolRevCheckbox.TabIndex = 56;
@@ -787,27 +809,6 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // tabCampaigns
-            // 
-            this.tabCampaigns.AutoScroll = true;
-            this.tabCampaigns.Controls.Add(this.label16);
-            this.tabCampaigns.Location = new System.Drawing.Point(4, 22);
-            this.tabCampaigns.Name = "tabCampaigns";
-            this.tabCampaigns.Size = new System.Drawing.Size(752, 449);
-            this.tabCampaigns.TabIndex = 4;
-            this.tabCampaigns.Text = "Campaigns";
-            this.tabCampaigns.UseVisualStyleBackColor = true;
-            // 
-            // label16
-            // 
-            this.label16.AutoSize = true;
-            this.label16.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label16.Location = new System.Drawing.Point(15, 15);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(165, 16);
-            this.label16.TabIndex = 31;
-            this.label16.Text = "Available Campaigns:";
-            // 
             // FormSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -830,13 +831,13 @@
             this.tabGeneral.PerformLayout();
             this.tabStates.ResumeLayout(false);
             this.tabStates.PerformLayout();
+            this.tabCampaigns.ResumeLayout(false);
+            this.tabCampaigns.PerformLayout();
             this.tabFacebook.ResumeLayout(false);
             this.tabFacebook.PerformLayout();
             this.tabTwitter.ResumeLayout(false);
             this.tabTwitter.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).EndInit();
-            this.tabCampaigns.ResumeLayout(false);
-            this.tabCampaigns.PerformLayout();
             this.ResumeLayout(false);
 
         }

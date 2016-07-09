@@ -15,6 +15,9 @@ namespace FaceBERN_
     {
         private Dictionary<int, string> stateIndexes;
         private int selectedStateIndex = 0;
+        private string checkboxNamePrefix = "checkboxUseCampaign_";
+
+        private List<int> displayedCampaignIds;
 
         private Credentials twitterCredentials;
 
@@ -63,7 +66,7 @@ namespace FaceBERN_
             Dictionary<int, bool> campaignConfigs = Globals.CampaignConfigs;
             foreach (KeyValuePair<int, bool> pair in campaignConfigs)
             {
-                string key = "useCampaign_" + pair.Key.ToString() + "_checkbox";
+                string key = checkboxNamePrefix + pair.Key.ToString();
                 if (this.Controls.ContainsKey(key))
                 {
                     Globals.CampaignConfigs[pair.Key] = ((CheckBox) this.Controls[key]).Checked;
@@ -189,6 +192,26 @@ namespace FaceBERN_
                     SetStateFields();
                     
                     break;
+                case "campaigns":
+                    /* Wait until the configurations are loaded.  --Kris */
+                    int ii = 15;  // 15 seconds
+                    while (Globals.campaigns == null
+                        && ii > 0)
+                    {
+                        System.Threading.Thread.Sleep(1000);
+                        ii--;
+                    }
+
+                    /* Dynamically display campaign checkboxes.  --Kris */
+                    displayedCampaignIds = new List<int>();
+
+                    List<CheckBox> campaignCheckboxes = GetCampaignCheckboxes();
+                    foreach (CheckBox checkbox in campaignCheckboxes)
+                    {
+                        tabCampaigns.Controls.Add(checkbox);
+                    }
+                    
+                    break;
                 case "facebook":
                     enableFacebankingCheckbox.Checked = (Globals.Config["EnableFacebanking"] == "1" ? true : false);
                     useFTBEventsCheckbox.Checked = (Globals.Config["UseFTBEvents"] == "1" ? true : false);
@@ -213,6 +236,50 @@ namespace FaceBERN_
             buttonApply.Enabled = applyEnabled;
         }
 
+        /* Create and position campaign checkboxes.  Note that a parent campaign must be active for its children to be active; children without an active parent are ignored (fucking PTA).  --Kris */
+        private List<CheckBox> GetCampaignCheckboxes(int? parentCampaignId = null, int indent = 0, int count = 0)
+        {
+            List<CheckBox> res = new List<CheckBox>();
+
+            int xIncrement = 20;
+            int yIncrement = 24;
+
+            int x = 18 + (indent * xIncrement);
+            int y = 40 + (count * yIncrement);
+            foreach (Campaign campaign in Globals.campaigns)
+            {
+                if (displayedCampaignIds.Contains(campaign.campaignId) 
+                    || parentCampaignId != campaign.parentCampaignId)
+                {
+                    continue;
+                }
+
+                CheckBox box = new CheckBox();
+
+                box.Name = checkboxNamePrefix + campaign.campaignId.ToString();
+                box.Location = new Point(x, y);
+                box.AutoSize = true;
+                box.Text = campaign.campaignTitle;
+                box.Checked = campaign.userSelected;
+                box.MouseHover += genericCampaignCheckbox_MouseHover;
+
+                res.Add(box);
+
+                y += yIncrement;
+                count++;
+
+                displayedCampaignIds.Add(campaign.campaignId);
+
+                /* Recursively add subordinate campaign checkboxes.  --Kris */
+                List<CheckBox> subRes = GetCampaignCheckboxes(campaign.campaignId, (indent + 1), count);
+
+                res.AddRange(subRes);
+                count += subRes.Count;
+            }
+
+            return res;
+        }
+
         // This should be called only when the Twitter tab is active!  --Kris
         private void ShowTwitterCredentials()
         {
@@ -232,6 +299,11 @@ namespace FaceBERN_
         private void tabStates_Load(object sender, EventArgs e)
         {
             SetFormDefaults("states");
+        }
+
+        private void tabCampaign_Load(object sender, EventArgs e)
+        {
+            SetFormDefaults("campaigns");
         }
 
         private void tabFacebook_Load(object sender, EventArgs e)
@@ -459,6 +531,28 @@ namespace FaceBERN_
         private void cMediaBlackoutCompensatorForPolRevCheckbox_CheckChanged(object sender, EventArgs e)
         {
             buttonApply.Enabled = true;
+        }
+
+        private void genericCampaignCheckbox_MouseHover(object sender, EventArgs e)
+        {
+            try
+            {
+                CheckBox checkbox = sender as CheckBox;
+                int campaignId;
+                if (int.TryParse(checkbox.Name.Substring(checkboxNamePrefix.Length), out campaignId))
+                {
+                    Campaign campaign = Globals.GetCampaignById(campaignId);
+
+                    if (campaign != null && campaign.campaignDescription != null)
+                    {
+                        toolTip1.SetToolTip(checkbox, campaign.campaignDescription);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Do nothing.  Not worth logging since it's juse a mouseover caption.  --Kris
+            }
         }
 
         private void cRunBernieRunCheckbox_MouseMove(object sender, EventArgs e)

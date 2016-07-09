@@ -101,6 +101,20 @@ namespace FaceBERN_
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
 
+        /* Get a campaign by ID.  --Kris */
+        public static Campaign GetCampaignById(int campaignId)
+        {
+            foreach (Campaign campaign in campaigns)
+            {
+                if (campaign.campaignId == campaignId)
+                {
+                    return campaign;
+                }
+            }
+
+            return null;
+        }
+
         /* Map log names to their respective objects (DEPRECATED).  --Kris */
         public static Log getLogObj(string logName)
         {
