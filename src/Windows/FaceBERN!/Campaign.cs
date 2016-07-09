@@ -13,13 +13,18 @@ namespace FaceBERN_
         public string createdByAdminUsername;
         public DateTime createdAt;
         public DateTime start;
+        public bool enabled;
+        public bool requiresFacebook;
+        public bool requiresTwitter;
+
+        public bool userSelected;  // Whether or not the user checked the box for this campaign in Settings.  --Kris
 
         public string campaignDescription = null;
         public string campaignURL = null;
         public int? parentCampaignId = null;
         public DateTime? end = null;
 
-        public Campaign(int campaignId, string campaignTitle, string createdByAdminUsername, DateTime createdAt, DateTime start,
+        public Campaign(int campaignId, string campaignTitle, string createdByAdminUsername, DateTime createdAt, DateTime start, bool enabled, bool requiresFacebook, bool requiresTwitter, bool userSelected, 
                         string campaignDescription = null, string campaignURL = null, int? parentCampaignId = null, DateTime? end = null)
         {
             this.campaignId = campaignId;
@@ -27,6 +32,12 @@ namespace FaceBERN_
             this.createdByAdminUsername = createdByAdminUsername;
             this.createdAt = createdAt;
             this.start = start;
+            this.enabled = enabled;
+            this.requiresFacebook = requiresFacebook;
+            this.requiresTwitter = requiresTwitter;
+
+            this.userSelected = userSelected;
+
             this.campaignDescription = campaignDescription;
             this.campaignURL = campaignURL;
             this.parentCampaignId = parentCampaignId;

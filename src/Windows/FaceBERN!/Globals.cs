@@ -24,6 +24,7 @@ namespace FaceBERN_
         /* File paths.  --Kris */
         public static string ConfigDir          = @"config";
         public static string MainINI            = __APPNAME__ + @".ini";
+        public static string CampaignsINI       = @"campaigns.ini";
         public static string StatesINIDir       = @"states";
 
         /* How long to wait for an action element to appear before dying.  --Kris */
@@ -53,9 +54,13 @@ namespace FaceBERN_
         public static List<string> bernieFacebookIDs;
         public static bool devOverride = false;  // Enable by holding down the Shift key while clicking Start.  This will force GOTV for all states, regardless of dates or recent prior checks.  --Kris
         public static bool requestedFTBInvite = false;
+        public static List<Campaign> campaigns = null;
 
         /* Global state configs container.  Individual states setup in Form1.SetStateDefaults.  --Kris */
         public static Dictionary<string, States> StateConfigs;
+
+        /* Global campaign configs container used to persist local settings.  The userSelected property corresponds to whether or not the user checked the box for a given campaign.  --Kris */
+        public static Dictionary<int, bool> CampaignConfigs = null;
 
         /* Global singletons.  --Kris */
         public static INI sINI;

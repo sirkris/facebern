@@ -56,6 +56,8 @@
             this.statesComboBox = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
             this.tabFacebook = new System.Windows.Forms.TabPage();
+            this.hideWebBrowserCheckbox = new System.Windows.Forms.CheckBox();
+            this.label6 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
             this.enableFacebankingCheckbox = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
@@ -87,20 +89,22 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.label6 = new System.Windows.Forms.Label();
-            this.hideWebBrowserCheckbox = new System.Windows.Forms.CheckBox();
+            this.tabCampaigns = new System.Windows.Forms.TabPage();
+            this.label16 = new System.Windows.Forms.Label();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
             this.tabFacebook.SuspendLayout();
             this.tabTwitter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).BeginInit();
+            this.tabCampaigns.SuspendLayout();
             this.SuspendLayout();
             // 
             // settingsTabControl
             // 
             this.settingsTabControl.Controls.Add(this.tabGeneral);
             this.settingsTabControl.Controls.Add(this.tabStates);
+            this.settingsTabControl.Controls.Add(this.tabCampaigns);
             this.settingsTabControl.Controls.Add(this.tabFacebook);
             this.settingsTabControl.Controls.Add(this.tabTwitter);
             this.settingsTabControl.Location = new System.Drawing.Point(12, 12);
@@ -401,6 +405,29 @@
             this.tabFacebook.Text = "Facebook";
             this.tabFacebook.UseVisualStyleBackColor = true;
             this.tabFacebook.Enter += new System.EventHandler(this.tabFacebook_Load);
+            // 
+            // hideWebBrowserCheckbox
+            // 
+            this.hideWebBrowserCheckbox.AutoSize = true;
+            this.hideWebBrowserCheckbox.Checked = true;
+            this.hideWebBrowserCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.hideWebBrowserCheckbox.Location = new System.Drawing.Point(391, 114);
+            this.hideWebBrowserCheckbox.Name = "hideWebBrowserCheckbox";
+            this.hideWebBrowserCheckbox.Size = new System.Drawing.Size(15, 14);
+            this.hideWebBrowserCheckbox.TabIndex = 20;
+            this.hideWebBrowserCheckbox.UseVisualStyleBackColor = true;
+            this.hideWebBrowserCheckbox.CheckedChanged += new System.EventHandler(this.hideWebBrowserCheckbox_CheckedChanged);
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label6.Location = new System.Drawing.Point(115, 112);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(270, 16);
+            this.label6.TabIndex = 19;
+            this.label6.Text = "Hide the Web Browser for Facebanking:";
+            this.label6.Click += new System.EventHandler(this.label6_Click);
             // 
             // button3
             // 
@@ -760,28 +787,26 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
-            // label6
+            // tabCampaigns
             // 
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(115, 112);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(270, 16);
-            this.label6.TabIndex = 19;
-            this.label6.Text = "Hide the Web Browser for Facebanking:";
-            this.label6.Click += new System.EventHandler(this.label6_Click);
+            this.tabCampaigns.AutoScroll = true;
+            this.tabCampaigns.Controls.Add(this.label16);
+            this.tabCampaigns.Location = new System.Drawing.Point(4, 22);
+            this.tabCampaigns.Name = "tabCampaigns";
+            this.tabCampaigns.Size = new System.Drawing.Size(752, 449);
+            this.tabCampaigns.TabIndex = 4;
+            this.tabCampaigns.Text = "Campaigns";
+            this.tabCampaigns.UseVisualStyleBackColor = true;
             // 
-            // hideWebBrowserCheckbox
+            // label16
             // 
-            this.hideWebBrowserCheckbox.AutoSize = true;
-            this.hideWebBrowserCheckbox.Checked = true;
-            this.hideWebBrowserCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.hideWebBrowserCheckbox.Location = new System.Drawing.Point(391, 114);
-            this.hideWebBrowserCheckbox.Name = "hideWebBrowserCheckbox";
-            this.hideWebBrowserCheckbox.Size = new System.Drawing.Size(15, 14);
-            this.hideWebBrowserCheckbox.TabIndex = 20;
-            this.hideWebBrowserCheckbox.UseVisualStyleBackColor = true;
-            this.hideWebBrowserCheckbox.CheckedChanged += new System.EventHandler(this.hideWebBrowserCheckbox_CheckedChanged);
+            this.label16.AutoSize = true;
+            this.label16.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label16.Location = new System.Drawing.Point(15, 15);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(165, 16);
+            this.label16.TabIndex = 31;
+            this.label16.Text = "Available Campaigns:";
             // 
             // FormSettings
             // 
@@ -810,6 +835,8 @@
             this.tabTwitter.ResumeLayout(false);
             this.tabTwitter.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).EndInit();
+            this.tabCampaigns.ResumeLayout(false);
+            this.tabCampaigns.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -875,5 +902,7 @@
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.CheckBox hideWebBrowserCheckbox;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.TabPage tabCampaigns;
+        private System.Windows.Forms.Label label16;
     }
 }

@@ -51,6 +51,31 @@ namespace FaceBERN_
 
         private void buttonApply_Click(object sender, EventArgs e)
         {
+            string sectionName;
+            Dictionary<string, Dictionary<string, string>> config;
+
+            /* Apply campaigns config.  --Kris */
+            config = new Dictionary<string, Dictionary<string, string>>();
+            sectionName = "Campaigns";
+
+            config[sectionName] = new Dictionary<string,string>();
+
+            Dictionary<int, bool> campaignConfigs = Globals.CampaignConfigs;
+            foreach (KeyValuePair<int, bool> pair in campaignConfigs)
+            {
+                string key = "useCampaign_" + pair.Key.ToString() + "_checkbox";
+                if (this.Controls.ContainsKey(key))
+                {
+                    Globals.CampaignConfigs[pair.Key] = ((CheckBox) this.Controls[key]).Checked;
+                }
+
+                config[sectionName].Add("UseCampaign" + pair.Key.ToString(), (Globals.CampaignConfigs[pair.Key] ? "1" : "0"));
+            }
+
+            Globals.sINI.Clear(Path.Combine(Globals.ConfigDir, Globals.CampaignsINI));
+            Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.CampaignsINI), config);
+
+            /* Apply main config.  --Kris */
             Globals.Config["UseFTBEvents"] = (useFTBEventsCheckbox.Checked ? "1" : "0");
             Globals.Config["UseCustomEvents"] = (useCustomEventsCheckbox.Checked ? "1" : "0");
             Globals.Config["CheckRememberPasswordByDefault"] = (checkRememberPasswordByDefaultCheckbox.Checked ? "1" : "0");
@@ -65,6 +90,7 @@ namespace FaceBERN_
 
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
+            /* Apply state configs.  --Kris */
             if (stateIndexes != null && stateIndexes[selectedStateIndex] != null)
             {
                 States state = Globals.StateConfigs[stateIndexes[selectedStateIndex]];
@@ -76,9 +102,9 @@ namespace FaceBERN_
 
                 Globals.StateConfigs[state.abbr] = state;
 
-                Dictionary<string, Dictionary<string, string>> config = new Dictionary<string, Dictionary<string, string>>();
+                config = new Dictionary<string, Dictionary<string, string>>();
 
-                string sectionName = "Settings";
+                sectionName = "Settings";
 
                 config[sectionName] = new Dictionary<string, string>();
                 config[sectionName].Add("abbr", state.abbr);

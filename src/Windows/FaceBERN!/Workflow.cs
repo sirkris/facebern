@@ -55,8 +55,6 @@ namespace FaceBERN_
 
         private List<ExceptionReport> exceptions;
 
-        private List<Campaign> campaigns = null;
-
         public Workflow(Form1 Main, Log MainLog = null)
         {
             exceptions = new List<ExceptionReport>();
@@ -445,12 +443,74 @@ namespace FaceBERN_
         /* Get the active campaigns.  --Kris */
         private void LoadCampaigns()
         {
-            IRestResponse res = BirdieQuery(@"/campaigns?showActiveOnly", "GET");
+            try
+            {
+                IRestResponse res = BirdieQuery(@"/campaigns?showActiveOnly", "GET");
 
-            campaigns = BirdieToCampaigns(JsonConvert.DeserializeObject(res.Content));
+                if (res != null && res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    Globals.campaigns = BirdieToCampaigns(JsonConvert.DeserializeObject(res.Content));
+
+                    SaveCampaignsToRegistry();
+                }
+                else
+                {
+                    Log("Warning:  Unable to retrieve updated campaigns from Birdie.  Falling back to local cache....");
+
+                    LoadCampaignsFromRegistry();
+                }
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error loading campaigns : " + e.ToString());
+
+                ReportException(e, "Exception thrown loading campaigns.");
+            }
         }
 
-        /* Report one or more new tweets to Birdie.  --Kris */
+        /* Grab our latest cache if Birdie API is down.  --Kris */
+        private void LoadCampaignsFromRegistry()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                Globals.campaigns = BirdieToCampaigns(JsonConvert.DeserializeObject((string) appKey.GetValue("campaignsCache")));
+
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error loading campaigns from registry : " + e.ToString());
+
+                ReportException(e, "Exception thrown loading campaigns from registry.");
+            }
+        }
+
+        /* Maintain a local cahce of our current campaigns in case there's an API issue of some kind.  --Kris */
+        private void SaveCampaignsToRegistry()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                appKey.SetValue("campaignsCache", JsonConvert.SerializeObject(Globals.campaigns), RegistryValueKind.String);
+
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error saving campaigns cache to registry : " + e.ToString());
+
+                ReportException(e, "Exception thrown saving campaigns cache to registry.");
+            }
+        }
+
+        /* Report one or more new tweets to Birdie API.  --Kris */
         private void ReportNewTweets(List<TweetsQueue> tweets)
         {
             for (int i = 0; i < tweets.Count; i++)
@@ -503,9 +563,18 @@ namespace FaceBERN_
 
         private List<Campaign> BirdieToCampaigns(dynamic deserializedJSON, bool overwrite = true)
         {
-            if (overwrite || campaigns == null)
+            if (overwrite || Globals.campaigns == null)
             {
-                campaigns = new List<Campaign>();
+                Globals.campaigns = new List<Campaign>();
+            }
+
+            /* Wait until the configurations are loaded.  --Kris */
+            int i = 150;  // 15 seconds
+            while (Globals.CampaignConfigs == null 
+                && i > 0)
+            {
+                System.Threading.Thread.Sleep(100);
+                i--;
             }
 
             foreach (dynamic o in deserializedJSON)
@@ -515,14 +584,33 @@ namespace FaceBERN_
                     && o["campaignTitle"] != null
                     && o["createdByAdminUsername"] != null
                     && o["createdAt"] != null
-                    && o["start"] != null)
+                    && o["start"] != null
+                    && o["enabled"] != null
+                    && o["requiresFacebook"] != null
+                    && o["approvedByDefault"] != null
+                    && o["requiresTwitter"] != null)
                 {
-                    campaigns.Add(new Campaign((int) o["campaignId"], (string) o["campaignTitle"], (string) o["createdByAdminUsername"], (DateTime) o["createdAt"], (DateTime) o["start"],
-                                                (string) o["campaignDescription"], (string) o["campaignURL"], (int?) o["parentCampaignId"], (DateTime?) o["end"]));
+                    bool userSelected;
+                    if (Globals.CampaignConfigs != null && Globals.CampaignConfigs.ContainsKey((int) o["campaignId"]))
+                    {
+                        userSelected = Globals.CampaignConfigs[(int) o["campaignId"]];
+                    }
+                    else
+                    {
+                        userSelected = ((string) o["approvedByDefault"]).Equals("1");
+                    }
+
+                    Campaign addCampaign = new Campaign((int) o["campaignId"], (string) o["campaignTitle"], (string) o["createdByAdminUsername"], (DateTime) o["createdAt"], (DateTime) o["start"],
+                                                (bool) ((string) o["enabled"]).Equals("1"), (bool) ((string) o["requiresFacebook"]).Equals("1"), (bool) ((string) o["requiresTwitter"]).Equals("1"), 
+                                                userSelected, (string) o["campaignDescription"], (string) o["campaignURL"], (int?) o["parentCampaignId"], (DateTime?) o["end"]);
+
+                    Globals.campaigns.Add(addCampaign);
+
+                    Globals.CampaignConfigs[(int) o["campaignId"]] = addCampaign.userSelected;
                 }
             }
 
-            return campaigns;
+            return Globals.campaigns;
         }
 
         /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
