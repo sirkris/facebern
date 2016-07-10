@@ -18,6 +18,7 @@ namespace FaceBERN_
         public bool requiresTwitter;
 
         public bool userSelected;  // Whether or not the user checked the box for this campaign in Settings.  --Kris
+        public bool approvedByDefault;
 
         public string campaignDescription = null;
         public string campaignURL = null;
@@ -25,7 +26,7 @@ namespace FaceBERN_
         public DateTime? end = null;
 
         public Campaign(int campaignId, string campaignTitle, string createdByAdminUsername, DateTime createdAt, DateTime start, bool enabled, bool requiresFacebook, bool requiresTwitter, bool userSelected, 
-                        string campaignDescription = null, string campaignURL = null, int? parentCampaignId = null, DateTime? end = null)
+                        bool approvedByDefault, string campaignDescription = null, string campaignURL = null, int? parentCampaignId = null, DateTime? end = null)
         {
             this.campaignId = campaignId;
             this.campaignTitle = campaignTitle;
@@ -37,6 +38,7 @@ namespace FaceBERN_
             this.requiresTwitter = requiresTwitter;
 
             this.userSelected = userSelected;
+            this.approvedByDefault = approvedByDefault;
 
             this.campaignDescription = campaignDescription;
             this.campaignURL = campaignURL;

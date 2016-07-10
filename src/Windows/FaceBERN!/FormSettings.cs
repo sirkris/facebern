@@ -18,6 +18,7 @@ namespace FaceBERN_
         private string checkboxNamePrefix = "checkboxUseCampaign_";
 
         private List<int> displayedCampaignIds;
+        private List<CheckBox> lastAddedCheckboxes = null;
 
         private Credentials twitterCredentials;
 
@@ -64,16 +65,22 @@ namespace FaceBERN_
             config[sectionName] = new Dictionary<string,string>();
 
             Dictionary<int, bool> campaignConfigs = Globals.CampaignConfigs;
+            Dictionary<int, bool> newCampaignConfigs = new Dictionary<int, bool>();
             foreach (KeyValuePair<int, bool> pair in campaignConfigs)
             {
                 string key = checkboxNamePrefix + pair.Key.ToString();
-                if (this.Controls.ContainsKey(key))
+                if (tabCampaigns.Controls.ContainsKey(key))
                 {
-                    Globals.CampaignConfigs[pair.Key] = ((CheckBox) this.Controls[key]).Checked;
+                    newCampaignConfigs[pair.Key] = ((CheckBox) tabCampaigns.Controls[key]).Checked;
+
+                    Campaign campaign = Globals.GetCampaignById(pair.Key);
+                    campaign.userSelected = newCampaignConfigs[pair.Key];
+                    Globals.SetCampaign(campaign);
                 }
 
-                config[sectionName].Add("UseCampaign" + pair.Key.ToString(), (Globals.CampaignConfigs[pair.Key] ? "1" : "0"));
+                config[sectionName].Add("UseCampaign" + pair.Key.ToString(), (newCampaignConfigs[pair.Key] ? "1" : "0"));
             }
+            Globals.CampaignConfigs = newCampaignConfigs;
 
             Globals.sINI.Clear(Path.Combine(Globals.ConfigDir, Globals.CampaignsINI));
             Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.CampaignsINI), config);
@@ -123,6 +130,9 @@ namespace FaceBERN_
                 Globals.sINI.Clear(Path.Combine(Globals.ConfigDir, state.abbr + ".ini"));
                 Globals.sINI.Save(Path.Combine(Globals.ConfigDir, state.abbr + ".ini"), config);
             }
+
+            /* Enable/disable any checkboxes based on the new settings.  --Kris */
+            LoadCampaignCheckboxes();
 
             buttonApply.Enabled = false;
         }
@@ -202,15 +212,8 @@ namespace FaceBERN_
                         ii--;
                     }
 
-                    /* Dynamically display campaign checkboxes.  --Kris */
-                    displayedCampaignIds = new List<int>();
+                    LoadCampaignCheckboxes();
 
-                    List<CheckBox> campaignCheckboxes = GetCampaignCheckboxes();
-                    foreach (CheckBox checkbox in campaignCheckboxes)
-                    {
-                        tabCampaigns.Controls.Add(checkbox);
-                    }
-                    
                     break;
                 case "facebook":
                     enableFacebankingCheckbox.Checked = (Globals.Config["EnableFacebanking"] == "1" ? true : false);
@@ -234,6 +237,35 @@ namespace FaceBERN_
             }
 
             buttonApply.Enabled = applyEnabled;
+        }
+
+        /* Dynamically display campaign checkboxes.  --Kris */
+        private void LoadCampaignCheckboxes()
+        {
+            ClearCampaignCheckboxes();
+
+            displayedCampaignIds = new List<int>();
+
+            lastAddedCheckboxes = GetCampaignCheckboxes();
+            foreach (CheckBox checkbox in lastAddedCheckboxes)
+            {
+                tabCampaigns.Controls.Add(checkbox);
+            }
+        }
+
+        private void ClearCampaignCheckboxes()
+        {
+            if (lastAddedCheckboxes == null)
+            {
+                return;
+            }
+
+            foreach (CheckBox checkbox in lastAddedCheckboxes)
+            {
+                tabCampaigns.Controls.Remove(checkbox);
+            }
+
+            lastAddedCheckboxes = null;
         }
 
         /* Create and position campaign checkboxes.  Note that a parent campaign must be active for its children to be active; children without an active parent are ignored (fucking PTA).  --Kris */
@@ -262,6 +294,16 @@ namespace FaceBERN_
                 box.Text = campaign.campaignTitle;
                 box.Checked = campaign.userSelected;
                 box.MouseHover += genericCampaignCheckbox_MouseHover;
+                box.CheckedChanged += genericCheckbox_CheckChanged;
+
+                /* Disable a checkbox if its prerequisites aren't met.  --Kris */
+                if ((!(Globals.Config["EnableFacebanking"].Equals("1"))
+                        && campaign.requiresFacebook == true)
+                    || ((!(Globals.Config["EnableTwitter"].Equals("1"))
+                        && campaign.requiresTwitter == true)))
+                {
+                    box.Enabled = false;
+                }
 
                 res.Add(box);
 
@@ -546,6 +588,52 @@ namespace FaceBERN_
                     if (campaign != null && campaign.campaignDescription != null)
                     {
                         toolTip1.SetToolTip(checkbox, campaign.campaignDescription);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Do nothing.  Not worth logging since it's juse a mouseover caption.  --Kris
+            }
+        }
+
+        private void genericCheckbox_CheckChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
+
+            /* Perform any checkbox-specific UI operations.  --Kris */
+            try
+            {
+                CheckBox checkbox = sender as CheckBox;
+                int campaignId;
+                if (int.TryParse(checkbox.Name.Substring(checkboxNamePrefix.Length), out campaignId))
+                {
+                    Campaign campaign = Globals.GetCampaignById(campaignId);
+
+                    if (campaign != null)
+                    {
+                        /* Make any subordinate campaign checkboxes visible/invisible based on whether or not the parent is checked.  --Kris */
+                        for (int i = 0; i < Globals.campaigns.Count; i++)
+                        {
+                            if (Globals.campaigns[i].parentCampaignId == campaignId)
+                            {
+                                string key = checkboxNamePrefix + Globals.campaigns[i].campaignId;
+                                if (tabCampaigns.Controls.ContainsKey(key))
+                                {
+                                    CheckBox subCheckbox = ((CheckBox) tabCampaigns.Controls[key]);
+                                    if (checkbox.Checked == true)
+                                    {
+                                        subCheckbox.Visible = true;
+                                        subCheckbox.Checked = Globals.campaigns[i].approvedByDefault;
+                                    }
+                                    else
+                                    {
+                                        subCheckbox.Visible = false;
+                                        subCheckbox.Checked = false;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

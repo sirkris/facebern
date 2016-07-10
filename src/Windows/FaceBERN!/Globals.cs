@@ -115,6 +115,32 @@ namespace FaceBERN_
             return null;
         }
 
+        /* Set a campaign.  --Kris */
+        public static void SetCampaign(Campaign setCampaign)
+        {
+            List<Campaign> newCampaigns = new List<Campaign>();
+            bool found = false;
+            foreach (Campaign campaign in campaigns)
+            {
+                if (campaign.campaignId == setCampaign.campaignId)
+                {
+                    newCampaigns.Add(setCampaign);
+                    found = true;
+                }
+                else
+                {
+                    newCampaigns.Add(campaign);
+                }
+            }
+
+            if (found == false)
+            {
+                newCampaigns.Add(setCampaign);
+            }
+
+            campaigns = newCampaigns;
+        }
+
         /* Map log names to their respective objects (DEPRECATED).  --Kris */
         public static Log getLogObj(string logName)
         {
