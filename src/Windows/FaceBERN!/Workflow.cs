@@ -554,7 +554,8 @@ namespace FaceBERN_
                     && o["end"] != null)
                 {
                     tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
-                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["tid"] != null ? (int) o["tid"] : 0)));
+                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["campaignId"] != null ? o["campaignId"].ToString() : null),
+                        (o["tid"] != null ? (int)o["tid"] : 0)));
                 }
             }
 
@@ -1174,15 +1175,25 @@ namespace FaceBERN_
                         Log("Facebanking has been disabled.  GOTV skipped.");
                     }
 
-                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    // Deprecated.  --Kris
+                    /*if (Globals.Config["EnableTwitter"].Equals("1"))
                     {
-                        /* Fight back against the media blackout!  --Kris */
+                        // Fight back against the media blackout!  --Kris
                         Twitter();
                     }
                     else
                     {
                         Log("Tweetbanking has been disabled.  Twitter workflow skipped.");
+                    }*/
+
+                    /* Update the tweets queue, if enabled.  --Kris */
+                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    {
+                        UpdateLocalTweetsQueue();
                     }
+
+                    /* Execute any selected campaigns.  --Kris */
+                    ExecuteCampaigns();
 
                     /* Check for updates every 24 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
@@ -1286,8 +1297,58 @@ namespace FaceBERN_
             }
         }
 
+        /* Execute our top-level campaigns.  Sanity checks are performed in each respective campaign method.  Parent campaigns will call their child campaigns directly.  --Kris */
+        // TODO - Move these campaigns someplace else.  --Kris
+        private void ExecuteCampaigns()
+        {
+            Campaign_RunBernieRun();
+        }
+
+        private void Campaign_RunBernieRun()
+        {
+            if (Globals.CampaignConfigs[Globals.CAMPAIGN_RUNBERNIERUN] == false)
+            {
+                Log("The #RunBernieRun campaign is disabled.  Skipped.");
+                return;
+            }
+
+            Log(@"Executing campaign:  #RunBernieRun....");
+
+            Campaign_TweetStillSandersForPres();
+
+            Log(@"Finished executing campaign:  #RunBernieRun.");
+        }
+
+        private void Campaign_TweetStillSandersForPres()
+        {
+            if (Globals.CampaignConfigs[Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES] == false)
+            {
+                Log("The campaign to send tweets from /r/StillSandersForPres is disabled.  Skipped.");
+                return;
+            }
+            else if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                Log("Unable to send tweets from /r/StillSandersForPres because you have Twitter disabled.  Skipped.");
+                return;
+            }
+
+            LoadTwitterCredentialsFromRegistry();
+
+            if (twitterAccessCredentials.IsAssociated() == false)
+            {
+                Log("Warning:  Twitter is enabled but you don't have your Twitter account associated!  Twitter workflow aborted.");
+                Log(@"You can link " + Globals.__APPNAME__ + " to your Twitter account under Tools->Settings.");
+
+                return;
+            }
+
+            LoadTwitterTokens();
+
+            ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+        }
+
         // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
-        private void Twitter()
+        private void Twitter()  // DEPRECATED
         {
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
             {
@@ -1352,13 +1413,8 @@ namespace FaceBERN_
         // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
         private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
         {
-            if (!(Globals.Config["TwitterCampaignRedditS4P"].Equals("1"))
-                && !(Globals.Config["TwitterCampaignRedditPolRev"].Equals("1")))
-            {
-                return new List<TweetsQueue>();
-            }
-
-            List<TweetsQueue> res = GetTweetsFromSubreddit("csReddit");  // TODO - Change to the production subs.  --Kris
+            List<TweetsQueue> res = GetTweetsFromSubreddit("StillSandersForPres", Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+            // TODO - Add more subs when able.  --Kris
 
             if (appendTweetsQueue)
             {
@@ -1384,7 +1440,7 @@ namespace FaceBERN_
             return res;
         }
 
-        private List<TweetsQueue> GetTweetsFromSubreddit(string sub)
+        private List<TweetsQueue> GetTweetsFromSubreddit(string sub, int? campaignId = null)
         {
             if (reddit == null)
             {
@@ -1398,14 +1454,14 @@ namespace FaceBERN_
             foreach (RedditPost redditPost in redditPosts)
             {
                 res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
-                    @"/u/" + redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
+                    @"/u/" + redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3), campaignId));
             }
 
             return res;
         }
 
         /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
-        private void ConsumeTweetsQueue()
+        private void ConsumeTweetsQueue(int? campaignId = null)
         {
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
             {
@@ -1434,6 +1490,13 @@ namespace FaceBERN_
                 {
                     if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
                         || DateTime.Now >= entry.end)
+                    {
+                        continue;
+                    }
+
+                    /* If a campaign ID is passed, ignore anything in the queue without that ID.  --Kris */
+                    if (campaignId != null
+                        && entry.GetCampaignId() != campaignId)
                     {
                         continue;
                     }

@@ -15,12 +15,13 @@ namespace FaceBERN_
         public string enteredBy;
         public DateTime start;
         public DateTime end;
+        public int? campaignId = null;
         public int tid = 0;
         public DateTime? tweeted = null;
 
         public string tweetedBy = null;  // Only used for reporting new tweet to Birdie API.  --Kris
 
-        public TweetsQueue(string tweet, string source, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end, int tid = 0, DateTime? tweeted = null)
+        public TweetsQueue(string tweet, string source, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end, int? campaignId = null, int tid = 0, DateTime? tweeted = null)
         {
             this.tweet = tweet;
             this.source = source;
@@ -29,6 +30,7 @@ namespace FaceBERN_
             this.enteredBy = enteredBy;
             this.start = start;
             this.end = end;
+            this.campaignId = campaignId;
             this.tid = tid;
             this.tweeted = tweeted;
         }
@@ -93,6 +95,16 @@ namespace FaceBERN_
         public void SetStart(DateTime start)
         {
             this.start = start;
+        }
+
+        public int? GetCampaignId()
+        {
+            return campaignId;
+        }
+
+        public void SetCampaignId(int? campaignId)
+        {
+            this.campaignId = campaignId;
         }
 
         public DateTime GetEnd()

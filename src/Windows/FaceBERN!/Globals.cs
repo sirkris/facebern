@@ -95,6 +95,12 @@ namespace FaceBERN_
         public const int PROGRESSBAR_MARQUEE = -1;
         public const int PROGRESSBAR_CONTINUOUS = 0;
 
+        /* Campaign ID constants.  --Kris */
+        public const int CAMPAIGN_RUNBERNIERUN = 1;
+        public const int CAMPAIGN_TWEET_STILLSANDERSFORPRES = 2;
+        public const int CAMPAIGN_TWEET_SANDERSFORPRESIDENT = 3;
+        public const int CAMPAIGN_TWEET_POLITICALREVOLUTION = 4;
+
         /* Application ID.  Used for API calls.  It should be set to null here.  --Kris */
         public static string appId = null;
 
