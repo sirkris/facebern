@@ -94,6 +94,10 @@ namespace FaceBERN_
                     appKey.Close();
                     softwareKey.Close();
 
+#if (DEBUG)
+                    throw e;
+#endif
+
                     Process.Start(Application.ExecutablePath + (args != null ? " " + String.Join(" ", args) : ""));
 
                     System.Threading.Thread.Sleep(3000);
