@@ -189,9 +189,6 @@ namespace FaceBERN_
             Globals.Config.Add("UseFTBEvents", "1");
             Globals.Config.Add("UseCustomEvents", "0");
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
-            Globals.Config.Add("TwitterCampaignRunBernieRun", "1");
-            Globals.Config.Add("TwitterCampaignRedditS4P", "1");
-            Globals.Config.Add("TwitterCampaignRedditPolRev", "1");
             Globals.Config.Add("EnableFacebanking", "1");
             Globals.Config.Add("EnableTwitter", "1");
             Globals.Config.Add("TweetIntervalMinutes", "30");

@@ -93,9 +93,6 @@ namespace FaceBERN_
 
             // Twitter credentials are stored elsewhere, so we just need to set the config values here.  --Kris
             Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
-            Globals.Config["TwitterCampaignRunBernieRun"] = (cRunBernieRunCheckbox.Checked ? "1" : "0");
-            Globals.Config["TwitterCampaignRedditS4P"] = (cMediaBlackoutCompensatorForS4PCheckbox.Checked ? "1" : "0");
-            Globals.Config["TwitterCampaignRedditPolRev"] = (cMediaBlackoutCompensatorForPolRevCheckbox.Checked ? "1" : "0");
 
             Globals.sINI.Save(System.IO.Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
@@ -206,23 +203,12 @@ namespace FaceBERN_
 
         private void ShowCampaignsForm()
         {
-            if (twitterCredentials.IsAssociated())
-            {
-                label5.Visible = true;
-
-                cRunBernieRunCheckbox.Visible = true;
-                cMediaBlackoutCompensatorForS4PCheckbox.Visible = true;
-                cMediaBlackoutCompensatorForPolRevCheckbox.Visible = true;
-            }
+            // DEPRECATED.  --Kris
         }
 
         private void HideCampaignsForm()
         {
-            label5.Visible = false;
-
-            cRunBernieRunCheckbox.Visible = false;
-            cMediaBlackoutCompensatorForS4PCheckbox.Visible = false;
-            cMediaBlackoutCompensatorForPolRevCheckbox.Visible = false;
+            // DEPRECATED. --Kris
         }
 
         private void enableTwitterCheckbox_CheckedChanged(object sender, EventArgs e)

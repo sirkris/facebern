@@ -90,9 +90,6 @@ namespace FaceBERN_
             Globals.Config["UseCustomEvents"] = (useCustomEventsCheckbox.Checked ? "1" : "0");
             Globals.Config["CheckRememberPasswordByDefault"] = (checkRememberPasswordByDefaultCheckbox.Checked ? "1" : "0");
             Globals.Config["AutoUpdate"] = (autoUpdateCheckbox.Checked ? "1" : "0");
-            Globals.Config["TwitterCampaignRunBernieRun"] = (cRunBernieRunCheckbox.Checked ? "1" : "0");
-            Globals.Config["TwitterCampaignRedditS4P"] = (cMediaBlackoutCompensatorForS4PCheckbox.Checked ? "1" : "0");
-            Globals.Config["TwitterCampaignRedditPolRev"] = (cMediaBlackoutCompensatorForPolRevCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableFacebanking"] = (enableFacebankingCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
             Globals.Config["TweetIntervalMinutes"] = tweetIntervalMinutesNumericUpDown.Value.ToString();
@@ -225,9 +222,6 @@ namespace FaceBERN_
                     break;
                 case "twitter":
                     enableTwitterCheckbox.Checked = (Globals.Config["EnableTwitter"] == "1" ? true : false);
-                    cRunBernieRunCheckbox.Checked = (Globals.Config["TwitterCampaignRunBernieRun"] == "1" ? true : false);
-                    cMediaBlackoutCompensatorForS4PCheckbox.Checked = (Globals.Config["TwitterCampaignRedditS4P"] == "1" ? true : false);
-                    cMediaBlackoutCompensatorForPolRevCheckbox.Checked = (Globals.Config["TwitterCampaignRedditPolRev"] == "1" ? true : false);
                     tweetIntervalMinutesNumericUpDown.Value = Decimal.Parse(Globals.Config["TweetIntervalMinutes"]);
 
                     ShowTwitterCredentials();
@@ -458,11 +452,7 @@ namespace FaceBERN_
             {
                 label13.Visible = true;
                 label14.Visible = true;
-                label15.Visible = true;
 
-                cRunBernieRunCheckbox.Visible = true;
-                cMediaBlackoutCompensatorForS4PCheckbox.Visible = true;
-                cMediaBlackoutCompensatorForPolRevCheckbox.Visible = true;
                 button2.Visible = true;
                 tweetIntervalMinutesNumericUpDown.Visible = true;
 
@@ -476,11 +466,7 @@ namespace FaceBERN_
                 label12.Visible = false;
                 label13.Visible = false;
                 label14.Visible = false;
-                label15.Visible = false;
 
-                cRunBernieRunCheckbox.Visible = false;
-                cMediaBlackoutCompensatorForS4PCheckbox.Visible = false;
-                cMediaBlackoutCompensatorForPolRevCheckbox.Visible = false;
                 button2.Visible = false;
                 twitterUsernameTextbox.Visible = false;
                 twitterUserIdTextbox.Visible = false;
@@ -641,21 +627,6 @@ namespace FaceBERN_
             {
                 // Do nothing.  Not worth logging since it's juse a mouseover caption.  --Kris
             }
-        }
-
-        private void cRunBernieRunCheckbox_MouseMove(object sender, EventArgs e)
-        {
-            toolTip1.SetToolTip(cRunBernieRunCheckbox, "Promote a Bernie Sanders candidacy for President of the United States (assuming you're still unhappy about all the election fraud and voter suppression in the Dem primaries).");
-        }
-
-        private void cMediaBlackoutCompensatorForS4PCheckbox_MouseMove(object sender, EventArgs e)
-        {
-            toolTip1.SetToolTip(cMediaBlackoutCompensatorForS4PCheckbox, "Tweet news posts from Reddit /r/SandersForPresident that are flaired by the mods.");
-        }
-
-        private void cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove(object sender, EventArgs e)
-        {
-            toolTip1.SetToolTip(cMediaBlackoutCompensatorForPolRevCheckbox, "Tweet news posts from Reddit /r/Political_Revolution that are flaired by the mods.");
         }
 
         private void button1_Click(object sender, EventArgs e)
