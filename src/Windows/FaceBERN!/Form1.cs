@@ -899,6 +899,12 @@ namespace FaceBERN_
             saveLog(logName, logObj);
         }
 
+        /* Clear the log window.  --Kris */
+        internal void ClearLogW()
+        {
+            this.outBox.Text = "Log window cleared:  " + DateTime.Now.ToString();
+        }
+
         internal void UpdateInvitationsCount(int x = 1, bool clear = false)
         {
             if (!clear)

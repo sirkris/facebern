@@ -55,6 +55,8 @@ namespace FaceBERN_
 
         private List<ExceptionReport> exceptions;
 
+        private DateTime lastLogClear;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             exceptions = new List<ExceptionReport>();
@@ -76,6 +78,8 @@ namespace FaceBERN_
             restClient = new RestClient("http://birdie.freeddns.org");
 
             reddit = new Reddit(false);
+
+            lastLogClear = DateTime.Now;
         }
 
         /* This thread is designed to run continuously while the program is running.  --Kris */
@@ -143,6 +147,34 @@ namespace FaceBERN_
                 System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
 
                 i++;
+            }
+        }
+
+        // Temporary:  Clear the log every 24 hours as possible workaround to access violation exception in the logging function after prolonged execution.  --Kris
+        private void ClearLog()
+        {
+            try
+            {
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { ClearLog(); }));
+                }
+                else
+                {
+                    if (DateTime.Now > lastLogClear.AddHours(24))
+                    {
+                        Main.ClearLogW();
+                        Main.Refresh();
+
+                        lastLogClear = DateTime.Now;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception raised in Workflow ClearLog method.");
             }
         }
 
