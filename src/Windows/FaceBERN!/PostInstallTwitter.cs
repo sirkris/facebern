@@ -54,21 +54,6 @@ namespace FaceBERN_
             }
         }
 
-        private void cRunBernieRunCheckbox_MouseMove(object sender, EventArgs e)
-        {
-            toolTip1.SetToolTip(cRunBernieRunCheckbox, "Promote a Bernie Sanders candidacy for President of the United States (assuming you're still unhappy about all the election fraud and voter suppression in the Dem primaries).");
-        }
-
-        private void cMediaBlackoutCompensatorForS4PCheckbox_MouseMove(object sender, EventArgs e)
-        {
-            toolTip1.SetToolTip(cMediaBlackoutCompensatorForS4PCheckbox, "Tweet news posts from Reddit /r/SandersForPresident that are flaired by the mods.");
-        }
-
-        private void cMediaBlackoutCompensatorForPolRevCheckbox_MouseMove(object sender, EventArgs e)
-        {
-            toolTip1.SetToolTip(cMediaBlackoutCompensatorForPolRevCheckbox, "Tweet news posts from Reddit /r/Political_Revolution that are flaired by the mods.");
-        }
-
         private void button3_Click(object sender, EventArgs e)
         {
             PostInstallFacebook postInstallFacebook = new PostInstallFacebook(Main, appVersion);
