@@ -24,6 +24,7 @@ namespace FaceBERN_
         /* File paths.  --Kris */
         public static string ConfigDir          = @"config";
         public static string MainINI            = __APPNAME__ + @".ini";
+        public static string CampaignsINI       = @"campaigns.ini";
         public static string StatesINIDir       = @"states";
 
         /* How long to wait for an action element to appear before dying.  --Kris */
@@ -53,9 +54,13 @@ namespace FaceBERN_
         public static List<string> bernieFacebookIDs;
         public static bool devOverride = false;  // Enable by holding down the Shift key while clicking Start.  This will force GOTV for all states, regardless of dates or recent prior checks.  --Kris
         public static bool requestedFTBInvite = false;
+        public static List<Campaign> campaigns = null;
 
         /* Global state configs container.  Individual states setup in Form1.SetStateDefaults.  --Kris */
         public static Dictionary<string, States> StateConfigs;
+
+        /* Global campaign configs container used to persist local settings.  The userSelected property corresponds to whether or not the user checked the box for a given campaign.  --Kris */
+        public static Dictionary<int, bool> CampaignConfigs = null;
 
         /* Global singletons.  --Kris */
         public static INI sINI;
@@ -90,11 +95,57 @@ namespace FaceBERN_
         public const int PROGRESSBAR_MARQUEE = -1;
         public const int PROGRESSBAR_CONTINUOUS = 0;
 
+        /* Campaign ID constants.  --Kris */
+        public const int CAMPAIGN_RUNBERNIERUN = 1;
+        public const int CAMPAIGN_TWEET_STILLSANDERSFORPRES = 2;
+        public const int CAMPAIGN_TWEET_SANDERSFORPRESIDENT = 3;
+        public const int CAMPAIGN_TWEET_POLITICALREVOLUTION = 4;
+
         /* Application ID.  Used for API calls.  It should be set to null here.  --Kris */
         public static string appId = null;
 
         /* Nothing says "nonsequitur" quite like "salt".  --Kris */
         public static Random rand = new Random();
+
+        /* Get a campaign by ID.  --Kris */
+        public static Campaign GetCampaignById(int campaignId)
+        {
+            foreach (Campaign campaign in campaigns)
+            {
+                if (campaign.campaignId == campaignId)
+                {
+                    return campaign;
+                }
+            }
+
+            return null;
+        }
+
+        /* Set a campaign.  --Kris */
+        public static void SetCampaign(Campaign setCampaign)
+        {
+            List<Campaign> newCampaigns = new List<Campaign>();
+            bool found = false;
+            foreach (Campaign campaign in campaigns)
+            {
+                if (campaign.campaignId == setCampaign.campaignId)
+                {
+                    newCampaigns.Add(setCampaign);
+                    found = true;
+                }
+                else
+                {
+                    newCampaigns.Add(campaign);
+                }
+            }
+
+            if (found == false)
+            {
+                newCampaigns.Add(setCampaign);
+            }
+
+            campaigns = newCampaigns;
+        }
 
         /* Map log names to their respective objects (DEPRECATED).  --Kris */
         public static Log getLogObj(string logName)

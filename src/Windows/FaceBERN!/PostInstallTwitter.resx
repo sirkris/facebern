@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>If enabled, the client will periodically post tweets on your behalf.  What tweets are sent depends on which "campaigns" below you have selected.  See below for an explanation of each Twitter campaign currently available.
+    <value>If enabled, the client will periodically post tweets on your behalf.  What tweets are sent depends on which "campaigns" (Tools-&gt;Settings)  you have selected.
 
 Unlike Facebook, no web browser is required to use the Twitter features (though you'll need one briefly now in order to grant this app's permissions on your Twitter account).  You can always do this later or make changes by going to Tools-&gt;Settings.</value>
   </data>

@@ -55,6 +55,8 @@ namespace FaceBERN_
 
         private List<ExceptionReport> exceptions;
 
+        private DateTime lastLogClear;
+
         public Workflow(Form1 Main, Log MainLog = null)
         {
             exceptions = new List<ExceptionReport>();
@@ -76,6 +78,8 @@ namespace FaceBERN_
             restClient = new RestClient("http://birdie.freeddns.org");
 
             reddit = new Reddit(false);
+
+            lastLogClear = DateTime.Now;
         }
 
         /* This thread is designed to run continuously while the program is running.  --Kris */
@@ -122,6 +126,9 @@ namespace FaceBERN_
             {
                 /* Send a keep-alive to the Birdie API.  --Kris */
                 KeepAlive();
+
+                /* Update our list of active campaigns.  --Kris */
+                LoadCampaigns();
                 
                 /* Process the remote update queue and send it to Birdie.  --Kris */
                 PostLatestInvites((i == 0));
@@ -140,6 +147,34 @@ namespace FaceBERN_
                 System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
 
                 i++;
+            }
+        }
+
+        // Temporary:  Clear the log every 24 hours as possible workaround to access violation exception in the logging function after prolonged execution.  --Kris
+        private void ClearLog()
+        {
+            try
+            {
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { ClearLog(); }));
+                }
+                else
+                {
+                    if (DateTime.Now > lastLogClear.AddHours(24))
+                    {
+                        Main.ClearLogW();
+                        Main.Refresh();
+
+                        lastLogClear = DateTime.Now;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception raised in Workflow ClearLog method.");
             }
         }
 
@@ -437,7 +472,77 @@ namespace FaceBERN_
             UpdateTweetsCount(myTweets.Value, totalTweets.Value);
         }
 
-        /* Report one or more new tweets to Birdie.  --Kris */
+        /* Get the active campaigns.  --Kris */
+        private void LoadCampaigns()
+        {
+            try
+            {
+                IRestResponse res = BirdieQuery(@"/campaigns?showActiveOnly", "GET");
+
+                if (res != null && res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    Globals.campaigns = BirdieToCampaigns(JsonConvert.DeserializeObject(res.Content));
+
+                    SaveCampaignsToRegistry();
+                }
+                else
+                {
+                    Log("Warning:  Unable to retrieve updated campaigns from Birdie.  Falling back to local cache....");
+
+                    LoadCampaignsFromRegistry();
+                }
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error loading campaigns : " + e.ToString());
+
+                ReportException(e, "Exception thrown loading campaigns.");
+            }
+        }
+
+        /* Grab our latest cache if Birdie API is down.  --Kris */
+        private void LoadCampaignsFromRegistry()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                Globals.campaigns = BirdieToCampaigns(JsonConvert.DeserializeObject((string) appKey.GetValue("campaignsCache")));
+
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error loading campaigns from registry : " + e.ToString());
+
+                ReportException(e, "Exception thrown loading campaigns from registry.");
+            }
+        }
+
+        /* Maintain a local cahce of our current campaigns in case there's an API issue of some kind.  --Kris */
+        private void SaveCampaignsToRegistry()
+        {
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                appKey.SetValue("campaignsCache", JsonConvert.SerializeObject(Globals.campaigns), RegistryValueKind.String);
+
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception e)
+            {
+                Log("Warning:  Error saving campaigns cache to registry : " + e.ToString());
+
+                ReportException(e, "Exception thrown saving campaigns cache to registry.");
+            }
+        }
+
+        /* Report one or more new tweets to Birdie API.  --Kris */
         private void ReportNewTweets(List<TweetsQueue> tweets)
         {
             for (int i = 0; i < tweets.Count; i++)
@@ -481,11 +586,65 @@ namespace FaceBERN_
                     && o["end"] != null)
                 {
                     tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
-                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["tid"] != null ? (int) o["tid"] : 0)));
+                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["campaignId"] != null ? o["campaignId"].ToString() : null),
+                        (o["tid"] != null ? (int)o["tid"] : 0)));
                 }
             }
 
             return tweetsQueue;
+        }
+
+        private List<Campaign> BirdieToCampaigns(dynamic deserializedJSON, bool overwrite = true)
+        {
+            if (overwrite || Globals.campaigns == null)
+            {
+                Globals.campaigns = new List<Campaign>();
+            }
+
+            /* Wait until the configurations are loaded.  --Kris */
+            int i = 150;  // 15 seconds
+            while (Globals.CampaignConfigs == null 
+                && i > 0)
+            {
+                System.Threading.Thread.Sleep(100);
+                i--;
+            }
+
+            foreach (dynamic o in deserializedJSON)
+            {
+                if (o != null
+                    && o["campaignId"] != null
+                    && o["campaignTitle"] != null
+                    && o["createdByAdminUsername"] != null
+                    && o["createdAt"] != null
+                    && o["start"] != null
+                    && o["enabled"] != null
+                    && o["requiresFacebook"] != null
+                    && o["approvedByDefault"] != null
+                    && o["requiresTwitter"] != null)
+                {
+                    bool userSelected;
+                    if (Globals.CampaignConfigs != null && Globals.CampaignConfigs.ContainsKey((int) o["campaignId"]))
+                    {
+                        userSelected = Globals.CampaignConfigs[(int) o["campaignId"]];
+                    }
+                    else
+                    {
+                        userSelected = ((string) o["approvedByDefault"]).Equals("1");
+                    }
+
+                    Campaign addCampaign = new Campaign((int) o["campaignId"], (string) o["campaignTitle"], (string) o["createdByAdminUsername"], (DateTime) o["createdAt"], (DateTime) o["start"],
+                                                (bool) ((string) o["enabled"]).Equals("1"), (bool) ((string) o["requiresFacebook"]).Equals("1"), (bool) ((string) o["requiresTwitter"]).Equals("1"), 
+                                                userSelected, ((string) o["approvedByDefault"]).Equals("1"), (string) o["campaignDescription"], (string) o["campaignURL"], (int?) o["parentCampaignId"], 
+                                                (DateTime?) o["end"]);
+
+                    Globals.campaigns.Add(addCampaign);
+
+                    Globals.CampaignConfigs[(int) o["campaignId"]] = addCampaign.userSelected;
+                }
+            }
+
+            return Globals.campaigns;
         }
 
         /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
@@ -1048,15 +1207,25 @@ namespace FaceBERN_
                         Log("Facebanking has been disabled.  GOTV skipped.");
                     }
 
-                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    // Deprecated.  --Kris
+                    /*if (Globals.Config["EnableTwitter"].Equals("1"))
                     {
-                        /* Fight back against the media blackout!  --Kris */
+                        // Fight back against the media blackout!  --Kris
                         Twitter();
                     }
                     else
                     {
                         Log("Tweetbanking has been disabled.  Twitter workflow skipped.");
+                    }*/
+
+                    /* Update the tweets queue, if enabled.  --Kris */
+                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    {
+                        UpdateLocalTweetsQueue();
                     }
+
+                    /* Execute any selected campaigns.  --Kris */
+                    ExecuteCampaigns();
 
                     /* Check for updates every 24 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
@@ -1160,8 +1329,58 @@ namespace FaceBERN_
             }
         }
 
+        /* Execute our top-level campaigns.  Sanity checks are performed in each respective campaign method.  Parent campaigns will call their child campaigns directly.  --Kris */
+        // TODO - Move these campaigns someplace else.  --Kris
+        private void ExecuteCampaigns()
+        {
+            Campaign_RunBernieRun();
+        }
+
+        private void Campaign_RunBernieRun()
+        {
+            if (Globals.CampaignConfigs[Globals.CAMPAIGN_RUNBERNIERUN] == false)
+            {
+                Log("The #RunBernieRun campaign is disabled.  Skipped.");
+                return;
+            }
+
+            Log(@"Executing campaign:  #RunBernieRun....");
+
+            Campaign_TweetStillSandersForPres();
+
+            Log(@"Finished executing campaign:  #RunBernieRun.");
+        }
+
+        private void Campaign_TweetStillSandersForPres()
+        {
+            if (Globals.CampaignConfigs[Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES] == false)
+            {
+                Log("The campaign to send tweets from /r/StillSandersForPres is disabled.  Skipped.");
+                return;
+            }
+            else if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            {
+                Log("Unable to send tweets from /r/StillSandersForPres because you have Twitter disabled.  Skipped.");
+                return;
+            }
+
+            LoadTwitterCredentialsFromRegistry();
+
+            if (twitterAccessCredentials.IsAssociated() == false)
+            {
+                Log("Warning:  Twitter is enabled but you don't have your Twitter account associated!  Twitter workflow aborted.");
+                Log(@"You can link " + Globals.__APPNAME__ + " to your Twitter account under Tools->Settings.");
+
+                return;
+            }
+
+            LoadTwitterTokens();
+
+            ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+        }
+
         // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
-        private void Twitter()
+        private void Twitter()  // DEPRECATED
         {
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
             {
@@ -1226,13 +1445,8 @@ namespace FaceBERN_
         // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
         private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
         {
-            if (!(Globals.Config["TwitterCampaignRedditS4P"].Equals("1"))
-                && !(Globals.Config["TwitterCampaignRedditPolRev"].Equals("1")))
-            {
-                return new List<TweetsQueue>();
-            }
-
-            List<TweetsQueue> res = GetTweetsFromSubreddit("csReddit");  // TODO - Change to the production subs.  --Kris
+            List<TweetsQueue> res = GetTweetsFromSubreddit("StillSandersForPres", Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+            // TODO - Add more subs when able.  --Kris
 
             if (appendTweetsQueue)
             {
@@ -1258,7 +1472,7 @@ namespace FaceBERN_
             return res;
         }
 
-        private List<TweetsQueue> GetTweetsFromSubreddit(string sub)
+        private List<TweetsQueue> GetTweetsFromSubreddit(string sub, int? campaignId = null)
         {
             if (reddit == null)
             {
@@ -1272,14 +1486,14 @@ namespace FaceBERN_
             foreach (RedditPost redditPost in redditPosts)
             {
                 res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
-                    redditPost.GetAuthor(), redditPost.GetCreated(), redditPost.GetCreated().AddDays(3)));
+                    @"/u/" + redditPost.GetAuthor(), DateTime.Now, DateTime.Now.AddDays(3), campaignId));
             }
 
             return res;
         }
 
         /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
-        private void ConsumeTweetsQueue()
+        private void ConsumeTweetsQueue(int? campaignId = null)
         {
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
             {
@@ -1308,6 +1522,13 @@ namespace FaceBERN_
                 {
                     if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
                         || DateTime.Now >= entry.end)
+                    {
+                        continue;
+                    }
+
+                    /* If a campaign ID is passed, ignore anything in the queue without that ID.  --Kris */
+                    if (campaignId != null
+                        && entry.GetCampaignId() != campaignId)
                     {
                         continue;
                     }
@@ -1414,8 +1635,12 @@ namespace FaceBERN_
             }
 
             LoadTwitterTokens();
+            
+#if (DEBUG)
             Log("DEBUG - " + tweet);
             return true;
+#endif
+            
             TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
             if (res.Result == RequestResult.Success)
             {
