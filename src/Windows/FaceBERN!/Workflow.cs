@@ -1603,8 +1603,12 @@ namespace FaceBERN_
             }
 
             LoadTwitterTokens();
+            
+#if (DEBUG)
             Log("DEBUG - " + tweet);
             return true;
+#endif
+            
             TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
             if (res.Result == RequestResult.Success)
             {
