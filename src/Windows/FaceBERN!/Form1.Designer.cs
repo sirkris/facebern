@@ -64,6 +64,8 @@
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.historyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tweetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -106,6 +108,7 @@
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem1,
             this.toolsToolStripMenuItem1,
+            this.historyToolStripMenuItem,
             this.DEBUGToolStripMenuItem,
             this.helpToolStripMenuItem1});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
@@ -143,7 +146,7 @@
             // 
             this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
@@ -397,6 +400,21 @@
             this.label2.TabIndex = 38;
             this.label2.Text = "Web Browser:";
             // 
+            // historyToolStripMenuItem
+            // 
+            this.historyToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tweetsToolStripMenuItem});
+            this.historyToolStripMenuItem.Name = "historyToolStripMenuItem";
+            this.historyToolStripMenuItem.Size = new System.Drawing.Size(57, 20);
+            this.historyToolStripMenuItem.Text = "History";
+            // 
+            // tweetsToolStripMenuItem
+            // 
+            this.tweetsToolStripMenuItem.Name = "tweetsToolStripMenuItem";
+            this.tweetsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.tweetsToolStripMenuItem.Text = "Tweets";
+            this.tweetsToolStripMenuItem.Click += new System.EventHandler(this.tweetsToolStripMenuItem_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -472,6 +490,8 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ToolStripMenuItem throwExceptionToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem executeInstallerToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem historyToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem tweetsToolStripMenuItem;
     }
 }
 

@@ -569,13 +569,14 @@ namespace FaceBERN_
             ReportNewTweets(new List<TweetsQueue> { tweet });
         }
 
-        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true)
+        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true, bool returnOnly = false)
         {
             if (overwrite || tweetsQueue == null)
             {
                 tweetsQueue = new List<TweetsQueue>();
             }
 
+            List<TweetsQueue> res = new List<TweetsQueue>();
             foreach (dynamic o in deserializedJSON)
             {
                 if (o != null
@@ -585,13 +586,27 @@ namespace FaceBERN_
                     && o["start"] != null
                     && o["end"] != null)
                 {
-                    tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
-                        o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["campaignId"] != null ? o["campaignId"].ToString() : null),
-                        (o["tid"] != null ? (int)o["tid"] : 0)));
+                    try
+                    {
+                        res.Add(new TweetsQueue(o["tweet"].ToString(), (o["source"] != null ? o["source"].ToString() : "Birdie"), null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
+                            o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (int?) (o["campaignId"] != null ? o["campaignId"] : null),
+                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null)));
+                    }
+                    catch (Exception e)
+                    {
+                        Log("Warning:  Unable to import tweets queue from Birdie API : " + e.ToString());
+
+                        ReportException(e, "Warning:  Unable to import tweets queue from Birdie API.");
+                    }
                 }
             }
 
-            return tweetsQueue;
+            if (returnOnly == false)
+            {
+                tweetsQueue.AddRange(res);
+            }
+
+            return res;
         }
 
         private List<Campaign> BirdieToCampaigns(dynamic deserializedJSON, bool overwrite = true)
@@ -893,6 +908,31 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Birdie API query error : " + e.Message);
+                return null;
+            }
+        }
+
+        internal List<TweetsQueue> GetTweetsHistoryFromBirdie()
+        {
+            try
+            {
+                IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + Globals.appId + @"&verbose", "GET");
+
+                if (res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content), false, true);
+                }
+                else
+                {
+                    Log("Warning:  Bad response from API for GetTweetsHistoryFromBirdie() : " + res.StatusDescription);
+
+                    return null;
+                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Warning:  Failed to retrieve tweets history from Birdie.");
+
                 return null;
             }
         }
@@ -1480,12 +1520,12 @@ namespace FaceBERN_
             }
 
             // No need to login to Reddit since all we're doing is a search.  --Kris
-            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("Tweet This!", sub, "all");
+            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("Tweet This!", sub, campaignId, "month");
 
             List<TweetsQueue> res = new List<TweetsQueue>();
             foreach (RedditPost redditPost in redditPosts)
             {
-                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
+                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", @"http://www.reddit.com" + redditPost.permalink, DateTime.Now, redditPost.GetCreated(),
                     @"/u/" + redditPost.GetAuthor(), DateTime.Now, DateTime.Now.AddDays(3), campaignId));
             }
 
@@ -1561,23 +1601,23 @@ namespace FaceBERN_
         }
 
         /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
-        private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, string t = "day", bool? self = null)
+        private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, int? campaignId = null, string t = "day", bool? self = null)
         {
             if (self == null)
             {
                 List<RedditPost> res = new List<RedditPost>();
-                res.AddRange(SearchSubredditForFlairPosts(flair, sub, t, false));
-                res.AddRange(SearchSubredditForFlairPosts(flair, sub, t, true));
+                res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, false));
+                res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, true));
 
                 return res;
             }
             else
             {
-                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub));
+                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub), sub, campaignId);
             }
         }
 
-        private List<RedditPost> ParseRedditPosts(dynamic redditObj)
+        private List<RedditPost> ParseRedditPosts(dynamic redditObj, string sub = null, int? campaignId = null)
         {
             List<RedditPost> res = new List<RedditPost>();
 
@@ -1591,14 +1631,22 @@ namespace FaceBERN_
                 if (o != null
                     && o["data"] != null
                     && o["data"]["title"] != null
+                    && o["data"]["subreddit"] != null
                     && o["data"]["url"] != null
+                    && o["data"]["permalink"] != null
                     && o["data"]["score"] != null 
                     && o["data"]["created"] != null)
                 {
+                    /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
+                    if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
+                    {
+                        continue;
+                    }
+
                     try
                     {
-                        res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["url"].ToString(),
-                            (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), (string) o["data"]["selftext"]));
+                        res.Add(new RedditPost((bool)o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(), o["data"]["permalink"].ToString(), 
+                            (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), (string) o["data"]["selftext"], campaignId));
                     }
                     catch (Exception e)
                     {
@@ -3414,6 +3462,12 @@ namespace FaceBERN_
 
                 Main.Refresh();
             }
+        }
+
+        private void LogAndReportException(Exception e, string text, bool show = true)
+        {
+            Log(text);
+            ReportException(e, text);
         }
 
         private void InitLog()

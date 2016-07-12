@@ -172,6 +172,34 @@ namespace FaceBERN_
             return log;
         }
 
+        /* Campaign ID to logged name mappings.  --Kris */
+        public static string[] CampaignNames()
+        {
+            string[] names = new string[32767];
+
+            names[CAMPAIGN_RUNBERNIERUN] = @"#RunBernieRun";
+            names[CAMPAIGN_TWEET_POLITICALREVOLUTION] = @"Tweet from /r/Political_Revolution";
+            names[CAMPAIGN_TWEET_SANDERSFORPRESIDENT] = @"Tweet from /r/SandersForPresident";
+            names[CAMPAIGN_TWEET_STILLSANDERSFORPRES] = @"#RunBernieRun::Tweet from /r/StillSandersForPres";
+
+            return names;
+        }
+
+        /* Get the string logged name for a given campaign constant.  --Kris */
+        public static string CampaignName(int? campaignId)
+        {
+            if (campaignId == null)
+            {
+                return null;
+            }
+            else
+            {
+                string[] names = CampaignNames();
+
+                return names[campaignId.Value];
+            }
+        }
+
         /* List browser names indexed by constant.  --Kris */
         public static string[] BrowserNames()
         {
