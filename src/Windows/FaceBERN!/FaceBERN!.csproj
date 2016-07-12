@@ -285,6 +285,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="TweetsHistory.resx">
+      <DependentUpon>TweetsHistory.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="TwitPin.resx">
       <DependentUpon>TwitPin.cs</DependentUpon>
     </EmbeddedResource>

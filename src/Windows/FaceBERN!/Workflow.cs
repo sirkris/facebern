@@ -569,13 +569,14 @@ namespace FaceBERN_
             ReportNewTweets(new List<TweetsQueue> { tweet });
         }
 
-        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true)
+        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true, bool returnOnly = false)
         {
             if (overwrite || tweetsQueue == null)
             {
                 tweetsQueue = new List<TweetsQueue>();
             }
 
+            List<TweetsQueue> res = new List<TweetsQueue>();
             foreach (dynamic o in deserializedJSON)
             {
                 if (o != null
@@ -587,9 +588,9 @@ namespace FaceBERN_
                 {
                     try
                     {
-                        tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
+                        res.Add(new TweetsQueue(o["tweet"].ToString(), (o["source"] != null ? o["source"].ToString() : "Birdie"), null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
                             o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (int?) (o["campaignId"] != null ? o["campaignId"] : null),
-                            (o["tid"] != null ? (int) o["tid"] : 0)));
+                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null)));
                     }
                     catch (Exception e)
                     {
@@ -600,7 +601,12 @@ namespace FaceBERN_
                 }
             }
 
-            return tweetsQueue;
+            if (returnOnly == false)
+            {
+                tweetsQueue.AddRange(res);
+            }
+
+            return res;
         }
 
         private List<Campaign> BirdieToCampaigns(dynamic deserializedJSON, bool overwrite = true)
@@ -902,6 +908,31 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 Log("Warning:  Birdie API query error : " + e.Message);
+                return null;
+            }
+        }
+
+        internal List<TweetsQueue> GetTweetsHistoryFromBirdie()
+        {
+            try
+            {
+                IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + Globals.appId + @"&verbose", "GET");
+
+                if (res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content), false, true);
+                }
+                else
+                {
+                    Log("Warning:  Bad response from API for GetTweetsHistoryFromBirdie() : " + res.StatusDescription);
+
+                    return null;
+                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Warning:  Failed to retrieve tweets history from Birdie.");
+
                 return null;
             }
         }
@@ -3431,6 +3462,12 @@ namespace FaceBERN_
 
                 Main.Refresh();
             }
+        }
+
+        private void LogAndReportException(Exception e, string text, bool show = true)
+        {
+            Log(text);
+            ReportException(e, text);
         }
 
         private void InitLog()

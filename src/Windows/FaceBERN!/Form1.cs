@@ -1172,5 +1172,11 @@ namespace FaceBERN_
         {
             ExecuteInstaller();
         }
+
+        private void tweetsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TweetsHistory tweetsHistory = new TweetsHistory(this);
+            tweetsHistory.Show();
+        }
     }
 }
