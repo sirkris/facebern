@@ -17,8 +17,9 @@ namespace FaceBERN_
         public DateTime created;
         public string author;
         public string selfText = null;
+        public int? campaignId = null;
 
-        public RedditPost(bool self, string title, string subreddit, string url, string permalink, int score, DateTime created, string author, string selfText = null)
+        public RedditPost(bool self, string title, string subreddit, string url, string permalink, int score, DateTime created, string author, string selfText = null, int? campaignId = null)
         {
             this.self = self;
             this.title = title;
@@ -29,6 +30,7 @@ namespace FaceBERN_
             this.created = created;
             this.author = author;
             this.selfText = selfText;
+            this.campaignId = campaignId;
         }
 
         public RedditPost() { }
@@ -121,6 +123,16 @@ namespace FaceBERN_
         public void SetSelfText(string selfText)
         {
             this.selfText = selfText;
+        }
+
+        public int? GetCampaignID()
+        {
+            return campaignId;
+        }
+
+        public void SetCampaignId(int? campaignId)
+        {
+            this.campaignId = campaignId;
         }
     }
 }
