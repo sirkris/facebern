@@ -10,17 +10,21 @@ namespace FaceBERN_
     {
         public bool self;
         public string title;
+        public string subreddit;
         public string url;
+        public string permalink;
         public int score;
         public DateTime created;
         public string author;
         public string selfText = null;
 
-        public RedditPost(bool self, string title, string url, int score, DateTime created, string author, string selfText = null)
+        public RedditPost(bool self, string title, string subreddit, string url, string permalink, int score, DateTime created, string author, string selfText = null)
         {
             this.self = self;
             this.title = title;
+            this.subreddit = subreddit;
             this.url = url;
+            this.permalink = permalink;
             this.score = score;
             this.created = created;
             this.author = author;
@@ -49,6 +53,16 @@ namespace FaceBERN_
             this.title = title;
         }
 
+        public string GetSubreddit()
+        {
+            return subreddit;
+        }
+
+        public void SetSubreddit(string subreddit)
+        {
+            this.subreddit = subreddit;
+        }
+
         public string GetURL()
         {
             return url;
@@ -57,6 +71,16 @@ namespace FaceBERN_
         public void SetURL(string url)
         {
             this.url = url;
+        }
+
+        public string GetPermalink()
+        {
+            return permalink;
+        }
+
+        public void SetPermalink(string permalink)
+        {
+            this.permalink = permalink;
         }
 
         public int GetScore()

@@ -10,6 +10,7 @@ namespace FaceBERN_
     {
         public string tweet;
         public string source;
+        public string sourceURI;
         public DateTime discovered;
         public DateTime entered;
         public string enteredBy;
@@ -21,10 +22,12 @@ namespace FaceBERN_
 
         public string tweetedBy = null;  // Only used for reporting new tweet to Birdie API.  --Kris
 
-        public TweetsQueue(string tweet, string source, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end, int? campaignId = null, int tid = 0, DateTime? tweeted = null)
+        public TweetsQueue(string tweet, string source, string sourceURI, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end, 
+            int? campaignId = null, int tid = 0, DateTime? tweeted = null)
         {
             this.tweet = tweet;
             this.source = source;
+            this.sourceURI = sourceURI;
             this.discovered = discovered;
             this.entered = entered;
             this.enteredBy = enteredBy;
@@ -55,6 +58,16 @@ namespace FaceBERN_
         public void SetSource(string source)
         {
             this.source = source;
+        }
+
+        public string GetSourceURI()
+        {
+            return sourceURI;
+        }
+
+        public void SetSourceURI(string sourceURI)
+        {
+            this.sourceURI = sourceURI;
         }
 
         public DateTime GetDiscovered()

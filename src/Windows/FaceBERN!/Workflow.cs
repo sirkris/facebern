@@ -585,7 +585,7 @@ namespace FaceBERN_
                     && o["start"] != null
                     && o["end"] != null)
                 {
-                    tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", DateTime.Now, DateTime.Parse(o["entered"].ToString()),
+                    tweetsQueue.Add(new TweetsQueue(o["tweet"].ToString(), "Birdie", null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
                         o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (o["campaignId"] != null ? o["campaignId"].ToString() : null),
                         (o["tid"] != null ? (int)o["tid"] : 0)));
                 }
@@ -1485,7 +1485,7 @@ namespace FaceBERN_
             List<TweetsQueue> res = new List<TweetsQueue>();
             foreach (RedditPost redditPost in redditPosts)
             {
-                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", DateTime.Now, redditPost.GetCreated(),
+                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", @"http://www.reddit.com" + redditPost.permalink, DateTime.Now, redditPost.GetCreated(),
                     @"/u/" + redditPost.GetAuthor(), DateTime.Now, DateTime.Now.AddDays(3), campaignId));
             }
 
@@ -1573,11 +1573,11 @@ namespace FaceBERN_
             }
             else
             {
-                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub));
+                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub), sub);
             }
         }
 
-        private List<RedditPost> ParseRedditPosts(dynamic redditObj)
+        private List<RedditPost> ParseRedditPosts(dynamic redditObj, string sub = null)
         {
             List<RedditPost> res = new List<RedditPost>();
 
@@ -1591,13 +1591,21 @@ namespace FaceBERN_
                 if (o != null
                     && o["data"] != null
                     && o["data"]["title"] != null
+                    && o["data"]["subreddit"] != null
                     && o["data"]["url"] != null
+                    && o["data"]["permalink"] != null
                     && o["data"]["score"] != null 
                     && o["data"]["created"] != null)
                 {
+                    /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
+                    if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
+                    {
+                        continue;
+                    }
+
                     try
                     {
-                        res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["url"].ToString(),
+                        res.Add(new RedditPost((bool)o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(), o["data"]["permalink"].ToString(), 
                             (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), (string) o["data"]["selftext"]));
                     }
                     catch (Exception e)
