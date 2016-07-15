@@ -100,53 +100,69 @@ namespace FaceBERN_
         }
 
         /* Responsible for any background communications, such as interfacing with the Birdie API to periodically update the invited totals.  --Kris */
-        public void ExecuteInterCom()
+        public void ExecuteInterCom(bool skipStartup = false)
         {
-            DateTime start = DateTime.Now;
-
-            invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
-
-            /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
-            if (CheckClientRegistration() == false)
+            try
             {
-                RegisterClient();
+                DateTime start = DateTime.Now;
 
-                System.Threading.Thread.Sleep(5000);
+                if (skipStartup == false)
+                {
+                    invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
+
+                    /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
+                    if (CheckClientRegistration() == false)
+                    {
+                        RegisterClient();
+
+                        System.Threading.Thread.Sleep(5000);
+                    }
+
+                    /* Load any invitations persisted in the registry from a previous run.  --Kris */
+                    LoadLatestInvitesQueue();
+
+                    /* If we relaunched due to an unhandled exception, log/report it.  --Kris */
+                    ReportPreRecoveryError();
+                }
+
+                /* The main InterCom loop.  --Kris */
+                int i = 0;
+                while (true)
+                {
+                    /* Send a keep-alive to the Birdie API.  --Kris */
+                    KeepAlive();
+
+                    /* Update our list of active campaigns.  --Kris */
+                    LoadCampaigns();
+
+                    /* Process the remote update queue and send it to Birdie.  --Kris */
+                    PostLatestInvites((i == 0));
+
+                    /* Update our local invitations count for both ours and remote.  --Kris */
+                    UpdateRemoteInvitesCount();
+                    invited = GetInvitedPeople();
+                    UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+
+                    /* Update our local tweets count for both ours and remote.  --Kris */
+                    UpdateRemoteTweetsCount();
+
+                    /* Update our local count for both active users and total users.  --Kris */
+                    UpdateRemoteUsers();
+
+                    System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
+
+                    i++;
+                }
             }
-
-            /* Load any invitations persisted in the registry from a previous run.  --Kris */
-            LoadLatestInvitesQueue();
-
-            /* If we relaunched due to an unhandled exception, log/report it.  --Kris */
-            ReportPreRecoveryError();
-
-            /* The main InterCom loop.  --Kris */
-            int i = 0;
-            while (true)
+            catch (Exception e)
             {
-                /* Send a keep-alive to the Birdie API.  --Kris */
-                KeepAlive();
+                LogAndReportException(e, "Unhandled exception in InterCOM thread.");
 
-                /* Update our list of active campaigns.  --Kris */
-                LoadCampaigns();
-                
-                /* Process the remote update queue and send it to Birdie.  --Kris */
-                PostLatestInvites((i == 0));
+                System.Threading.Thread.Sleep(30000);
 
-                /* Update our local invitations count for both ours and remote.  --Kris */
-                UpdateRemoteInvitesCount();
-                invited = GetInvitedPeople();
-                UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+                Log("Restarting InterCOM....");
 
-                /* Update our local tweets count for both ours and remote.  --Kris */
-                UpdateRemoteTweetsCount();
-
-                /* Update our local count for both active users and total users.  --Kris */
-                UpdateRemoteUsers();
-
-                System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
-
-                i++;
+                ExecuteInterCom(true);
             }
         }
 
@@ -955,34 +971,45 @@ namespace FaceBERN_
 
         public void ExecuteShutdown(Thread workflowThread)
         {
-            Log("Aborting Workflow thread....");
-
-            workflowThread.Abort();
-
-            int i = 600;
-            while (workflowThread.IsAlive && i > 0)
+            try
             {
-                System.Threading.Thread.Sleep(1000);
+                Log("Aborting Workflow thread....");
 
-                i--;
-                if (i > 0 && i % 30 == 0)
+                workflowThread.Abort();
+
+                int i = 600;
+                while (workflowThread.IsAlive && i > 0)
                 {
-                    Log("Still waiting for Workflow thread to abort....");
+                    System.Threading.Thread.Sleep(1000);
+
+                    i--;
+                    if (i > 0 && i % 30 == 0)
+                    {
+                        Log("Still waiting for Workflow thread to abort....");
+                    }
+                }
+
+                if (workflowThread.IsAlive)
+                {
+                    Log("ERROR!  Unable to shutdown Workflow thread!");
+
+                    SetExecState(Globals.STATE_BROKEN);
+                }
+                else
+                {
+                    Log("Workflow thread aborted successfully!");
+
+                    Main.Invoke(new MethodInvoker(delegate() { Main.buttonStart_ToStart(); }));
+                    Main.Invoke(new MethodInvoker(delegate() { Main.Ready(); }));
                 }
             }
-
-            if (workflowThread.IsAlive)
+            catch (Exception e)
             {
-                Log("ERROR!  Unable to shutdown Workflow thread!");
+                LogAndReportException(e, "Unhandled exception in Shutdown thread.");
+
+                Log("Workflow broken!  Please restart Birdie.");
 
                 SetExecState(Globals.STATE_BROKEN);
-            }
-            else
-            {
-                Log("Workflow thread aborted successfully!");
-
-                Main.Invoke(new MethodInvoker(delegate() { Main.buttonStart_ToStart(); }));
-                Main.Invoke(new MethodInvoker(delegate() { Main.Ready(); }));
             }
         }
 
@@ -1004,13 +1031,20 @@ namespace FaceBERN_
 
         public void ExecuteTwitterAuth(int browser)
         {
-            Log("Commencing Twitter authorization workflow....");
+            try
+            {
+                Log("Commencing Twitter authorization workflow....");
 
-            AuthorizeTwitter(browser);
+                AuthorizeTwitter(browser);
 
-            Log("Twitter authorization complete!");
+                Log("Twitter authorization complete!");
 
-            Ready();
+                Ready();
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Unhandled exception in TwitterAuth thread.");
+            }
         }
 
         private void LoadTwitterCredentialsFromRegistry()
@@ -1365,7 +1399,7 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                Log("Warning:  Error reporting exception : " + e.ToString());
+                Log("Warning:  Error reporting exception : " + e.ToString(), true, true, true, true, true, true);
             }
         }
 
@@ -3476,7 +3510,7 @@ namespace FaceBERN_
             WorkflowLog.Init(logName);
         }
 
-        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
+        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true, bool breakOnFailure = false)
         {
             try
             {
@@ -3502,7 +3536,22 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                ReportException(e, "Exception raised in Workflow Log method.");
+                if (breakOnFailure)
+                {
+                    // To prevent infinite recursion.  --Kris
+                    try
+                    {
+                        SetExecState(Globals.STATE_BROKEN);
+                    }
+                    catch (Exception)
+                    {
+                        // Just let it go.  --Kris
+                    }
+                }
+                else
+                {
+                    ReportException(e, "Exception raised in Workflow Log method.");
+                }
             }
         }
 
