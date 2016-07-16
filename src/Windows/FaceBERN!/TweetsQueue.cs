@@ -19,11 +19,14 @@ namespace FaceBERN_
         public int? campaignId = null;
         public int tid = 0;
         public DateTime? tweeted = null;
+        public string twitterStatusId = null;
 
         public string tweetedBy = null;  // Only used for reporting new tweet to Birdie API.  --Kris
 
-        public TweetsQueue(string tweet, string source, string sourceURI, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end, 
-            int? campaignId = null, int tid = 0, DateTime? tweeted = null)
+        public int failures = 0;  // Increments whenever it attempts to tweet but fails.  --Kris
+
+        public TweetsQueue(string tweet, string source, string sourceURI, DateTime discovered, DateTime entered, string enteredBy, DateTime start, DateTime end,
+            int? campaignId = null, int tid = 0, DateTime? tweeted = null, string statusId = null)
         {
             this.tweet = tweet;
             this.source = source;
@@ -33,9 +36,11 @@ namespace FaceBERN_
             this.enteredBy = enteredBy;
             this.start = start;
             this.end = end;
+
             this.campaignId = campaignId;
             this.tid = tid;
             this.tweeted = tweeted;
+            this.twitterStatusId = statusId;
         }
 
         public TweetsQueue() { }
@@ -158,6 +163,31 @@ namespace FaceBERN_
         public void SetTweetedBy(string tweetedBy)
         {
             this.tweetedBy = tweetedBy;
+        }
+
+        public string GetStatusID()
+        {
+            return twitterStatusId;
+        }
+
+        public void SetStatusID(string statusId)
+        {
+            this.twitterStatusId = statusId;
+        }
+
+        public int GetFailures()
+        {
+            return failures;
+        }
+
+        public void SetFailures(int failures)
+        {
+            this.failures = failures;
+        }
+
+        public void IncrementFailures()
+        {
+            this.failures++;
         }
     }
 }

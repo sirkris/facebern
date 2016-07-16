@@ -606,7 +606,7 @@ namespace FaceBERN_
                     {
                         res.Add(new TweetsQueue(o["tweet"].ToString(), (o["source"] != null ? o["source"].ToString() : "Birdie"), null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
                             o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (int?) (o["campaignId"] != null ? o["campaignId"] : null),
-                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null)));
+                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null), (string) o["twitterStatusId"]));
                     }
                     catch (Exception e)
                     {
@@ -692,6 +692,36 @@ namespace FaceBERN_
             IRestResponse res = BirdieQuery(@"/twitter/tweetsQueue?showActiveOnly&showQueueFor=" + GetAppID(), "GET");
 
             tweetsQueue = BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content));
+
+            /* Grab any local data from the registry.  --Kris */
+            List<TweetsQueue> localTweetsQueue;
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                localTweetsQueue = JsonConvert.DeserializeObject<List<TweetsQueue>>((string) twitterKey.GetValue("tweetsQueue", new List<TweetsQueue>()));
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception)
+            {
+                localTweetsQueue = new List<TweetsQueue>();
+            }
+
+            foreach (TweetsQueue entry in localTweetsQueue)
+            {
+                for ( int i = 0; i < tweetsQueue.Count; i++ )
+                {
+                    if (tweetsQueue[i].GetTweet() == entry.GetTweet())
+                    {
+                        tweetsQueue[i].SetFailures(entry.GetFailures());
+                    }
+                }
+            }
 
             /* Get any tweets from Reddit, if enabled.  --Kris */
             GetTweetsFromReddit();
@@ -1389,18 +1419,34 @@ namespace FaceBERN_
             }
         }
 
-        private void ReportException(Exception ex, string logMsg = null)
+        private void ReportException(Exception ex, string logMsg = null, bool silent = false)
         {
             try
             {
-                Log("Reporting exception....");
+                if (!(silent))
+                {
+                    Log("Reporting exception....");
+                }
 
                 exceptions.Add(new ExceptionReport(Main, ex, logMsg));
             }
             catch (Exception e)
             {
-                Log("Warning:  Error reporting exception : " + e.ToString(), true, true, true, true, true, true);
+                if (!(silent))
+                {
+                    Log("Warning:  Error reporting exception : " + e.ToString(), true, true, true, true, true, true);
+                }
             }
+        }
+
+        internal void ReportExceptionSilently(Exception ex, string logMsg = null)
+        {
+            try
+            {
+                ReportException(ex, logMsg, true);
+            }
+            catch (Exception)
+            { }
         }
 
         /* Execute our top-level campaigns.  Sanity checks are performed in each respective campaign method.  Parent campaigns will call their child campaigns directly.  --Kris */
@@ -1581,7 +1627,8 @@ namespace FaceBERN_
                 && tweetsHistory != null
                 && tweetsHistory.Count > 0
                 && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
-                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now)
+                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now 
+                && Globals.devOverride != true)
             {
                 return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
             }
@@ -1591,6 +1638,7 @@ namespace FaceBERN_
             if (tweetsQueue != null && tweetsQueue.Count > 0)
             {
                 List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
+                TweetsQueue appendTweetsQueue = null;
                 bool tweeted = false;
                 foreach (TweetsQueue entry in tweetsQueue)
                 {
@@ -1610,15 +1658,26 @@ namespace FaceBERN_
                     if (!(tweeted) 
                         && DateTime.Now >= entry.start)
                     {
-                        if (Tweet(entry.tweet))  // Perform the actual tweet.  --Kris
+                        string statusId;
+                        if (Tweet(entry.tweet, out statusId))  // Perform the actual tweet.  --Kris
                         {
+                            entry.SetStatusID(statusId);
                             AppendTweetsHistory(entry);
                         }
                         else
                         {
                             Log("Warning:  Unable to tweet from queue.  Will try again later.");
 
-                            newTweetsQueue.Add(entry);
+                            entry.IncrementFailures();
+
+                            if (entry.GetFailures() > 1)
+                            {
+                                Log("Warning:  Repeated failures on this tweet.  Removed from queue.");
+                            }
+                            else
+                            {
+                                appendTweetsQueue = entry;  // Move it to the bottom of the queue so it won't block others.  TODO - Still comes first?!  Investigate when I have time.  --Kris
+                            }
                         }
 
                         tweeted = true;
@@ -1627,6 +1686,11 @@ namespace FaceBERN_
                     {
                         newTweetsQueue.Add(entry);
                     }
+                }
+
+                if (appendTweetsQueue != null)
+                {
+                    newTweetsQueue.Add(appendTweetsQueue);
                 }
 
                 tweetsQueue = newTweetsQueue;
@@ -1729,8 +1793,10 @@ namespace FaceBERN_
         }
 
         /* Post a tweet.  --Kris */
-        private bool Tweet(string tweet)
+        private bool Tweet(string tweet, out string statusId)
         {
+            statusId = null;
+
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
             {
                 Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
@@ -1766,8 +1832,55 @@ namespace FaceBERN_
             {
                 Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
             }
+
+            /* Get the ID of the tweet.  This is necessary in order to give the user the option to delete ("undo") the tweet later.  Would be nice if they included it in the API result....  --Kris */
+            TwitterStatusCollection coll = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
+            foreach (TwitterStatus status in coll)
+            {
+                string checkTweet = status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/"));  // TODO - Strip out all links and compare.  --Kris
+                if (tweet.IndexOf(checkTweet) != -1)
+                {
+                    statusId = status.Id.ToString();
+                    break;
+                }
+            }
             
             return (res.Result == RequestResult.Success);
+        }
+
+        internal bool DeleteTweet(string twitterStatusId)
+        {
+            try
+            {
+                TwitterResponse<TwitterStatus> res = TwitterStatus.Delete(twitterTokens, decimal.Parse(twitterStatusId));
+                if (res.Result == RequestResult.Success)
+                {
+                    /* Now that the tweet is deleted from Twitter, update the Birdie API.  --Kris */
+                    IRestResponse bRes = BirdieQuery(@"/twitter/tweets", "DELETE", null, JsonConvert.SerializeObject(new Dictionary<string, string> { { "twitterStatusId", twitterStatusId } }));
+
+                    if (bRes.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    {
+                        MessageBox.Show("Tweet deleted successfully!");
+
+                        return true;
+                    }
+                    else
+                    {
+                        throw new Exception("Tweet deleted successfully from Twitter, but not history.");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Error deleting tweet; Twitter API returned non-success response in result : " + JsonConvert.SerializeObject(res));
+                }
+            }
+            catch (Exception e)
+            {
+                ReportExceptionSilently(e, "Error deleting tweet : " + twitterStatusId);
+
+                MessageBox.Show("Error deleting tweet (" + twitterStatusId + ")!");
+                return false;
+            }
         }
 
         /* This function is used for testing Twitter integration.  Not currently used by any production workflows.  --Kris */
