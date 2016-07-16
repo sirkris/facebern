@@ -47,11 +47,11 @@ namespace FaceBERN_
                 }
                 else
                 {
+                    tweetsLogListView.Items.Clear();
+
                     int i = 0;
                     foreach (TweetsQueue entry in Enumerable.Reverse(history))
                     {
-                        tweetsLogListView.Items.Clear();
-
                         tweetsLogListView.Items.Add(new ListViewItem(new[] { entry.GetTweeted().Value.ToString(), entry.GetTweet(), Globals.CampaignName(entry.GetCampaignId()), 
                         entry.GetSource(), ( entry.GetStatusID() != null ? "Undo" : "" ) }));
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].UseItemStyleForSubItems = false;
