@@ -35,15 +35,18 @@
             this.colCampaign = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.colSource = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.button1 = new System.Windows.Forms.Button();
+            this.colUndo = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // tweetsLogListView
             // 
+            this.tweetsLogListView.Activation = System.Windows.Forms.ItemActivation.OneClick;
             this.tweetsLogListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colDate,
             this.colTweet,
             this.colCampaign,
-            this.colSource});
+            this.colSource,
+            this.colUndo});
             this.tweetsLogListView.Location = new System.Drawing.Point(12, 12);
             this.tweetsLogListView.Name = "tweetsLogListView";
             this.tweetsLogListView.Size = new System.Drawing.Size(960, 607);
@@ -69,7 +72,7 @@
             // colSource
             // 
             this.colSource.Text = "Source";
-            this.colSource.Width = 136;
+            this.colSource.Width = 86;
             // 
             // button1
             // 
@@ -80,6 +83,11 @@
             this.button1.Text = "Close";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // colUndo
+            // 
+            this.colUndo.Text = "";
+            this.colUndo.Width = 50;
             // 
             // TweetsHistory
             // 
@@ -105,5 +113,6 @@
         private System.Windows.Forms.ColumnHeader colCampaign;
         private System.Windows.Forms.ColumnHeader colSource;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.ColumnHeader colUndo;
     }
 }

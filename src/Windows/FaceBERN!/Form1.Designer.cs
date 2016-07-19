@@ -38,6 +38,8 @@
             this.exitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.historyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tweetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.throwExceptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -64,8 +66,8 @@
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.historyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.tweetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.twitterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.deleteTweetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -146,16 +148,32 @@
             // 
             this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            // 
+            // historyToolStripMenuItem
+            // 
+            this.historyToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tweetsToolStripMenuItem});
+            this.historyToolStripMenuItem.Name = "historyToolStripMenuItem";
+            this.historyToolStripMenuItem.Size = new System.Drawing.Size(57, 20);
+            this.historyToolStripMenuItem.Text = "History";
+            // 
+            // tweetsToolStripMenuItem
+            // 
+            this.tweetsToolStripMenuItem.Name = "tweetsToolStripMenuItem";
+            this.tweetsToolStripMenuItem.Size = new System.Drawing.Size(111, 22);
+            this.tweetsToolStripMenuItem.Text = "Tweets";
+            this.tweetsToolStripMenuItem.Click += new System.EventHandler(this.tweetsToolStripMenuItem_Click);
             // 
             // DEBUGToolStripMenuItem
             // 
             this.DEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.launchPostInstallerToolStripMenuItem,
             this.throwExceptionToolStripMenuItem,
-            this.executeInstallerToolStripMenuItem});
+            this.executeInstallerToolStripMenuItem,
+            this.twitterToolStripMenuItem});
             this.DEBUGToolStripMenuItem.Name = "DEBUGToolStripMenuItem";
             this.DEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
             this.DEBUGToolStripMenuItem.Text = "DEBUG";
@@ -400,20 +418,20 @@
             this.label2.TabIndex = 38;
             this.label2.Text = "Web Browser:";
             // 
-            // historyToolStripMenuItem
+            // twitterToolStripMenuItem
             // 
-            this.historyToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tweetsToolStripMenuItem});
-            this.historyToolStripMenuItem.Name = "historyToolStripMenuItem";
-            this.historyToolStripMenuItem.Size = new System.Drawing.Size(57, 20);
-            this.historyToolStripMenuItem.Text = "History";
+            this.twitterToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.deleteTweetToolStripMenuItem});
+            this.twitterToolStripMenuItem.Name = "twitterToolStripMenuItem";
+            this.twitterToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.twitterToolStripMenuItem.Text = "API";
             // 
-            // tweetsToolStripMenuItem
+            // deleteTweetToolStripMenuItem
             // 
-            this.tweetsToolStripMenuItem.Name = "tweetsToolStripMenuItem";
-            this.tweetsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.tweetsToolStripMenuItem.Text = "Tweets";
-            this.tweetsToolStripMenuItem.Click += new System.EventHandler(this.tweetsToolStripMenuItem_Click);
+            this.deleteTweetToolStripMenuItem.Name = "deleteTweetToolStripMenuItem";
+            this.deleteTweetToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.deleteTweetToolStripMenuItem.Text = "Delete Tweet";
+            this.deleteTweetToolStripMenuItem.Click += new System.EventHandler(this.deleteTweetToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -439,12 +457,14 @@
             this.Controls.Add(this.pictureBox1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Birdie Client for Windows";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Shown += new System.EventHandler(this.Form1_Shown);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -492,6 +512,8 @@
         private System.Windows.Forms.ToolStripMenuItem executeInstallerToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem historyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tweetsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem twitterToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem deleteTweetToolStripMenuItem;
     }
 }
 

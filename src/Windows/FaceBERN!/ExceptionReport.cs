@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -25,6 +26,7 @@ namespace FaceBERN_
         public string source = null;
         public string type = null;
         public DateTime discovered;
+        public Dictionary<dynamic, dynamic> data;
 
         public string logMsg = null;
 
@@ -33,6 +35,11 @@ namespace FaceBERN_
         private string lastLogMsg = null;
 
         public ExceptionReport(Form1 Main, Exception ex, string logMsg = null, bool autoSend = true)
+        {
+            ExInit(Main, ex, logMsg, autoSend);
+        }
+
+        public void ExInit(Form1 Main, Exception ex, string logMsg = null, bool autoSend = true)
         {
             this.Main = Main;
             this.ex = ex;
@@ -44,6 +51,14 @@ namespace FaceBERN_
                 this.source = ex.Source;
                 this.type = ex.GetType().ToString();
                 this.discovered = DateTime.Now;
+                if (ex.Data != null && ex.Data.Count > 0)
+                {
+                    this.data = new Dictionary<dynamic, dynamic>();
+                    foreach (DictionaryEntry pair in ex.Data)
+                    {
+                        this.data.Add(pair.Key, pair.Value);
+                    }
+                }
 
                 this.logMsg = logMsg;
             }
@@ -84,6 +99,17 @@ namespace FaceBERN_
                 body.Add("exStackTrace", stackTrace);
                 body.Add("exSource", source);
                 body.Add("exToString", ex.ToString());
+                if (data != null)
+                {
+                    try
+                    {
+                        body.Add("exData", JsonConvert.SerializeObject(data));
+                    }
+                    catch (Exception e)
+                    {
+                        Log("Warning:  Unable to serialize data for exception report : " + e.ToString());
+                    }
+                }
                 body.Add("logMsg", logMsg);
                 body.Add("appName", @"FaceBERN!");
                 body.Add("clientId", workflow.GetAppID());

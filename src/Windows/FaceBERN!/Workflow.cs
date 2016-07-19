@@ -53,6 +53,9 @@ namespace FaceBERN_
         private List<TweetsQueue> tweetsQueue = null;
         private List<TweetsQueue> tweetsHistory = null;
 
+        private TwitterStatusCollection twitterTimelineCache = null;
+        private DateTime? twitterTimelineCacheLastRefresh = null;
+
         private List<ExceptionReport> exceptions;
 
         private DateTime lastLogClear;
@@ -100,53 +103,69 @@ namespace FaceBERN_
         }
 
         /* Responsible for any background communications, such as interfacing with the Birdie API to periodically update the invited totals.  --Kris */
-        public void ExecuteInterCom()
+        public void ExecuteInterCom(bool skipStartup = false)
         {
-            DateTime start = DateTime.Now;
-
-            invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
-
-            /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
-            if (CheckClientRegistration() == false)
+            try
             {
-                RegisterClient();
+                DateTime start = DateTime.Now;
 
-                System.Threading.Thread.Sleep(5000);
+                if (skipStartup == false)
+                {
+                    invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
+
+                    /* Register FaceBERN! with the Birdie API if it's not already.  --Kris */
+                    if (CheckClientRegistration() == false)
+                    {
+                        RegisterClient();
+
+                        System.Threading.Thread.Sleep(5000);
+                    }
+
+                    /* Load any invitations persisted in the registry from a previous run.  --Kris */
+                    LoadLatestInvitesQueue();
+
+                    /* If we relaunched due to an unhandled exception, log/report it.  --Kris */
+                    ReportPreRecoveryError();
+                }
+
+                /* The main InterCom loop.  --Kris */
+                int i = 0;
+                while (true)
+                {
+                    /* Send a keep-alive to the Birdie API.  --Kris */
+                    KeepAlive();
+
+                    /* Update our list of active campaigns.  --Kris */
+                    LoadCampaigns();
+
+                    /* Process the remote update queue and send it to Birdie.  --Kris */
+                    PostLatestInvites((i == 0));
+
+                    /* Update our local invitations count for both ours and remote.  --Kris */
+                    UpdateRemoteInvitesCount();
+                    invited = GetInvitedPeople();
+                    UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+
+                    /* Update our local tweets count for both ours and remote.  --Kris */
+                    UpdateRemoteTweetsCount();
+
+                    /* Update our local count for both active users and total users.  --Kris */
+                    UpdateRemoteUsers();
+
+                    System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
+
+                    i++;
+                }
             }
-
-            /* Load any invitations persisted in the registry from a previous run.  --Kris */
-            LoadLatestInvitesQueue();
-
-            /* If we relaunched due to an unhandled exception, log/report it.  --Kris */
-            ReportPreRecoveryError();
-
-            /* The main InterCom loop.  --Kris */
-            int i = 0;
-            while (true)
+            catch (Exception e)
             {
-                /* Send a keep-alive to the Birdie API.  --Kris */
-                KeepAlive();
+                LogAndReportException(e, "Unhandled exception in InterCOM thread.");
 
-                /* Update our list of active campaigns.  --Kris */
-                LoadCampaigns();
-                
-                /* Process the remote update queue and send it to Birdie.  --Kris */
-                PostLatestInvites((i == 0));
+                System.Threading.Thread.Sleep(30000);
 
-                /* Update our local invitations count for both ours and remote.  --Kris */
-                UpdateRemoteInvitesCount();
-                invited = GetInvitedPeople();
-                UpdateInvitationsCount(invited.Count, remoteInvitesSent);
+                Log("Restarting InterCOM....");
 
-                /* Update our local tweets count for both ours and remote.  --Kris */
-                UpdateRemoteTweetsCount();
-
-                /* Update our local count for both active users and total users.  --Kris */
-                UpdateRemoteUsers();
-
-                System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
-
-                i++;
+                ExecuteInterCom(true);
             }
         }
 
@@ -590,7 +609,7 @@ namespace FaceBERN_
                     {
                         res.Add(new TweetsQueue(o["tweet"].ToString(), (o["source"] != null ? o["source"].ToString() : "Birdie"), null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
                             o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (int?) (o["campaignId"] != null ? o["campaignId"] : null),
-                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null)));
+                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null), (string) o["twitterStatusId"]));
                     }
                     catch (Exception e)
                     {
@@ -676,6 +695,36 @@ namespace FaceBERN_
             IRestResponse res = BirdieQuery(@"/twitter/tweetsQueue?showActiveOnly&showQueueFor=" + GetAppID(), "GET");
 
             tweetsQueue = BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content));
+
+            /* Grab any local data from the registry.  --Kris */
+            List<TweetsQueue> localTweetsQueue;
+            try
+            {
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
+
+                localTweetsQueue = JsonConvert.DeserializeObject<List<TweetsQueue>>((string) twitterKey.GetValue("tweetsQueue", new List<TweetsQueue>()));
+
+                twitterKey.Close();
+                appKey.Close();
+                softwareKey.Close();
+            }
+            catch (Exception)
+            {
+                localTweetsQueue = new List<TweetsQueue>();
+            }
+
+            foreach (TweetsQueue entry in localTweetsQueue)
+            {
+                for ( int i = 0; i < tweetsQueue.Count; i++ )
+                {
+                    if (tweetsQueue[i].GetTweet() == entry.GetTweet())
+                    {
+                        tweetsQueue[i].SetFailures(entry.GetFailures());
+                    }
+                }
+            }
 
             /* Get any tweets from Reddit, if enabled.  --Kris */
             GetTweetsFromReddit();
@@ -937,6 +986,35 @@ namespace FaceBERN_
             }
         }
 
+        internal bool UpdateBirdieTwitterStatusIDs(List<TweetsQueue> history)
+        {
+            try
+            {
+                IRestResponse res = BirdieQuery(@"/twitter/tweets", "PUT", null, JsonConvert.SerializeObject(history));  // API ignores everything except tid and twitterStatusId for PUT.  --Kris
+
+                if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+                {
+                    return true;  // Query succeeded and one or more records were updated.  --Kris
+                }
+                else if (res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return true;  // Query succeeded but no records needed to be updated, either because they don't exist or because the value didn't change.  --Kris
+                }
+                else
+                {
+                    Log("Warning:  Bad response from API for UpdateBirdieTwitterStatusIDs() : " + res.StatusDescription);
+
+                    return false;  // Query failed.  --Kris
+                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Warning:  Failed to update tweets history to Birdie.");
+
+                return false;
+            }
+        }
+
         public Thread ExecuteShutdownThread(Thread workflowThread)
         {
             SetExecState(Globals.STATE_STOPPING);
@@ -955,34 +1033,45 @@ namespace FaceBERN_
 
         public void ExecuteShutdown(Thread workflowThread)
         {
-            Log("Aborting Workflow thread....");
-
-            workflowThread.Abort();
-
-            int i = 600;
-            while (workflowThread.IsAlive && i > 0)
+            try
             {
-                System.Threading.Thread.Sleep(1000);
+                Log("Aborting Workflow thread....");
 
-                i--;
-                if (i > 0 && i % 30 == 0)
+                workflowThread.Abort();
+
+                int i = 600;
+                while (workflowThread.IsAlive && i > 0)
                 {
-                    Log("Still waiting for Workflow thread to abort....");
+                    System.Threading.Thread.Sleep(1000);
+
+                    i--;
+                    if (i > 0 && i % 30 == 0)
+                    {
+                        Log("Still waiting for Workflow thread to abort....");
+                    }
+                }
+
+                if (workflowThread.IsAlive)
+                {
+                    Log("ERROR!  Unable to shutdown Workflow thread!");
+
+                    SetExecState(Globals.STATE_BROKEN);
+                }
+                else
+                {
+                    Log("Workflow thread aborted successfully!");
+
+                    Main.Invoke(new MethodInvoker(delegate() { Main.buttonStart_ToStart(); }));
+                    Main.Invoke(new MethodInvoker(delegate() { Main.Ready(); }));
                 }
             }
-
-            if (workflowThread.IsAlive)
+            catch (Exception e)
             {
-                Log("ERROR!  Unable to shutdown Workflow thread!");
+                LogAndReportException(e, "Unhandled exception in Shutdown thread.");
+
+                Log("Workflow broken!  Please restart Birdie.");
 
                 SetExecState(Globals.STATE_BROKEN);
-            }
-            else
-            {
-                Log("Workflow thread aborted successfully!");
-
-                Main.Invoke(new MethodInvoker(delegate() { Main.buttonStart_ToStart(); }));
-                Main.Invoke(new MethodInvoker(delegate() { Main.Ready(); }));
             }
         }
 
@@ -1004,13 +1093,20 @@ namespace FaceBERN_
 
         public void ExecuteTwitterAuth(int browser)
         {
-            Log("Commencing Twitter authorization workflow....");
+            try
+            {
+                Log("Commencing Twitter authorization workflow....");
 
-            AuthorizeTwitter(browser);
+                AuthorizeTwitter(browser);
 
-            Log("Twitter authorization complete!");
+                Log("Twitter authorization complete!");
 
-            Ready();
+                Ready();
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Unhandled exception in TwitterAuth thread.");
+            }
         }
 
         private void LoadTwitterCredentialsFromRegistry()
@@ -1355,18 +1451,34 @@ namespace FaceBERN_
             }
         }
 
-        private void ReportException(Exception ex, string logMsg = null)
+        private void ReportException(Exception ex, string logMsg = null, bool silent = false)
         {
             try
             {
-                Log("Reporting exception....");
+                if (!(silent))
+                {
+                    Log("Reporting exception....");
+                }
 
                 exceptions.Add(new ExceptionReport(Main, ex, logMsg));
             }
             catch (Exception e)
             {
-                Log("Warning:  Error reporting exception : " + e.ToString());
+                if (!(silent))
+                {
+                    Log("Warning:  Error reporting exception : " + e.ToString(), true, true, true, true, true, true);
+                }
             }
+        }
+
+        internal void ReportExceptionSilently(Exception ex, string logMsg = null)
+        {
+            try
+            {
+                ReportException(ex, logMsg, true);
+            }
+            catch (Exception)
+            { }
         }
 
         /* Execute our top-level campaigns.  Sanity checks are performed in each respective campaign method.  Parent campaigns will call their child campaigns directly.  --Kris */
@@ -1547,7 +1659,8 @@ namespace FaceBERN_
                 && tweetsHistory != null
                 && tweetsHistory.Count > 0
                 && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
-                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now)
+                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now 
+                && Globals.devOverride != true)
             {
                 return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
             }
@@ -1557,6 +1670,7 @@ namespace FaceBERN_
             if (tweetsQueue != null && tweetsQueue.Count > 0)
             {
                 List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
+                TweetsQueue appendTweetsQueue = null;
                 bool tweeted = false;
                 foreach (TweetsQueue entry in tweetsQueue)
                 {
@@ -1576,15 +1690,26 @@ namespace FaceBERN_
                     if (!(tweeted) 
                         && DateTime.Now >= entry.start)
                     {
-                        if (Tweet(entry.tweet))  // Perform the actual tweet.  --Kris
+                        string statusId;
+                        if (Tweet(entry.tweet, out statusId))  // Perform the actual tweet.  --Kris
                         {
+                            entry.SetStatusID(statusId);
                             AppendTweetsHistory(entry);
                         }
                         else
                         {
                             Log("Warning:  Unable to tweet from queue.  Will try again later.");
 
-                            newTweetsQueue.Add(entry);
+                            entry.IncrementFailures();
+
+                            if (entry.GetFailures() > 1)
+                            {
+                                Log("Warning:  Repeated failures on this tweet.  Removed from queue.");
+                            }
+                            else
+                            {
+                                appendTweetsQueue = entry;  // Move it to the bottom of the queue so it won't block others.  TODO - Still comes first?!  Investigate when I have time.  --Kris
+                            }
                         }
 
                         tweeted = true;
@@ -1593,6 +1718,11 @@ namespace FaceBERN_
                     {
                         newTweetsQueue.Add(entry);
                     }
+                }
+
+                if (appendTweetsQueue != null)
+                {
+                    newTweetsQueue.Add(appendTweetsQueue);
                 }
 
                 tweetsQueue = newTweetsQueue;
@@ -1619,50 +1749,86 @@ namespace FaceBERN_
 
         private List<RedditPost> ParseRedditPosts(dynamic redditObj, string sub = null, int? campaignId = null)
         {
-            List<RedditPost> res = new List<RedditPost>();
-
-            if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
+            try
             {
-                return res;  // No results.  --Kris
-            }
+                List<RedditPost> res = new List<RedditPost>();
 
-            foreach (dynamic o in redditObj["data"]["children"])
-            {
-                if (o != null
-                    && o["data"] != null
-                    && o["data"]["title"] != null
-                    && o["data"]["subreddit"] != null
-                    && o["data"]["url"] != null
-                    && o["data"]["permalink"] != null
-                    && o["data"]["score"] != null 
-                    && o["data"]["created"] != null)
+                if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
                 {
-                    /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
-                    if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
-                    {
-                        continue;
-                    }
+                    return res;  // No results.  --Kris
+                }
+
+                int i = 0;
+                foreach (dynamic o in redditObj["data"]["children"])
+                {
+                    i++;
 
                     try
                     {
-                        res.Add(new RedditPost((bool)o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(), o["data"]["permalink"].ToString(), 
-                            (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), (string) o["data"]["selftext"], campaignId));
+                        if (o != null
+                            && o["data"] != null
+                            && o["data"]["title"] != null
+                            && o["data"]["subreddit"] != null
+                            && o["data"]["url"] != null
+                            && o["data"]["permalink"] != null
+                            && o["data"]["score"] != null
+                            && o["data"]["created"] != null)
+                        {
+                            /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
+                            if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
+                            {
+                                continue;
+                            }
+
+                            try
+                            {
+                                res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(), 
+                                    o["data"]["permalink"].ToString(), (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), 
+                                    (string) o["data"]["selftext"], campaignId));
+                            }
+                            catch (Exception e)
+                            {
+                                Log("Warning:  Error parsing Reddit post : " + e.ToString());
+
+                                ReportException(e, "Error parsing Reddit post.");
+                            }
+                        }
                     }
                     catch (Exception e)
                     {
-                        Log("Warning:  Error parsing Reddit post : " + e.ToString());
-
-                        ReportException(e, "Error parsing Reddit post.");
+                        try
+                        {
+                            LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where o = " + JsonConvert.SerializeObject(o) + ".");
+                        }
+                        catch (Exception)
+                        {
+                            try
+                            {
+                                LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where i = " + i.ToString() + "; unable to serialize object o.");
+                            }
+                            catch (Exception)
+                            {
+                                // Just forget it.  No point logging it without any useful information.  --Kris
+                            }
+                        }
                     }
                 }
-            }
 
-            return res;
+                return res;
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Exception in ParseRedditPosts.");
+
+                return null;
+            }
         }
 
         /* Post a tweet.  --Kris */
-        private bool Tweet(string tweet)
+        private bool Tweet(string tweet, out string statusId)
         {
+            statusId = null;
+
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
             {
                 Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
@@ -1698,8 +1864,123 @@ namespace FaceBERN_
             {
                 Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
             }
+
+            /* Get the ID of the tweet.  This is necessary in order to give the user the option to delete ("undo") the tweet later.  Would be nice if they included it in the API result....  --Kris */
+            statusId = GetTwitterStatusId(tweet);
             
             return (res.Result == RequestResult.Success);
+        }
+
+        internal string GetTwitterStatusId(string tweet)
+        {
+            TwitterStatusCollection coll = GetTwitterUserTimeline();
+            foreach (TwitterStatus status in coll)
+            {
+                // TODO - Strip out all links and compare.  --Kris
+                string checkTweet = ( status.Text.LastIndexOf(@"https://t.co/") != -1 ? status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/")) : status.Text );
+                if (tweet.IndexOf(checkTweet) != -1)
+                {
+                    return status.Id.ToString();
+                }
+            }
+
+            return null;
+        }
+
+        private TwitterStatusCollection GetTwitterUserTimeline()
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return null;
+            }
+
+            LoadTwitterTokens(true);
+
+            if (twitterTimelineCache == null || twitterTimelineCacheLastRefresh == null
+                || twitterTimelineCacheLastRefresh.Value.AddMinutes(Globals.__TWITTER_TIMELINE_CACHE_SHELF_LIFE__) <= DateTime.Now)
+            {
+                twitterTimelineCache = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
+                twitterTimelineCacheLastRefresh = DateTime.Now;
+            }
+
+            return twitterTimelineCache;
+        }
+
+        internal bool DeleteTweet(string twitterStatusId, bool apiOnly = false)
+        {
+            TwitterResponse<TwitterStatus> res = null;
+
+            try
+            {
+                bool doApi;
+                if (!(apiOnly))
+                {
+                    LoadTwitterCredentialsFromRegistry();
+
+                    if (twitterAccessCredentials.IsAssociated() == false)
+                    {
+                        MessageBox.Show("Unable to delete tweet because that account is no longer associated with " + Globals.__APPNAME__ + @"!");
+                        return false;
+                    }
+
+                    LoadTwitterTokens();
+
+                    res = TwitterStatus.Delete(twitterTokens, decimal.Parse(twitterStatusId));
+
+                    doApi = (res.Result == RequestResult.Success);
+                }
+                else
+                {
+                    doApi = true;
+                }
+
+                if (doApi)
+                {
+                    /* Now that the tweet is deleted from Twitter, update the Birdie API.  --Kris */
+                    IRestResponse bRes = BirdieQuery(@"/twitter/tweets", "DELETE", null, JsonConvert.SerializeObject(new Dictionary<string, string> { 
+                                                                                                                            { "twitterStatusId", twitterStatusId }, 
+                                                                                                                            { "tweetedBy", Globals.appId } 
+                                                                                                                        }));
+
+                    if (bRes.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    {
+                        MessageBox.Show("Tweet deleted successfully!");
+
+                        return true;
+                    }
+                    else
+                    {
+                        Exception ex;
+                        if (apiOnly)
+                        {
+                            ex = new Exception("Birdie API query to delete tweet from history failed.  No attempt was made to delete it from Twitter.");
+                        }
+                        else
+                        {
+                            ex = new Exception("Tweet deleted successfully from Twitter, but not history.");
+                        }
+
+                        try
+                        {
+                            ex.Data.Add("bRes", JsonConvert.SerializeObject(bRes));
+                        }
+                        catch (Exception) { }
+
+                        throw ex;
+                    }
+                }
+                else
+                {
+                    throw new Exception("Error deleting tweet; Twitter API returned non-success response in result : " + JsonConvert.SerializeObject(res));
+                }
+            }
+            catch (Exception e)
+            {
+                ReportExceptionSilently(e, "Error deleting tweet : " + twitterStatusId);
+
+                MessageBox.Show("Error deleting tweet (" + twitterStatusId + ")!");
+                return false;
+            }
         }
 
         /* This function is used for testing Twitter integration.  Not currently used by any production workflows.  --Kris */
@@ -1721,18 +2002,21 @@ namespace FaceBERN_
             return TwitterTimeline.UserTimeline(twitterTokens, userTimelineOptions);
         }
 
-        private bool LoadTwitterTokens()
+        private bool LoadTwitterTokens(bool onlyIfNull = false)
         {
             if (!(TwitterIsAuthorized()))
             {
                 return false;
             }
 
-            twitterTokens = new OAuthTokens();
-            twitterTokens.ConsumerKey = twitterConsumerKey;
-            twitterTokens.ConsumerSecret = twitterConsumerSecret;
-            twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
-            twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+            if (twitterTokens == null || onlyIfNull == false)
+            {
+                twitterTokens = new OAuthTokens();
+                twitterTokens.ConsumerKey = twitterConsumerKey;
+                twitterTokens.ConsumerSecret = twitterConsumerSecret;
+                twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
+                twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+            }
 
             return true;
         }
@@ -3476,7 +3760,7 @@ namespace FaceBERN_
             WorkflowLog.Init(logName);
         }
 
-        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true)
+        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true, bool breakOnFailure = false)
         {
             try
             {
@@ -3502,7 +3786,22 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                ReportException(e, "Exception raised in Workflow Log method.");
+                if (breakOnFailure)
+                {
+                    // To prevent infinite recursion.  --Kris
+                    try
+                    {
+                        SetExecState(Globals.STATE_BROKEN);
+                    }
+                    catch (Exception)
+                    {
+                        // Just let it go.  --Kris
+                    }
+                }
+                else
+                {
+                    ReportException(e, "Exception raised in Workflow Log method.");
+                }
             }
         }
 
