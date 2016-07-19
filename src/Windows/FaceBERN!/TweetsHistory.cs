@@ -39,6 +39,7 @@ namespace FaceBERN_
             try
             {
                 history = workflow.GetTweetsHistoryFromBirdie();
+                List<TweetsQueue> history_remote = history;
 
                 if (history == null || history.Count == 0)
                 {
@@ -49,11 +50,29 @@ namespace FaceBERN_
                 {
                     tweetsLogListView.Items.Clear();
 
+                    for (int ii = 0; ii < history.Count; ii++)
+                    {
+                        history[ii].SetStatusID(workflow.GetTwitterStatusId(history[ii].GetTweet()));
+                    }
+
+                    /* Use this opportunity to update Birdie API with the status IDs.  --Kris */
+                    bool undoOk = workflow.UpdateBirdieTwitterStatusIDs(history);
+
                     int i = 0;
                     foreach (TweetsQueue entry in Enumerable.Reverse(history))
                     {
+                        TweetsQueue entryRemote = null;  // If statusId update fails, only show Undo for tweets that already have a statusId in the database record.  --Kris
+                        for (int ii = 0; ii < history_remote.Count; ii++)
+                        {
+                            if (history_remote[ii].GetTID() == entry.GetTID())
+                            {
+                                entryRemote = history_remote[ii];
+                                break;
+                            }
+                        }
+
                         tweetsLogListView.Items.Add(new ListViewItem(new[] { entry.GetTweeted().Value.ToString(), entry.GetTweet(), Globals.CampaignName(entry.GetCampaignId()), 
-                        entry.GetSource(), ( entry.GetStatusID() != null ? "Undo" : "" ) }));
+                        entry.GetSource(), ( entry.GetStatusID() != null && (undoOk || (entryRemote != null && entryRemote.GetStatusID() != null)) ? "Undo" : "" ) }));
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].UseItemStyleForSubItems = false;
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].Tag = JsonConvert.SerializeObject(new List<string> { entry.GetStatusID(), entry.GetTweet() });
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].ForeColor = Color.Blue;

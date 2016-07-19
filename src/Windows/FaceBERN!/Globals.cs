@@ -42,6 +42,9 @@ namespace FaceBERN_
         /* How long to wait between each iteration fo the main InterCom loop.  --Kris */
         public static int __INTERCOM_WAIT_INTERVAL__ = 4;  // Minutes
 
+        /* How old the Twitter user timeline cache can get before it needs to be refreshed.  --Kris */
+        public static int __TWITTER_TIMELINE_CACHE_SHELF_LIFE__ = 2;  // Minutes
+
         /*
          * -- END GLOBAL SETTINGS --
          */

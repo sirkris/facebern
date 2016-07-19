@@ -180,6 +180,12 @@
     </Compile>
     <Compile Include="Campaign.cs" />
     <Compile Include="Credentials.cs" />
+    <Compile Include="DebugTextForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DebugTextForm.Designer.cs">
+      <DependentUpon>DebugTextForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ExceptionReport.cs" />
     <Compile Include="FacebookUser.cs" />
     <Compile Include="Form1.cs">
@@ -252,6 +258,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="About.resx">
       <DependentUpon>About.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DebugTextForm.resx">
+      <DependentUpon>DebugTextForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>

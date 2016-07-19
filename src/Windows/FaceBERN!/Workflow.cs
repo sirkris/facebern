@@ -53,6 +53,9 @@ namespace FaceBERN_
         private List<TweetsQueue> tweetsQueue = null;
         private List<TweetsQueue> tweetsHistory = null;
 
+        private TwitterStatusCollection twitterTimelineCache = null;
+        private DateTime? twitterTimelineCacheLastRefresh = null;
+
         private List<ExceptionReport> exceptions;
 
         private DateTime lastLogClear;
@@ -983,6 +986,35 @@ namespace FaceBERN_
             }
         }
 
+        internal bool UpdateBirdieTwitterStatusIDs(List<TweetsQueue> history)
+        {
+            try
+            {
+                IRestResponse res = BirdieQuery(@"/twitter/tweets", "PUT", null, JsonConvert.SerializeObject(history));  // API ignores everything except tid and twitterStatusId for PUT.  --Kris
+
+                if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+                {
+                    return true;  // Query succeeded and one or more records were updated.  --Kris
+                }
+                else if (res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return true;  // Query succeeded but no records needed to be updated, either because they don't exist or because the value didn't change.  --Kris
+                }
+                else
+                {
+                    Log("Warning:  Bad response from API for UpdateBirdieTwitterStatusIDs() : " + res.StatusDescription);
+
+                    return false;  // Query failed.  --Kris
+                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Warning:  Failed to update tweets history to Birdie.");
+
+                return false;
+            }
+        }
+
         public Thread ExecuteShutdownThread(Thread workflowThread)
         {
             SetExecState(Globals.STATE_STOPPING);
@@ -1834,29 +1866,81 @@ namespace FaceBERN_
             }
 
             /* Get the ID of the tweet.  This is necessary in order to give the user the option to delete ("undo") the tweet later.  Would be nice if they included it in the API result....  --Kris */
-            TwitterStatusCollection coll = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
-            foreach (TwitterStatus status in coll)
-            {
-                string checkTweet = status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/"));  // TODO - Strip out all links and compare.  --Kris
-                if (tweet.IndexOf(checkTweet) != -1)
-                {
-                    statusId = status.Id.ToString();
-                    break;
-                }
-            }
+            statusId = GetTwitterStatusId(tweet);
             
             return (res.Result == RequestResult.Success);
         }
 
-        internal bool DeleteTweet(string twitterStatusId)
+        internal string GetTwitterStatusId(string tweet)
         {
+            TwitterStatusCollection coll = GetTwitterUserTimeline();
+            foreach (TwitterStatus status in coll)
+            {
+                // TODO - Strip out all links and compare.  --Kris
+                string checkTweet = ( status.Text.LastIndexOf(@"https://t.co/") != -1 ? status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/")) : status.Text );
+                if (tweet.IndexOf(checkTweet) != -1)
+                {
+                    return status.Id.ToString();
+                }
+            }
+
+            return null;
+        }
+
+        private TwitterStatusCollection GetTwitterUserTimeline()
+        {
+            if (!(TwitterIsAuthorized()))
+            {
+                return null;
+            }
+
+            LoadTwitterTokens(true);
+
+            if (twitterTimelineCache == null || twitterTimelineCacheLastRefresh == null
+                || twitterTimelineCacheLastRefresh.Value.AddMinutes(Globals.__TWITTER_TIMELINE_CACHE_SHELF_LIFE__) <= DateTime.Now)
+            {
+                twitterTimelineCache = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
+                twitterTimelineCacheLastRefresh = DateTime.Now;
+            }
+
+            return twitterTimelineCache;
+        }
+
+        internal bool DeleteTweet(string twitterStatusId, bool apiOnly = false)
+        {
+            TwitterResponse<TwitterStatus> res = null;
+
             try
             {
-                TwitterResponse<TwitterStatus> res = TwitterStatus.Delete(twitterTokens, decimal.Parse(twitterStatusId));
-                if (res.Result == RequestResult.Success)
+                bool doApi;
+                if (!(apiOnly))
+                {
+                    LoadTwitterCredentialsFromRegistry();
+
+                    if (twitterAccessCredentials.IsAssociated() == false)
+                    {
+                        MessageBox.Show("Unable to delete tweet because that account is no longer associated with " + Globals.__APPNAME__ + @"!");
+                        return false;
+                    }
+
+                    LoadTwitterTokens();
+
+                    res = TwitterStatus.Delete(twitterTokens, decimal.Parse(twitterStatusId));
+
+                    doApi = (res.Result == RequestResult.Success);
+                }
+                else
+                {
+                    doApi = true;
+                }
+
+                if (doApi)
                 {
                     /* Now that the tweet is deleted from Twitter, update the Birdie API.  --Kris */
-                    IRestResponse bRes = BirdieQuery(@"/twitter/tweets", "DELETE", null, JsonConvert.SerializeObject(new Dictionary<string, string> { { "twitterStatusId", twitterStatusId } }));
+                    IRestResponse bRes = BirdieQuery(@"/twitter/tweets", "DELETE", null, JsonConvert.SerializeObject(new Dictionary<string, string> { 
+                                                                                                                            { "twitterStatusId", twitterStatusId }, 
+                                                                                                                            { "tweetedBy", Globals.appId } 
+                                                                                                                        }));
 
                     if (bRes.StatusCode == System.Net.HttpStatusCode.NoContent)
                     {
@@ -1866,7 +1950,23 @@ namespace FaceBERN_
                     }
                     else
                     {
-                        throw new Exception("Tweet deleted successfully from Twitter, but not history.");
+                        Exception ex;
+                        if (apiOnly)
+                        {
+                            ex = new Exception("Birdie API query to delete tweet from history failed.  No attempt was made to delete it from Twitter.");
+                        }
+                        else
+                        {
+                            ex = new Exception("Tweet deleted successfully from Twitter, but not history.");
+                        }
+
+                        try
+                        {
+                            ex.Data.Add("bRes", JsonConvert.SerializeObject(bRes));
+                        }
+                        catch (Exception) { }
+
+                        throw ex;
                     }
                 }
                 else
@@ -1902,18 +2002,21 @@ namespace FaceBERN_
             return TwitterTimeline.UserTimeline(twitterTokens, userTimelineOptions);
         }
 
-        private bool LoadTwitterTokens()
+        private bool LoadTwitterTokens(bool onlyIfNull = false)
         {
             if (!(TwitterIsAuthorized()))
             {
                 return false;
             }
 
-            twitterTokens = new OAuthTokens();
-            twitterTokens.ConsumerKey = twitterConsumerKey;
-            twitterTokens.ConsumerSecret = twitterConsumerSecret;
-            twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
-            twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+            if (twitterTokens == null || onlyIfNull == false)
+            {
+                twitterTokens = new OAuthTokens();
+                twitterTokens.ConsumerKey = twitterConsumerKey;
+                twitterTokens.ConsumerSecret = twitterConsumerSecret;
+                twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
+                twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+            }
 
             return true;
         }

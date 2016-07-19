@@ -58,6 +58,9 @@ namespace FaceBERN_
         public int activeUsers = 0;
         public int totalUsers = 0;
 
+        private bool ctrlShift = false;
+        private List<Keys> keysPressed = null;
+
         public Form1(bool updated = false, bool logging = true, bool autoStart = false, string[] cliArgs = null)
         {
             InitializeComponent();
@@ -1177,6 +1180,96 @@ namespace FaceBERN_
         {
             TweetsHistory tweetsHistory = new TweetsHistory(this);
             tweetsHistory.Show();
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            /* Type keywords while holding down CTRL and SHIFT to execute certain dev commands.  --Kris */
+            ctrlShift = (e.Control && e.Shift);
+
+            if (e.KeyCode < Keys.A || e.KeyCode > Keys.Z)
+            {
+                return;
+            }
+
+            if (ctrlShift == true)
+            {
+                if (keysPressed == null)
+                {
+                    keysPressed = new List<Keys>();
+                }
+
+                keysPressed.Add(e.KeyCode);
+
+                string cmd = "";
+                foreach (Keys keyCode in keysPressed)
+                {
+                    cmd += (new KeysConverter()).ConvertToString(keyCode);
+                }
+
+                ExecuteDevCommand(cmd);
+            }
+            else
+            {
+                keysPressed = null;
+            }
+        }
+
+        private void ReportErrorAsException(string errMsg)
+        {
+            try
+            {
+                throw new Exception(errMsg);
+            }
+            catch (Exception e)
+            {
+                ExceptionReport exR = new ExceptionReport(this, e, "Reported error as exception with errMsg:  " + errMsg);
+            }
+        }
+
+        private void ExecuteDevCommand(string cmd)
+        {
+            string cmdDesc;
+            switch (cmd.Trim().ToLower())
+            {
+                default:
+                    return;
+                case "debug":  // Make the DEBUG menu appear on the Release build.  --Kris
+                    DEBUGToolStripMenuItem.Visible = true;
+                    cmdDesc = "Show debug menu.";
+                    break;
+            }
+
+            keysPressed = null;
+
+            MessageBox.Show("Executed dev command:  " + cmdDesc);
+        }
+
+        private void deleteTweetToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Warning:  This will only delete the record of the tweet from the Birdie API!  The original tweet on Twitter will remain unaffected.");
+
+            DebugTextForm twitterStatusIdForm = new DebugTextForm("Twitter Status ID to delete:");
+            twitterStatusIdForm.ShowDialog();
+
+            if (twitterStatusIdForm.DialogResult == System.Windows.Forms.DialogResult.OK)
+            {
+                if (twitterStatusIdForm.textBox1.Text.Trim().Length == 0)
+                {
+                    MessageBox.Show("You must specify a Twitter status ID for API deletion!");
+                    return;
+                }
+
+                Workflow workflow = new Workflow(this);
+                if (workflow.DeleteTweet(twitterStatusIdForm.textBox1.Text, true))
+                {
+                    MessageBox.Show("Tweet " + twitterStatusIdForm.textBox1.Text + " deleted from API (not Twitter) successfully.");
+                }
+                else
+                {
+                    MessageBox.Show("ERROR deleting tweet " + twitterStatusIdForm.textBox1.Text + "!");
+                }
+            }
         }
     }
 }
