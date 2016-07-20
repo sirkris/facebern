@@ -41,6 +41,11 @@
     <Reference Include="AutoItX3.Assembly">
       <HintPath>Resources\AutoItX3.Assembly.dll</HintPath>
     </Reference>
+    <Reference Include="Awesomium.Core, Version=1.7.5.1, Culture=neutral, PublicKeyToken=e1a0d7c8071a5214" />
+    <Reference Include="Awesomium.Windows.Forms, Version=1.7.5.1, Culture=neutral, PublicKeyToken=9bd24830fbe304a0, processorArchitecture=x86" />
+    <Reference Include="CButtonLib">
+      <HintPath>Resources\CButtonLib.dll</HintPath>
+    </Reference>
     <Reference Include="csReddit">
       <HintPath>Resources\csReddit.dll</HintPath>
     </Reference>

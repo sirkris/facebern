@@ -588,14 +588,14 @@ namespace FaceBERN_
             }
         }
 
-        private void buttonStart_Click(object sender, EventArgs e)
+        private void StartButtonClick()
         {
-            if (buttonStart.Enabled == false 
-                || Globals.executionState == Globals.STATE_BROKEN 
-                || Globals.executionState == Globals.STATE_STOPPING 
+            if (buttonStart.Enabled == false
+                || Globals.executionState == Globals.STATE_BROKEN
+                || Globals.executionState == Globals.STATE_STOPPING
                 || Globals.executionState == Globals.STATE_TWITTERPIN)
             {
-                buttonStart.Click -= buttonStart_Click;
+                buttonStart.ClickButtonArea -= buttonStart_ClickButtonArea;
                 return;
             }
 
@@ -633,7 +633,7 @@ namespace FaceBERN_
                 Globals.devOverride = false;
 
                 workflow.ExecuteShutdownThread(Globals.thread);
-                
+
                 LogW("Execution terminated by user.");
 
                 // Use STATE_BROKEN if you want the error state to persist and prevent re-execution.  --Kris
@@ -644,11 +644,22 @@ namespace FaceBERN_
             }
         }
 
+        private void buttonStart_ClickButtonArea(object Sender, MouseEventArgs e)
+        {
+            StartButtonClick();
+        }
+
         public void buttonStart_ToStart()
         {
-            buttonStart.BackgroundImage = FaceBERN_.Properties.Resources.flames_button_bg;
-            buttonStart.ForeColor = Color.Yellow;
-            buttonStart.Text = "START";
+            //buttonStart.ColorFillBlend.iColor[0] = Color.FromArgb(150, 255, 150);
+            //buttonStart.ColorFillBlend.iColor[1] = Color.FromArgb(0, 160, 0);
+            //buttonStart.ColorFillBlend.iColor[2] = Color.FromArgb(0, 50, 0);
+            buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
+                                                                                    Color.FromArgb(150, 255, 150), 
+                                                                                    Color.FromArgb(0, 160, 0), 
+                                                                                    Color.FromArgb(0, 50, 0) 
+                                                                    }, new Single[] { 0.0F, 0.5F, 1.0F });
+            buttonStart.Text = "Go, Birdie!";
 
             browserModeComboBox.Enabled = true;
 
@@ -657,9 +668,16 @@ namespace FaceBERN_
 
         public void buttonStart_ToStop()
         {
-            buttonStart.BackgroundImage = null;
-            buttonStart.ForeColor = Color.Red;
-            buttonStart.Text = "STOP";
+            //buttonStart.ColorFillBlend.iColor[0] = Color.FromArgb(255, 150, 150);
+            //buttonStart.ColorFillBlend.iColor[1] = Color.FromArgb(160, 0, 0);
+            //buttonStart.ColorFillBlend.iColor[2] = Color.FromArgb(50, 0, 0);
+            buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
+                                                                                    Color.FromArgb(255, 150, 150), 
+                                                                                    Color.FromArgb(160, 0, 0), 
+                                                                                    Color.FromArgb(50, 0, 0) 
+                                                                    }, new Single[] { 0.0F, 0.5F, 1.0F });
+
+            buttonStart.Text = "Stop, Birdie!";
 
             browserModeComboBox.Enabled = false;
         }
@@ -1114,7 +1132,7 @@ namespace FaceBERN_
             if (buttonStart.Enabled
                 && Globals.executionState == Globals.STATE_READY)
             {
-                buttonStart_Click(sender, e);
+                StartButtonClick();
             }
         }
 
@@ -1123,7 +1141,7 @@ namespace FaceBERN_
             if (buttonStart.Enabled
                 && Globals.executionState > Globals.STATE_READY)
             {
-                buttonStart_Click(sender, e);
+                StartButtonClick();
             }
         }
 
