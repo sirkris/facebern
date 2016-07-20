@@ -289,6 +289,21 @@ If you don't see the bird, click on the up arrow left of your system tray to sho
         AAA=
 </value>
   </data>
+  <data name="buttonStart.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsEAAA7BAbiRa+0AAAIKSURBVDhPjdBPSBRRGADwsZ0wJROK7laHgqBDUkQRQ7m0
+        5rw/c3AgokugCx0yDKpVd6ljbGVKFFFUHiIrQWMp6WpdMj1k7qy1W5qGu+/NrhPUdinw63toRJE7++CD
+        b+a99/u+92kaLj02uSsQmZzRu5zZQOzdYfWv7HXyUXbjjiuZ/JH+z7D+QgoqO52fCiwbqGibeNoyOA+1
+        kSRUxhwMRGKpZNmAdmaqpv7ax7iOwOqosxRdDugdzgMtPF5dFqR3Jnfv6fkA2y6lYfvlNOzszkDdxfdA
+        7n56pbXPVfkjpya2xl8uQGt/Fk4MCDg3LMG+MQ23xzyoaHub8AVqIqkN4ejg4r34Q0hcH4ChvufQe38U
+        wn0p4D0OtEQT532RYsgYKYSC4KoIHgCvwYCvTQ0/ivwQFMlB8Exzf0lE8qa9rsXApeY3weiwyiVn3wUn
+        I0s5nZWGsbYkIpjZmuN0UVD6Ai+dXkZeL3+DpPSm71Pw0D5h0fEso28EI+2SmgVpkasIpxW4gPsrIvOE
+        VOco3YQVnwlOexE69oWH6oRFxlzGbMHZlMtZstDYuO6/iAKwg1F1Gd/c7QWDtb8PqnyuubkKgScYGWGa
+        m/9CJCPHcWB3pEU71AZo2qrHth34t5Kq7nKaQ2Tas/8U0GYMY420rC1Y+WzeMutLDSvPyVEEinns1Heo
+        Kx3AQrew26Ff9t0Qn9QdhVkAAAAASUVORK5CYII=
+</value>
+  </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         AAABAAQAICAAAAEAIACoEAAARgAAACAgAAABAAgAqAgAAO4QAAAQEAAAAQAgAGgEAACWGQAAEBAAAAEA

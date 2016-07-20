@@ -30,6 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            CButtonLib.cBlendItems cBlendItems1 = new CButtonLib.cBlendItems();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.labelVersion = new System.Windows.Forms.Label();
@@ -44,12 +45,13 @@
             this.launchPostInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.throwExceptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.executeInstallerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.twitterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.deleteTweetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.donateToBernieToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outBox = new System.Windows.Forms.RichTextBox();
-            this.buttonStart = new System.Windows.Forms.Button();
             this.browserModeComboBox = new System.Windows.Forms.ComboBox();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -66,8 +68,7 @@
             this.labelActiveUsers = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.twitterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.deleteTweetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.buttonStart = new CButtonLib.CButton();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -199,6 +200,21 @@
             this.executeInstallerToolStripMenuItem.Text = "Execute Installer";
             this.executeInstallerToolStripMenuItem.Click += new System.EventHandler(this.executeInstallerToolStripMenuItem_Click);
             // 
+            // twitterToolStripMenuItem
+            // 
+            this.twitterToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.deleteTweetToolStripMenuItem});
+            this.twitterToolStripMenuItem.Name = "twitterToolStripMenuItem";
+            this.twitterToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.twitterToolStripMenuItem.Text = "API";
+            // 
+            // deleteTweetToolStripMenuItem
+            // 
+            this.deleteTweetToolStripMenuItem.Name = "deleteTweetToolStripMenuItem";
+            this.deleteTweetToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.deleteTweetToolStripMenuItem.Text = "Delete Tweet";
+            this.deleteTweetToolStripMenuItem.Click += new System.EventHandler(this.deleteTweetToolStripMenuItem_Click);
+            // 
             // helpToolStripMenuItem1
             // 
             this.helpToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -242,20 +258,6 @@
             this.outBox.TabIndex = 26;
             this.outBox.TabStop = false;
             this.outBox.Text = "";
-            // 
-            // buttonStart
-            // 
-            this.buttonStart.BackColor = System.Drawing.Color.Black;
-            this.buttonStart.BackgroundImage = global::FaceBERN_.Properties.Resources.flames_button_bg;
-            this.buttonStart.Font = new System.Drawing.Font("Algerian", 26.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonStart.ForeColor = System.Drawing.Color.Yellow;
-            this.buttonStart.Location = new System.Drawing.Point(263, 464);
-            this.buttonStart.Name = "buttonStart";
-            this.buttonStart.Size = new System.Drawing.Size(150, 50);
-            this.buttonStart.TabIndex = 0;
-            this.buttonStart.Text = "START";
-            this.buttonStart.UseVisualStyleBackColor = false;
-            this.buttonStart.Click += new System.EventHandler(this.buttonStart_Click);
             // 
             // browserModeComboBox
             // 
@@ -418,20 +420,40 @@
             this.label2.TabIndex = 38;
             this.label2.Text = "Web Browser:";
             // 
-            // twitterToolStripMenuItem
+            // buttonStart
             // 
-            this.twitterToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.deleteTweetToolStripMenuItem});
-            this.twitterToolStripMenuItem.Name = "twitterToolStripMenuItem";
-            this.twitterToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-            this.twitterToolStripMenuItem.Text = "API";
-            // 
-            // deleteTweetToolStripMenuItem
-            // 
-            this.deleteTweetToolStripMenuItem.Name = "deleteTweetToolStripMenuItem";
-            this.deleteTweetToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.deleteTweetToolStripMenuItem.Text = "Delete Tweet";
-            this.deleteTweetToolStripMenuItem.Click += new System.EventHandler(this.deleteTweetToolStripMenuItem_Click);
+            this.buttonStart.BackColor = System.Drawing.Color.Transparent;
+            this.buttonStart.BorderColor = System.Drawing.Color.DarkBlue;
+            cBlendItems1.iColor = new System.Drawing.Color[] {
+        System.Drawing.Color.FromArgb(((int)(((byte)(150)))), ((int)(((byte)(255)))), ((int)(((byte)(150))))),
+        System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(160)))), ((int)(((byte)(0))))),
+        System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))))};
+            cBlendItems1.iPoint = new float[] {
+        0F,
+        0.5F,
+        1F};
+            this.buttonStart.ColorFillBlend = cBlendItems1;
+            this.buttonStart.Corners.All = 8;
+            this.buttonStart.Corners.LowerLeft = 8;
+            this.buttonStart.Corners.LowerRight = 8;
+            this.buttonStart.Corners.UpperLeft = 8;
+            this.buttonStart.Corners.UpperRight = 8;
+            this.buttonStart.DesignerSelected = true;
+            this.buttonStart.Font = new System.Drawing.Font("Arial Rounded MT Bold", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonStart.Image = ((System.Drawing.Image)(resources.GetObject("buttonStart.Image")));
+            this.buttonStart.ImageIndex = 0;
+            this.buttonStart.Location = new System.Drawing.Point(263, 464);
+            this.buttonStart.Margin = new System.Windows.Forms.Padding(0);
+            this.buttonStart.Name = "buttonStart";
+            this.buttonStart.SideImageAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.buttonStart.Size = new System.Drawing.Size(138, 42);
+            this.buttonStart.TabIndex = 39;
+            this.buttonStart.Text = "Go, Birdie!";
+            this.buttonStart.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.buttonStart.TextMargin = new System.Windows.Forms.Padding(0);
+            this.buttonStart.TextShadow = System.Drawing.Color.Black;
+            this.buttonStart.TextSmoothingMode = System.Drawing.Text.TextRenderingHint.SystemDefault;
+            this.buttonStart.ClickButtonArea += new CButtonLib.CButton.ClickButtonAreaEventHandler(this.buttonStart_ClickButtonArea);
             // 
             // Form1
             // 
@@ -439,6 +461,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.labelActiveUsers);
             this.Controls.Add(this.label6);
@@ -449,7 +472,6 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.alwaysOnTopCheckBox);
             this.Controls.Add(this.browserModeComboBox);
-            this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.outBox);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.labelVersion);
@@ -488,7 +510,6 @@
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem donateToBernieToolStripMenuItem;
         internal System.Windows.Forms.RichTextBox outBox;
-        private System.Windows.Forms.Button buttonStart;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem openControlCenterToolStripMenuItem;
@@ -514,6 +535,7 @@
         private System.Windows.Forms.ToolStripMenuItem tweetsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem twitterToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem deleteTweetToolStripMenuItem;
+        internal CButtonLib.CButton buttonStart;
     }
 }
 
