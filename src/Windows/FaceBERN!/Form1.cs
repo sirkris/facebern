@@ -61,6 +61,8 @@ namespace FaceBERN_
         private bool ctrlShift = false;
         private List<Keys> keysPressed = null;
 
+        WaitForm waitForm = null;
+
         public Form1(bool updated = false, bool logging = true, bool autoStart = false, string[] cliArgs = null)
         {
             InitializeComponent();
@@ -70,9 +72,11 @@ namespace FaceBERN_
 
             label3.Visible = false;
             label4.Visible = false;
+            label5.Visible = false;
             label6.Visible = false;
             labelInvitesSent.Visible = false;
             labelTweetsTweeted.Visible = false;
+            labelTweetsQueued.Visible = false;
             labelActiveUsers.Visible = false;
 
             this.Resize += Form1_Resize;
@@ -128,6 +132,19 @@ namespace FaceBERN_
 
         private void Form1_Shown(object sender, EventArgs e)
         {
+            // These are set back to default after the InterCOM thread finishes its initial tasks.  --Kris
+            if (autoStart == false)
+            {
+                this.Enabled = false;
+                this.UseWaitCursor = true;
+
+                if (appKey.GetValue("PostInstallNeeded", null) == null)
+                {
+                    waitForm = new WaitForm("Birdie is starting.  Please wait....");
+                    waitForm.Show();
+                }
+            }
+
             try
             {
                 int n;
@@ -520,6 +537,18 @@ namespace FaceBERN_
             softwareKey.Close();
 
             Application.Exit();
+        }
+
+        internal void StartupComplete()
+        {
+            this.Enabled = true;
+            this.UseWaitCursor = false;
+
+            if (waitForm != null)
+            {
+                waitForm.Close();
+                waitForm = null;
+            }
         }
 
         public void SetExecState(int state, string logName = null, Log logObj = null)
@@ -1023,6 +1052,16 @@ namespace FaceBERN_
 
             LogW("Set local tweets count to:  " + x.ToString(), false);
             LogW("Set remote tweets count to:  " + y.ToString(), false);
+        }
+
+        internal void SetTweetsQueued(int total)
+        {
+            label5.Visible = true;
+            labelTweetsQueued.Visible = true;
+
+            labelTweetsQueued.Text = total.ToString();
+
+            LogW("Set local tweets queue count to:  " + total.ToString(), false);
         }
 
         internal void SetActiveUsers(int active, int total)

@@ -72,6 +72,8 @@
             this.executeInBackgroundCheckbox = new System.Windows.Forms.CheckBox();
             this.twitterToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.tweetsQueueManagerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.label5 = new System.Windows.Forms.Label();
+            this.labelTweetsQueued = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -396,7 +398,7 @@
             this.labelActiveUsers.BackColor = System.Drawing.Color.Transparent;
             this.labelActiveUsers.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelActiveUsers.ForeColor = System.Drawing.Color.Green;
-            this.labelActiveUsers.Location = new System.Drawing.Point(359, 547);
+            this.labelActiveUsers.Location = new System.Drawing.Point(359, 562);
             this.labelActiveUsers.Name = "labelActiveUsers";
             this.labelActiveUsers.Size = new System.Drawing.Size(14, 13);
             this.labelActiveUsers.TabIndex = 37;
@@ -407,7 +409,7 @@
             this.label6.AutoSize = true;
             this.label6.BackColor = System.Drawing.Color.Transparent;
             this.label6.ForeColor = System.Drawing.Color.Blue;
-            this.label6.Location = new System.Drawing.Point(292, 547);
+            this.label6.Location = new System.Drawing.Point(292, 562);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(70, 13);
             this.label6.TabIndex = 36;
@@ -487,12 +489,37 @@
             this.tweetsQueueManagerToolStripMenuItem.Text = "Tweets Queue Manager";
             this.tweetsQueueManagerToolStripMenuItem.Click += new System.EventHandler(this.tweetsQueueManagerToolStripMenuItem_Click);
             // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.BackColor = System.Drawing.Color.Transparent;
+            this.label5.ForeColor = System.Drawing.Color.Blue;
+            this.label5.Location = new System.Drawing.Point(271, 547);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(91, 13);
+            this.label5.TabIndex = 41;
+            this.label5.Text = "Tweets in Queue:";
+            // 
+            // labelTweetsQueued
+            // 
+            this.labelTweetsQueued.AutoSize = true;
+            this.labelTweetsQueued.BackColor = System.Drawing.Color.Transparent;
+            this.labelTweetsQueued.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelTweetsQueued.ForeColor = System.Drawing.Color.Green;
+            this.labelTweetsQueued.Location = new System.Drawing.Point(359, 547);
+            this.labelTweetsQueued.Name = "labelTweetsQueued";
+            this.labelTweetsQueued.Size = new System.Drawing.Size(14, 13);
+            this.labelTweetsQueued.TabIndex = 42;
+            this.labelTweetsQueued.Text = "0";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
-            this.ClientSize = new System.Drawing.Size(659, 562);
+            this.ClientSize = new System.Drawing.Size(659, 577);
+            this.Controls.Add(this.labelTweetsQueued);
+            this.Controls.Add(this.label5);
             this.Controls.Add(this.executeInBackgroundCheckbox);
             this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.label2);
@@ -573,6 +600,8 @@
         private System.Windows.Forms.CheckBox executeInBackgroundCheckbox;
         private System.Windows.Forms.ToolStripMenuItem twitterToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem tweetsQueueManagerToolStripMenuItem;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label labelTweetsQueued;
     }
 }
 

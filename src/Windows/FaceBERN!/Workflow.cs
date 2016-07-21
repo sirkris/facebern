@@ -149,8 +149,16 @@ namespace FaceBERN_
                     /* Update our local tweets count for both ours and remote.  --Kris */
                     UpdateRemoteTweetsCount();
 
+                    /* Update the number of tweets waiting in our local queue.  --Kris */
+                    UpdateLocalTweetsQueueCount();
+
                     /* Update our local count for both active users and total users.  --Kris */
                     UpdateRemoteUsers();
+
+                    if (i == 0)
+                    {
+                        EnableMain();
+                    }
 
                     System.Threading.Thread.Sleep(Globals.__INTERCOM_WAIT_INTERVAL__ * 60 * 1000);
 
@@ -489,6 +497,15 @@ namespace FaceBERN_
             }
 
             UpdateTweetsCount(myTweets.Value, totalTweets.Value);
+        }
+
+        /* Update the number of tweets in the queue displayed on the main form.  --Kris */
+        private void UpdateLocalTweetsQueueCount()
+        {
+            UpdateLocalTweetsQueue(true);
+            GetTweetsQueue();
+
+            UpdateTweetsQueuedCount(tweetsQueue.Count);
         }
 
         /* Get the active campaigns.  --Kris */
@@ -3971,6 +3988,23 @@ namespace FaceBERN_
             }
         }
 
+        /* Update displayed number of tweets in the local queue.  --Kris */
+        private void UpdateTweetsQueuedCount(int total)
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { UpdateTweetsQueuedCount(total); }));
+            }
+            else
+            {
+                Main.SetTweetsQueued(total);
+
+                //Main.Refresh();
+            }
+        }
+
         /* Update active and total users.  --Kris */
         private void UpdateActiveUsers(int active, int total)
         {
@@ -3985,6 +4019,21 @@ namespace FaceBERN_
                 Main.SetActiveUsers(active, total);
 
                 //Main.Refresh();
+            }
+        }
+
+        /* After everything's loaded, enable the main form.  --Kris */
+        private void EnableMain()
+        {
+            if (Main.InvokeRequired)
+            {
+                Main.BeginInvoke(
+                    new MethodInvoker(
+                        delegate() { EnableMain(); }));
+            }
+            else
+            {
+                Main.StartupComplete();
             }
         }
 

@@ -40,7 +40,6 @@ namespace FaceBERN_
             {
                 workflow.UpdateLocalTweetsQueue(true);
                 queue = workflow.GetTweetsQueue();
-                List<TweetsQueue> queue_remote = queue;
 
                 if (queue == null || queue.Count == 0)
                 {
