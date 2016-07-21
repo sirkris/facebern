@@ -120,9 +120,10 @@
   <data name="richTextBox1.Text" xml:space="preserve">
     <value>You have successfully installed Birdie!
 
-Birdie is designed to run in the background, unattended.  It will automatically perform facebanking GOTV for upcoming primary states, tweet out news/posts from the political revolution, etc; all you have to do is start it and let it run!
+Birdie is designed to run in the background, unattended.  It will automatically perform facebanking and tweeting for the political revolution.
 
 There is no documentation right now.  In the meantime, if you need help, please post your questions to /r/CodersForSanders.  The author's contact information can be found by clicking Help-&gt;About in Birdie and clicking the "About the Author" link.
+
 
 
 
