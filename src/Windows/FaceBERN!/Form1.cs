@@ -1300,5 +1300,11 @@ namespace FaceBERN_
                 }
             }
         }
+
+        private void tweetsQueueManagerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TweetsQueueManager tqm = new TweetsQueueManager(this);
+            tqm.Show();
+        }
     }
 }

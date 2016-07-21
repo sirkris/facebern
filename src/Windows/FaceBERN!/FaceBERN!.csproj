@@ -250,6 +250,12 @@
       <DependentUpon>TweetsHistory.cs</DependentUpon>
     </Compile>
     <Compile Include="TweetsQueue.cs" />
+    <Compile Include="TweetsQueueManager.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TweetsQueueManager.Designer.cs">
+      <DependentUpon>TweetsQueueManager.cs</DependentUpon>
+    </Compile>
     <Compile Include="TwitPin.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -301,6 +307,9 @@
     </Compile>
     <EmbeddedResource Include="TweetsHistory.resx">
       <DependentUpon>TweetsHistory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TweetsQueueManager.resx">
+      <DependentUpon>TweetsQueueManager.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="TwitPin.resx">
       <DependentUpon>TwitPin.cs</DependentUpon>

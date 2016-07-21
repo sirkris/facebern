@@ -681,10 +681,43 @@ namespace FaceBERN_
             return Globals.campaigns;
         }
 
-        /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
-        private void UpdateLocalTweetsQueue()
+        internal List<TweetsQueue> GetTweetsQueue()
         {
-            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            return tweetsQueue;
+        }
+
+        internal bool RemoveFromLocalTweetsQueue(string tweet)
+        {
+            bool entryFound = false;
+
+            List<TweetsQueue> newQueue = new List<TweetsQueue>();
+            foreach (TweetsQueue entry in tweetsQueue)
+            {
+                if (entry.GetTweet() != tweet)
+                {
+                    newQueue.Add(entry);
+                }
+                else
+                {
+                    entryFound = true;
+
+                    // Adding to the backend "history" to keep it from being re-added.  This will NOT make it appear in the history window.  --Kris
+                    AppendTweetsHistory(entry, true);
+                }
+            }
+
+            tweetsQueue = newQueue;
+
+            PersistLocalTweetsQueue();
+
+            return entryFound;
+        }
+
+        /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
+        internal void UpdateLocalTweetsQueue(bool continueIfDisabled = false)
+        {
+            if (!(Globals.Config["EnableTwitter"].Equals("1")) 
+                && continueIfDisabled == false)
             {
                 return;
             }
@@ -717,19 +750,55 @@ namespace FaceBERN_
 
             foreach (TweetsQueue entry in localTweetsQueue)
             {
+                bool found = false;
                 for ( int i = 0; i < tweetsQueue.Count; i++ )
                 {
                     if (tweetsQueue[i].GetTweet() == entry.GetTweet())
                     {
                         tweetsQueue[i].SetFailures(entry.GetFailures());
+                        found = true;
                     }
+                }
+
+                if (found == false)
+                {
+                    tweetsQueue.Add(entry);
                 }
             }
 
             /* Get any tweets from Reddit, if enabled.  --Kris */
             GetTweetsFromReddit();
 
+            /* Filter anything out that appears in our "history" cache.  --Kris */
+            FilterTweetedFromQueue();
+
             PersistLocalTweetsQueue();
+        }
+
+        private void FilterTweetedFromQueue()
+        {
+            LoadTweetsHistory(true);
+
+            List<TweetsQueue> newQueue = new List<TweetsQueue>();
+            foreach (TweetsQueue entry in tweetsQueue)
+            {
+                bool match = false;
+                foreach (TweetsQueue hEntry in tweetsHistory)
+                {
+                    if (hEntry.GetTweet() == entry.GetTweet())
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (match == false)
+                {
+                    newQueue.Add(entry);
+                }
+            }
+
+            tweetsQueue = newQueue;
         }
 
         /* Persist the queue in the system registry.  --Kris */
@@ -756,7 +825,7 @@ namespace FaceBERN_
         }
 
         /* Update our history of recent tweets.  This is used to prevent duplicate tweet spam in the event of an error or abuse.  --Kris */
-        private void AppendTweetsHistory(List<TweetsQueue> entries)
+        private void AppendTweetsHistory(List<TweetsQueue> entries, bool skipReport = false)
         {
             if (tweetsHistory == null)
             {
@@ -791,12 +860,15 @@ namespace FaceBERN_
                 ReportException(e, "Unable to update tweets queue in registry.");
             }
 
-            ReportNewTweets(entries);
+            if (!(skipReport))
+            {
+                ReportNewTweets(entries);
+            }
         }
 
-        private void AppendTweetsHistory(TweetsQueue entry)
+        private void AppendTweetsHistory(TweetsQueue entry, bool skipReport = false)
         {
-            AppendTweetsHistory(new List<TweetsQueue> { entry });
+            AppendTweetsHistory(new List<TweetsQueue> { entry }, skipReport);
         }
 
         private void SanitizeTweetsHistory()
@@ -815,8 +887,8 @@ namespace FaceBERN_
             tweetsHistory = newTweetsHistory.OrderBy(entry => entry.tweeted.Value).ToList();
         }
 
-        /* Load recent tweets history.  --Kris */
-        private List<TweetsQueue> LoadTweetsHistory()
+        /* Load recent tweets history.  This is used for backend deduping/etc; the "official" tweets history (that you see in the History window) is pulled separately from Birdie API.  --Kris */
+        private List<TweetsQueue> LoadTweetsHistory(bool includeRemote = false)
         {
             try
             {
@@ -839,6 +911,32 @@ namespace FaceBERN_
                 ReportException(e, "Error loading recent tweets history from registry.");
 
                 tweetsHistory = new List<TweetsQueue>();
+            }
+
+            if (includeRemote)
+            {
+                List<TweetsQueue> historyRemote = GetTweetsHistoryFromBirdie();
+
+                List<TweetsQueue> newHistory = new List<TweetsQueue>();
+                foreach (TweetsQueue entry in historyRemote)
+                {
+                    bool match = false;
+                    foreach (TweetsQueue lEntry in tweetsHistory)
+                    {
+                        if (lEntry.GetTweet() == entry.GetTweet())
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+
+                    if (match == false)
+                    {
+                        newHistory.Add(entry);
+                    }
+                }
+
+                tweetsHistory.AddRange(newHistory);
             }
 
             SanitizeTweetsHistory();

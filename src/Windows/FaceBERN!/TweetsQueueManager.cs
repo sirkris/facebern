@@ -11,13 +11,13 @@ using System.Windows.Forms;
 
 namespace FaceBERN_
 {
-    public partial class TweetsHistory : Form
+    public partial class TweetsQueueManager : Form
     {
         private Form1 Main;
-        private List<TweetsQueue> history;
+        private List<TweetsQueue> queue;
         private Workflow workflow;
 
-        public TweetsHistory(Form1 Main)
+        public TweetsQueueManager(Form1 Main)
         {
             InitializeComponent();
             this.Main = Main;
@@ -31,50 +31,33 @@ namespace FaceBERN_
 
         private void TweetsHistory_Load(object sender, EventArgs e)
         {
-            LoadHistory();
+            LoadQueue();
         }
 
-        private void LoadHistory()
+        private void LoadQueue()
         {
             try
             {
-                history = workflow.GetTweetsHistoryFromBirdie();
-                List<TweetsQueue> history_remote = history;
+                workflow.UpdateLocalTweetsQueue(true);
+                queue = workflow.GetTweetsQueue();
+                List<TweetsQueue> queue_remote = queue;
 
-                if (history == null || history.Count == 0)
+                if (queue == null || queue.Count == 0)
                 {
-                    MessageBox.Show("No tweets history found.  Have you clicked 'START' yet?");
+                    MessageBox.Show("No tweets queue found.  Have you clicked 'Go, Birdie!' yet?");
                     this.Close();
                 }
                 else
                 {
                     tweetsLogListView.Items.Clear();
 
-                    for (int ii = 0; ii < history.Count; ii++)
-                    {
-                        history[ii].SetStatusID(workflow.GetTwitterStatusId(history[ii].GetTweet()));
-                    }
-
-                    /* Use this opportunity to update Birdie API with the status IDs.  --Kris */
-                    bool undoOk = workflow.UpdateBirdieTwitterStatusIDs(history);
-
                     int i = 0;
-                    foreach (TweetsQueue entry in Enumerable.Reverse(history))
+                    foreach (TweetsQueue entry in Enumerable.Reverse(queue))
                     {
-                        TweetsQueue entryRemote = null;  // If statusId update fails, only show Undo for tweets that already have a statusId in the database record.  --Kris
-                        for (int ii = 0; ii < history_remote.Count; ii++)
-                        {
-                            if (history_remote[ii].GetTID() == entry.GetTID())
-                            {
-                                entryRemote = history_remote[ii];
-                                break;
-                            }
-                        }
-
-                        tweetsLogListView.Items.Add(new ListViewItem(new[] { entry.GetTweeted().Value.ToString(), entry.GetTweet(), Globals.CampaignName(entry.GetCampaignId()), 
-                        entry.GetSource(), ( entry.GetStatusID() != null && (undoOk || (entryRemote != null && entryRemote.GetStatusID() != null)) ? "Undo" : "" ) }));
+                        tweetsLogListView.Items.Add(new ListViewItem(new[] { entry.GetDiscovered().ToString(), entry.GetTweet(), Globals.CampaignName(entry.GetCampaignId()), 
+                        entry.GetSource(), ((entry != null && entry.GetTweet() != null) ? "Remove" : "" ) }));
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].UseItemStyleForSubItems = false;
-                        tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].Tag = JsonConvert.SerializeObject(new List<string> { entry.GetStatusID(), entry.GetTweet() });
+                        tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].Tag = JsonConvert.SerializeObject(new List<string> { entry.GetTweet() });
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].ForeColor = Color.Blue;
                         tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].Font = new Font(tweetsLogListView.Items[tweetsLogListView.Items.Count - 1].SubItems[4].Font, FontStyle.Underline);
 
@@ -94,9 +77,9 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                workflow.ReportExceptionSilently(e, "Error loading history.");
+                workflow.ReportExceptionSilently(e, "Error loading tweets queue.");
 
-                MessageBox.Show("Error loading history!");
+                MessageBox.Show("Error loading tweets queue!");
                 this.Close();
             }
         }
@@ -105,7 +88,7 @@ namespace FaceBERN_
         {
             ListViewHitTestInfo hit = tweetsLogListView.HitTest(e.Location);
 
-            if (hit.SubItem != null && hit.SubItem.Text.Equals("Undo") && hit.SubItem.Tag != null)
+            if (hit.SubItem != null && hit.SubItem.Text.Equals("Remove") && hit.SubItem.Tag != null)
             {
                 tweetsLogListView.Cursor = Cursors.Hand;
             }
@@ -119,37 +102,30 @@ namespace FaceBERN_
         {
             ListViewHitTestInfo hit = tweetsLogListView.HitTest(e.Location);
 
-            if (hit.SubItem != null && hit.SubItem.Text.Equals("Undo") && hit.SubItem.Tag != null)
+            if (hit.SubItem != null && hit.SubItem.Text.Equals("Remove") && hit.SubItem.Tag != null)
             {
-                string twitterStatusId;
                 string tweet;
                 try
                 {
                     List<string> tag = JsonConvert.DeserializeObject<List<string>>(hit.SubItem.Tag.ToString());
-                    twitterStatusId = tag[0];
-                    tweet = tag[1];
+                    tweet = tag[0];
                 }
                 catch (Exception ex)
                 {
-                    workflow.ReportExceptionSilently(ex, "Error deserializing Tag string in TweetsHistory.tweetsLogListView_MouseUp.");
+                    workflow.ReportExceptionSilently(ex, "Error deserializing Tag string in TweetsQueueManager.tweetsLogListView_MouseUp.");
 
-                    MessageBox.Show("Undo not available right now due to an error.");
+                    MessageBox.Show("Remove not available right now due to an error.");
                     return;
                 }
 
-                DialogResult dr = MessageBox.Show("Are you sure you want to delete tweet \"" + tweet + "\"?", "Confirm Tweet Deletion", MessageBoxButtons.YesNo);
+                DialogResult dr = MessageBox.Show("Are you sure you want to remove tweet \"" + tweet + "\" from the local queue?", "Confirm Queue Entry Deletion", MessageBoxButtons.YesNo);
                 if (dr == DialogResult.Yes)
                 {
-                    workflow.DeleteTweet(twitterStatusId);
+                    workflow.RemoveFromLocalTweetsQueue(tweet);
 
-                    LoadHistory();
+                    LoadQueue();
                 }
             }
-        }
-
-        private void tweetsLogListView_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
         }
     }
 }
