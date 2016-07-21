@@ -44,7 +44,7 @@ namespace FaceBERN_
 
                 if (queue == null || queue.Count == 0)
                 {
-                    MessageBox.Show("No tweets queue found.  Have you clicked 'Go, Birdie!' yet?");
+                    MessageBox.Show("The tweets queue is currently empty.  Please check back later.");
                     this.Close();
                 }
                 else
