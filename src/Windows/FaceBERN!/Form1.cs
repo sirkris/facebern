@@ -622,6 +622,11 @@ namespace FaceBERN_
                 //workflow.Execute(browserModeComboBox.SelectedIndex);  // Use this if you want to debug on a single thread (be sure to comment the ExecuteThread() call).  --Kris
 
                 LogW("Re-reticulating previously unreticulated splines....");
+
+                if (executeInBackgroundCheckbox.Checked)
+                {
+                    this.WindowState = FormWindowState.Minimized;
+                }
             }
             else
             {
