@@ -60,6 +60,16 @@ namespace FaceBERN_
             Main.Enabled = true;
 
             next = true;
+
+            DialogResult dr = MessageBox.Show("Would you like Birdie to start working now?", "Setup complete!", MessageBoxButtons.YesNo);
+            if (dr == System.Windows.Forms.DialogResult.OK)
+            {
+                MessageBox.Show("Birdie will now begin running in the background.  If you want to bring this window back, simply double-click the little birdie icon in your system tray.");
+
+                Main.buttonStart.PerformClick();
+                this.WindowState = FormWindowState.Minimized;
+            }
+
             this.Close();
         }
 

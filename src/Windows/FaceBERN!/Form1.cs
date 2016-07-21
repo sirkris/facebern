@@ -622,6 +622,11 @@ namespace FaceBERN_
                 //workflow.Execute(browserModeComboBox.SelectedIndex);  // Use this if you want to debug on a single thread (be sure to comment the ExecuteThread() call).  --Kris
 
                 LogW("Re-reticulating previously unreticulated splines....");
+
+                if (executeInBackgroundCheckbox.Checked)
+                {
+                    this.WindowState = FormWindowState.Minimized;
+                }
             }
             else
             {
@@ -651,9 +656,6 @@ namespace FaceBERN_
 
         public void buttonStart_ToStart()
         {
-            //buttonStart.ColorFillBlend.iColor[0] = Color.FromArgb(150, 255, 150);
-            //buttonStart.ColorFillBlend.iColor[1] = Color.FromArgb(0, 160, 0);
-            //buttonStart.ColorFillBlend.iColor[2] = Color.FromArgb(0, 50, 0);
             buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
                                                                                     Color.FromArgb(150, 255, 150), 
                                                                                     Color.FromArgb(0, 160, 0), 
@@ -668,9 +670,6 @@ namespace FaceBERN_
 
         public void buttonStart_ToStop()
         {
-            //buttonStart.ColorFillBlend.iColor[0] = Color.FromArgb(255, 150, 150);
-            //buttonStart.ColorFillBlend.iColor[1] = Color.FromArgb(160, 0, 0);
-            //buttonStart.ColorFillBlend.iColor[2] = Color.FromArgb(50, 0, 0);
             buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
                                                                                     Color.FromArgb(255, 150, 150), 
                                                                                     Color.FromArgb(160, 0, 0), 
@@ -1218,7 +1217,21 @@ namespace FaceBERN_
                 }
 
                 keysPressed.Add(e.KeyCode);
+            }
+            else
+            {
+                keysPressed = null;
+            }
+        }
 
+        private void Form1_KeyUp(object sender, KeyEventArgs e)
+        {
+            /* Check for keyword match after CTRL and SHIFT have been released.  --Kris */
+            ctrlShift = (e.Control && e.Shift);
+
+            if (ctrlShift == false 
+                && keysPressed != null)
+            {
                 string cmd = "";
                 foreach (Keys keyCode in keysPressed)
                 {
@@ -1226,9 +1239,7 @@ namespace FaceBERN_
                 }
 
                 ExecuteDevCommand(cmd);
-            }
-            else
-            {
+
                 keysPressed = null;
             }
         }

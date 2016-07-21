@@ -30,7 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            CButtonLib.cBlendItems cBlendItems1 = new CButtonLib.cBlendItems();
+            CButtonLib.cBlendItems cBlendItems2 = new CButtonLib.cBlendItems();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.labelVersion = new System.Windows.Forms.Label();
@@ -69,6 +69,7 @@
             this.label6 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.buttonStart = new CButtonLib.CButton();
+            this.executeInBackgroundCheckbox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -267,7 +268,7 @@
             "-- Please Select a Web Browser --",
             "Google Chrome",
             "Mozilla Firefox"});
-            this.browserModeComboBox.Location = new System.Drawing.Point(340, 404);
+            this.browserModeComboBox.Location = new System.Drawing.Point(340, 394);
             this.browserModeComboBox.Name = "browserModeComboBox";
             this.browserModeComboBox.Size = new System.Drawing.Size(228, 21);
             this.browserModeComboBox.TabIndex = 29;
@@ -324,7 +325,7 @@
             // 
             this.alwaysOnTopCheckBox.AutoSize = true;
             this.alwaysOnTopCheckBox.BackColor = System.Drawing.Color.Transparent;
-            this.alwaysOnTopCheckBox.Location = new System.Drawing.Point(299, 433);
+            this.alwaysOnTopCheckBox.Location = new System.Drawing.Point(275, 423);
             this.alwaysOnTopCheckBox.Name = "alwaysOnTopCheckBox";
             this.alwaysOnTopCheckBox.Size = new System.Drawing.Size(92, 17);
             this.alwaysOnTopCheckBox.TabIndex = 30;
@@ -337,7 +338,7 @@
             this.label3.AutoSize = true;
             this.label3.BackColor = System.Drawing.Color.Transparent;
             this.label3.ForeColor = System.Drawing.Color.Blue;
-            this.label3.Location = new System.Drawing.Point(274, 517);
+            this.label3.Location = new System.Drawing.Point(279, 517);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(83, 13);
             this.label3.TabIndex = 31;
@@ -349,7 +350,7 @@
             this.labelInvitesSent.BackColor = System.Drawing.Color.Transparent;
             this.labelInvitesSent.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelInvitesSent.ForeColor = System.Drawing.Color.Green;
-            this.labelInvitesSent.Location = new System.Drawing.Point(354, 517);
+            this.labelInvitesSent.Location = new System.Drawing.Point(359, 517);
             this.labelInvitesSent.Name = "labelInvitesSent";
             this.labelInvitesSent.Size = new System.Drawing.Size(14, 13);
             this.labelInvitesSent.TabIndex = 32;
@@ -368,7 +369,7 @@
             this.label4.AutoSize = true;
             this.label4.BackColor = System.Drawing.Color.Transparent;
             this.label4.ForeColor = System.Drawing.Color.Blue;
-            this.label4.Location = new System.Drawing.Point(267, 532);
+            this.label4.Location = new System.Drawing.Point(272, 532);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(90, 13);
             this.label4.TabIndex = 34;
@@ -380,7 +381,7 @@
             this.labelTweetsTweeted.BackColor = System.Drawing.Color.Transparent;
             this.labelTweetsTweeted.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelTweetsTweeted.ForeColor = System.Drawing.Color.Green;
-            this.labelTweetsTweeted.Location = new System.Drawing.Point(354, 532);
+            this.labelTweetsTweeted.Location = new System.Drawing.Point(359, 532);
             this.labelTweetsTweeted.Name = "labelTweetsTweeted";
             this.labelTweetsTweeted.Size = new System.Drawing.Size(14, 13);
             this.labelTweetsTweeted.TabIndex = 35;
@@ -392,7 +393,7 @@
             this.labelActiveUsers.BackColor = System.Drawing.Color.Transparent;
             this.labelActiveUsers.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelActiveUsers.ForeColor = System.Drawing.Color.Green;
-            this.labelActiveUsers.Location = new System.Drawing.Point(354, 547);
+            this.labelActiveUsers.Location = new System.Drawing.Point(359, 547);
             this.labelActiveUsers.Name = "labelActiveUsers";
             this.labelActiveUsers.Size = new System.Drawing.Size(14, 13);
             this.labelActiveUsers.TabIndex = 37;
@@ -403,7 +404,7 @@
             this.label6.AutoSize = true;
             this.label6.BackColor = System.Drawing.Color.Transparent;
             this.label6.ForeColor = System.Drawing.Color.Blue;
-            this.label6.Location = new System.Drawing.Point(287, 547);
+            this.label6.Location = new System.Drawing.Point(292, 547);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(70, 13);
             this.label6.TabIndex = 36;
@@ -414,7 +415,7 @@
             this.label2.AutoSize = true;
             this.label2.BackColor = System.Drawing.Color.Transparent;
             this.label2.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(203, 404);
+            this.label2.Location = new System.Drawing.Point(203, 394);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(134, 18);
             this.label2.TabIndex = 38;
@@ -424,25 +425,25 @@
             // 
             this.buttonStart.BackColor = System.Drawing.Color.Transparent;
             this.buttonStart.BorderColor = System.Drawing.Color.DarkBlue;
-            cBlendItems1.iColor = new System.Drawing.Color[] {
+            cBlendItems2.iColor = new System.Drawing.Color[] {
         System.Drawing.Color.FromArgb(((int)(((byte)(150)))), ((int)(((byte)(255)))), ((int)(((byte)(150))))),
         System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(160)))), ((int)(((byte)(0))))),
         System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))))};
-            cBlendItems1.iPoint = new float[] {
+            cBlendItems2.iPoint = new float[] {
         0F,
         0.5F,
         1F};
-            this.buttonStart.ColorFillBlend = cBlendItems1;
+            this.buttonStart.ColorFillBlend = cBlendItems2;
             this.buttonStart.Corners.All = 8;
             this.buttonStart.Corners.LowerLeft = 8;
             this.buttonStart.Corners.LowerRight = 8;
             this.buttonStart.Corners.UpperLeft = 8;
             this.buttonStart.Corners.UpperRight = 8;
-            this.buttonStart.DesignerSelected = true;
+            this.buttonStart.DesignerSelected = false;
             this.buttonStart.Font = new System.Drawing.Font("Arial Rounded MT Bold", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonStart.Image = ((System.Drawing.Image)(resources.GetObject("buttonStart.Image")));
             this.buttonStart.ImageIndex = 0;
-            this.buttonStart.Location = new System.Drawing.Point(263, 464);
+            this.buttonStart.Location = new System.Drawing.Point(268, 472);
             this.buttonStart.Margin = new System.Windows.Forms.Padding(0);
             this.buttonStart.Name = "buttonStart";
             this.buttonStart.SideImageAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -455,12 +456,26 @@
             this.buttonStart.TextSmoothingMode = System.Drawing.Text.TextRenderingHint.SystemDefault;
             this.buttonStart.ClickButtonArea += new CButtonLib.CButton.ClickButtonAreaEventHandler(this.buttonStart_ClickButtonArea);
             // 
+            // executeInBackgroundCheckbox
+            // 
+            this.executeInBackgroundCheckbox.AutoSize = true;
+            this.executeInBackgroundCheckbox.BackColor = System.Drawing.Color.Transparent;
+            this.executeInBackgroundCheckbox.Checked = true;
+            this.executeInBackgroundCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.executeInBackgroundCheckbox.Location = new System.Drawing.Point(275, 447);
+            this.executeInBackgroundCheckbox.Name = "executeInBackgroundCheckbox";
+            this.executeInBackgroundCheckbox.Size = new System.Drawing.Size(154, 17);
+            this.executeInBackgroundCheckbox.TabIndex = 40;
+            this.executeInBackgroundCheckbox.Text = "Execute in the background";
+            this.executeInBackgroundCheckbox.UseVisualStyleBackColor = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImage = global::FaceBERN_.Properties.Resources.Bernie_arrested_background;
             this.ClientSize = new System.Drawing.Size(659, 562);
+            this.Controls.Add(this.executeInBackgroundCheckbox);
             this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.labelActiveUsers);
@@ -487,6 +502,7 @@
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyUp);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -536,6 +552,7 @@
         private System.Windows.Forms.ToolStripMenuItem twitterToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem deleteTweetToolStripMenuItem;
         internal CButtonLib.CButton buttonStart;
+        private System.Windows.Forms.CheckBox executeInBackgroundCheckbox;
     }
 }
 
