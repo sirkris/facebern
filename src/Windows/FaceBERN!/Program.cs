@@ -90,7 +90,7 @@ namespace FaceBERN_
                     {
                         // Do nothing.  If we can't report it, fine; no need to risk another exception by making this overly complex.  --Kris
                     }
-
+                    
                     appKey.Close();
                     softwareKey.Close();
 

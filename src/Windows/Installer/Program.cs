@@ -93,25 +93,12 @@ namespace Installer
             }
             catch (Exception e)
             {
-                string query = @"http://birdie.freeddns.org/exceptions/installerExceptionReport?appName=FaceBERN!"
-                                + @"&exType=" + e.GetType().ToString()
-                                + @"&exMessage=" + e.Message
-                                + @"&exStackTrace=" + e.StackTrace
-                                + @"&exSource=" + e.Source
-                                + @"&exToString=" + e.ToString()
-                                + @"&logMsg=Unhandled Installer Exception";
+                Workflow workflow = new Workflow();
+                workflow.ReportException(e, "Unhandled INSTALLER exception forced abort.");
 
-                query = HttpUtility.UrlEncode(query);
+                MessageBox.Show("The installer encountered an error and will need to close.");
 
-                DialogResult dr = MessageBox.Show("An error occurred installing Birdie.  May I report it to the dev team so they can fix it?", "An error has occurred", MessageBoxButtons.YesNo);
-                if (dr == DialogResult.Yes)
-                {
-                    System.Diagnostics.Process.Start(query);
-
-                    System.Threading.Thread.Sleep(3000);
-
-                    Application.Exit();
-                }
+                Application.Exit();
             }
         }
     }
