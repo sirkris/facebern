@@ -3,7 +3,10 @@ using LibGit2Sharp;
 using LibGit2Sharp.Core;
 using LibGit2Sharp.Handlers;
 using Microsoft.Win32;
+using Newtonsoft.Json;
+using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,22 +23,47 @@ namespace Installer
     public class Workflow
     {
         private Form1 Main;
+        private RestClient restClient;
+        private List<Exception> exceptions;
 
         private List<string> exemptFiles;
 
         public Workflow(Form1 Main)
         {
             this.Main = Main;
+            exceptions = new List<Exception>();
             exemptFiles = new List<string>();
+
+            /* Initialize the Birdie API client. --Kris */
+            restClient = new RestClient("http://birdie.freeddns.org");
+        }
+
+        public Workflow()
+        {
+            this.Main = null;
+            exceptions = new List<Exception>();
+            exemptFiles = new List<string>();
+
+            /* Initialize the Birdie API client. --Kris */
+            restClient = new RestClient("http://birdie.freeddns.org");
         }
 
         public Thread ExecuteCleanupThread()
         {
-            Thread thread = new Thread(() => ExecuteCleanup());
-            thread.Start();
-            while (!thread.IsAlive) { }
+            try
+            {
+                Thread thread = new Thread(() => ExecuteCleanup());
+                thread.Start();
+                while (!thread.IsAlive) { }
 
-            return thread;
+                return thread;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unable to start cleanup thread.");
+
+                return null;
+            }
         }
 
         public void ExecuteCleanup()
@@ -50,6 +78,7 @@ namespace Installer
             {
                 SetStatus("ERROR!  Unable to delete temp exe!");
                 StoreException(e);
+                ReportException(e, "Unable to delete temp exe in ExecuteCleanup().");
                 return;
             }
 
@@ -58,46 +87,72 @@ namespace Installer
 
         public Thread ExecuteUninstallThread(string installPath)
         {
-            Thread thread = new Thread(() => ExecuteUninstall(installPath));
-            thread.Start();
-            while (!thread.IsAlive) { }
+            try
+            {
+                Thread thread = new Thread(() => ExecuteUninstall(installPath));
+                thread.Start();
+                while (!thread.IsAlive) { }
 
-            return thread;
+                return thread;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unable to start uninstall thread.");
+
+                return null;
+            }
         }
 
         public void ExecuteUninstall(string installPath)
         {
-            SetStatus("Performing uninstall....");
+            try
+            {
+                SetStatus("Performing uninstall....");
 
-            DeleteApplicationDir(installPath);
-            DeleteShortcuts();
+                DeleteApplicationDir(installPath);
+                DeleteShortcuts();
 
-            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
 
-            softwareKey.DeleteSubKeyTree("FaceBERN!", false);
-            RegistryKey runKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-            runKey.DeleteValue("Birdie", false);
+                softwareKey.DeleteSubKeyTree("FaceBERN!", false);
+                RegistryKey runKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                runKey.DeleteValue("Birdie", false);
 
-            softwareKey.Close();
+                softwareKey.Close();
 
-            SetStatus("Done!");
+                SetStatus("Done!");
 
-            Main.Close();
+                Main.Close();
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unable to perform uninstall.");
+
+                MessageBox.Show("Uninstall error!");
+            }
         }
 
         public static void DeleteReadOnlyDirectory(string directory)
         {
-            foreach (var subdirectory in Directory.EnumerateDirectories(directory))
+            try
             {
-                DeleteReadOnlyDirectory(subdirectory);
+                foreach (var subdirectory in Directory.EnumerateDirectories(directory))
+                {
+                    DeleteReadOnlyDirectory(subdirectory);
+                }
+                foreach (var fileName in Directory.EnumerateFiles(directory))
+                {
+                    var fileInfo = new FileInfo(fileName);
+                    fileInfo.Attributes = FileAttributes.Normal;
+                    fileInfo.Delete();
+                }
+                Directory.Delete(directory);
             }
-            foreach (var fileName in Directory.EnumerateFiles(directory))
+            catch (Exception e)
             {
-                var fileInfo = new FileInfo(fileName);
-                fileInfo.Attributes = FileAttributes.Normal;
-                fileInfo.Delete();
+                Workflow workflow = new Workflow();
+                workflow.ReportException(e, "Unable to delete directory:  " + directory);
             }
-            Directory.Delete(directory);
         }
 
         private void DeleteApplicationDir(string installPath)
@@ -112,6 +167,7 @@ namespace Installer
                 {
                     SetStatus("ERROR!  Unable to delete application directory!");
                     StoreException(e);
+                    ReportException(e, "Unable to delete application directory:  " + installPath);
                     return;
                 }
 
@@ -121,258 +177,378 @@ namespace Installer
 
         public Thread ExecuteUpdateThread(bool startAfter, string[] origArgs)
         {
-            Thread thread = new Thread(() => ExecuteUpdate(startAfter, origArgs));
-            thread.Start();
-            while (!thread.IsAlive) { }
+            try
+            {
+                Thread thread = new Thread(() => ExecuteUpdate(startAfter, origArgs));
+                thread.Start();
+                while (!thread.IsAlive) { }
 
-            return thread;
+                return thread;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unable to execute update thread.");
+                return null;
+            }
         }
 
         public void ExecuteUpdate(bool startAfter, string[] origArgs)
         {
-            SetStatus("Updating Birdie....");
-
-            bool keepSrc = Directory.Exists(Path.Combine(Main.repoBaseDir, "src"));
             try
             {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                SetStatus("Updating Birdie....");
 
-                using (Repository repo = new Repository(Main.repoBaseDir))
+                bool keepSrc = Directory.Exists(Path.Combine(Main.repoBaseDir, "src"));
+                try
                 {
-                    repo.Reset(ResetMode.Hard, "HEAD");  // This is necessary to clean things up for Git; configs/logs won't be affected.  --Kris
-                    Commands.Checkout(repo, repo.Branches[(string)appKey.GetValue("BranchName", "master")]);  // You should not use the updater on manual installs!  --Kris
-                    Commands.Pull(repo, new LibGit2Sharp.Signature("FaceBERN! Updater", "KrisCraig@php.net", new DateTimeOffset()), new PullOptions());  // Just do a git pull.  That's the update.  --Kris
+                    RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                    RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                    using (Repository repo = new Repository(Main.repoBaseDir))
+                    {
+                        repo.Reset(ResetMode.Hard, "HEAD");  // This is necessary to clean things up for Git; configs/logs won't be affected.  --Kris
+                        Commands.Checkout(repo, repo.Branches[(string)appKey.GetValue("BranchName", "master")]);  // You should not use the updater on manual installs!  --Kris
+                        Commands.Pull(repo, new LibGit2Sharp.Signature("FaceBERN! Updater", "KrisCraig@php.net", new DateTimeOffset()), new PullOptions());  // Just do a git pull.  That's the update.  --Kris
+                    }
+
+                    appKey.Close();
+                    softwareKey.Close();
+
+                    SetACLPermissions(Main.repoBaseDir);
+                }
+                catch (Exception e)
+                {
+                    SetStatus("ERROR:  Update FAILED!");
+                    StoreException(e);
+                    ReportException(e, "Update failed.");
+                    return;
                 }
 
-                appKey.Close();
-                softwareKey.Close();
+                SetStatus("Copying executables....", 80);
+                CopyExecutables(Main.repoBaseDir);
 
-                SetACLPermissions(Main.repoBaseDir);
+                SetStatus("Copying dependencies....", 85);
+                CopyDependencies(Main.repoBaseDir);
+
+                if (!keepSrc)
+                {
+                    SetStatus("Cleaning-up the corrupt campagin finance system....", 90);
+
+                    try
+                    {
+                        if (Directory.Exists(Path.Combine(Main.repoBaseDir, "src")))
+                        {
+                            Directory.Delete(Path.Combine(Main.repoBaseDir, "src"), true);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Error cleaning-up the corrupt campaign finance system.");
+                    }
+                }
+
+                SetStatus("Update Complete!", 100);
+
+                System.Threading.Thread.Sleep(1000);
+
+                string installerPath = Path.Combine(Main.repoBaseDir, "BirdieSetup.exe");
+                try
+                {
+                    Process process = new Process();
+                    process.StartInfo.FileName = installerPath;
+                    process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " " + (startAfter ? " /startAfter " : "") 
+                        + "/cleanup" + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
+                    process.Start();
+                }
+                catch (Exception ex)
+                {
+                    SetStatus("ERROR:  Installer re-launch FAILED!");
+                    StoreException(ex);
+                    ReportException(ex, "Installer re-launch failed.");
+                    return;
+                }
+
+                Main.Close();
             }
             catch (Exception e)
             {
-                //SetStatus("ERROR:  Update FAILED!");
-                SetStatus(@"err=" + e.Message);  // Uncomment for DEBUG.  --Kris
-                StoreException(e);
-                return;
+                ReportException(e, "Unhandled exception in ExecuteUpdate.");
+                MessageBox.Show("Update error!");
             }
-
-            SetStatus("Copying executables....", 80);
-            CopyExecutables(Main.repoBaseDir);
-
-            SetStatus("Copying dependencies....", 85);
-            CopyDependencies(Main.repoBaseDir);
-
-            if (!keepSrc)
-            {
-                SetStatus("Cleaning-up the corrupt campagin finance system....", 90);
-                if (Directory.Exists(Path.Combine(Main.repoBaseDir, "src")))
-                {
-                    Directory.Delete(Path.Combine(Main.repoBaseDir, "src"), true);
-                }
-            }
-
-            SetStatus("Update Complete!", 100);
-
-            System.Threading.Thread.Sleep(1000);
-
-            string installerPath = Path.Combine(Main.repoBaseDir, "BirdieSetup.exe");
-            try
-            {
-                Process process = new Process();
-                process.StartInfo.FileName = installerPath;
-                process.StartInfo.Arguments = Main.githubRemoteName + " " + Main.branchName + " " + (startAfter ? " /startAfter " : "") + "/cleanup" + " origArgs=\"" + String.Join(@",", origArgs) + "\"";
-                process.Start();
-            }
-            catch (Exception ex)
-            {
-                SetStatus("ERROR:  Installer re-launch FAILED!");
-                StoreException(ex);
-                return;
-            }
-
-            Main.Close();
         }
 
         public Thread ExecuteInstallThread(string installerVersion, string repoURL)
         {
-            Thread thread = new Thread(() => ExecuteInstall(installerVersion, repoURL));
-            thread.SetApartmentState(ApartmentState.STA);  // MTA is not compatible with FolderBrowserDialog.  --Kris
-            thread.Start();
-            while (!thread.IsAlive) { }
+            try
+            {
+                Thread thread = new Thread(() => ExecuteInstall(installerVersion, repoURL));
+                thread.SetApartmentState(ApartmentState.STA);  // MTA is not compatible with FolderBrowserDialog.  --Kris
+                thread.Start();
+                while (!thread.IsAlive) { }
 
-            return thread;
+                return thread;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unable to execute install thread.");
+                return null;
+            }
         }
 
         public void ExecuteInstall(string installerVersion, string repoURL)
         {
-            string installPath = null;
-            string branchName = null;
-            bool deleteSrc = false;
-            bool createStartMenuShortcut = false;
-            bool createDesktopShortcut = false;
-            using (WorkflowForm1 workflowForm1 = new WorkflowForm1(installerVersion))
+            try
             {
-                workflowForm1.ShowDialog();
-                if (workflowForm1.cancel)
+                string installPath = null;
+                string branchName = null;
+                bool deleteSrc = false;
+                bool createStartMenuShortcut = false;
+                bool createDesktopShortcut = false;
+                try
                 {
-                    Exit();
-                    return;
-                }
-                else
-                {
-                    using (WorkflowForm2 workflowForm2 = new WorkflowForm2())
+                    using (WorkflowForm1 workflowForm1 = new WorkflowForm1(installerVersion))
                     {
-                        workflowForm2.ShowDialog();
-                        if (workflowForm2.cancel)
+                        workflowForm1.ShowDialog();
+                        if (workflowForm1.cancel)
                         {
                             Exit();
                             return;
                         }
                         else
                         {
-                            installPath = workflowForm2.installPath;
-                            branchName = workflowForm2.branchName;
-                            deleteSrc = !(workflowForm2.includeSrcCheckbox.Checked);
-                            createStartMenuShortcut = workflowForm2.createStartMenuFolderCheckbox.Checked;
-                            createDesktopShortcut = workflowForm2.createDesktopShortcutCheckbox.Checked;
+                            using (WorkflowForm2 workflowForm2 = new WorkflowForm2())
+                            {
+                                workflowForm2.ShowDialog();
+                                if (workflowForm2.cancel)
+                                {
+                                    Exit();
+                                    return;
+                                }
+                                else
+                                {
+                                    installPath = workflowForm2.installPath;
+                                    branchName = workflowForm2.branchName;
+                                    deleteSrc = !(workflowForm2.includeSrcCheckbox.Checked);
+                                    createStartMenuShortcut = workflowForm2.createStartMenuFolderCheckbox.Checked;
+                                    createDesktopShortcut = workflowForm2.createDesktopShortcutCheckbox.Checked;
+                                }
+                            }
                         }
                     }
                 }
-            }
-
-            if (installPath != null && branchName != null)
-            {
-                /* Check for existing installation and overwrite.  --Kris */
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-
-                if (appKey != null)
+                catch (Exception e)
                 {
-                    /* We're NOT checking for/deleting the installedPath because the user might want that preserved.  We'll just clear the registry and make sure the destination directory's clean.  --Kris */
-                    appKey.Close();
+                    ReportException(e, "Install failed during user interaction workflow.");
 
-                    softwareKey.DeleteSubKeyTree("FaceBERN!", false);
+                    MessageBox.Show("Install error during user interaction workflow!");
                 }
 
-                /* Perform the installation.  --Kris */
-                SetStatus("Creating installation directory....", 0);
-
-                try
+                if (installPath != null && branchName != null)
                 {
-                    DeleteApplicationDir(installPath);
-
-                    Directory.CreateDirectory(installPath);
-                }
-                catch (Exception ex)
-                {
-                    SetStatus("Directory creation FAILED : " + ex.Message);
-                    StoreException(ex);
-                    return;
-                }
-
-                SetStatus("Downloading and unpacking program files....", 20);
-
-                Repository.Clone(repoURL, installPath);
-
-                if (!(branchName.ToLower().Equals("master")))
-                {
-                    SetStatus("Checking-out " + branchName + " branch....", 60);
-
-                    using (Repository repo = new Repository(installPath))
+                    RegistryKey softwareKey = null;
+                    RegistryKey appKey = null;
+                    try
                     {
-                        LibGit2Sharp.Commands.Checkout(repo, repo.Branches[@"origin/" + branchName]);
+                        /* Check for existing installation and overwrite.  --Kris */
+                        softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                        appKey = softwareKey.CreateSubKey("FaceBERN!");
+
+                        if (appKey != null)
+                        {
+                            /* We're NOT checking for/deleting the installedPath because the user might want that preserved.  We'll just clear the registry and make sure the destination directory's clean.  --Kris */
+                            appKey.Close();
+
+                            softwareKey.DeleteSubKeyTree("FaceBERN!", false);
+                        }
                     }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Install error trying to open/prepare registry.");
+
+                        MessageBox.Show("Install error during registry setup!");
+                    }
+
+                    /* Perform the installation.  --Kris */
+                    SetStatus("Creating installation directory....", 0);
+
+                    try
+                    {
+                        DeleteApplicationDir(installPath);
+
+                        Directory.CreateDirectory(installPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        SetStatus("Directory creation FAILED : " + ex.Message);
+                        StoreException(ex);
+                        ReportException(ex, "Install failed:  Directory creation failed.");
+                        return;
+                    }
+
+                    SetStatus("Downloading and unpacking program files....", 20);
+
+                    try
+                    {
+                        Repository.Clone(repoURL, installPath);
+
+                        if (!(branchName.ToLower().Equals("master")))
+                        {
+                            SetStatus("Checking-out " + branchName + " branch....", 60);
+
+                            using (Repository repo = new Repository(installPath))
+                            {
+                                LibGit2Sharp.Commands.Checkout(repo, repo.Branches[@"origin/" + branchName]);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Install failed:  Error during Git workflow.");
+
+                        MessageBox.Show("Error downloading/unpacking program files!");
+                    }
+
+                    SetStatus("Finalizing filesystem....", 80);
+
+                    try
+                    {
+                        /* Copy the executables.  --Kris */
+                        CopyExecutables(installPath);
+
+                        /* Copy all dependencies.  --Kris */
+                        CopyDependencies(installPath);
+
+                        /* Set the directory and file permissions.  --Kris */
+                        //SetPermissions(installPath);  // The built-in ACL libraries are terrible and wholly unreliable.  Resorting to Plan B.  --Kris
+                        SetACLPermissions(installPath);
+                    }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Install failed:  Error finalizing filesystem.");
+
+                        MessageBox.Show("Install failed during filesystem finalization!");
+                    }
+
+                    /* Create shortcuts.  --Kris */
+                    if (createStartMenuShortcut || createDesktopShortcut)
+                    {
+                        SetStatus("Creating shortcut(s)....", 85);
+
+                        try
+                        {
+                            CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);
+                        }
+                        catch (Exception e)
+                        {
+                            ReportException(e, "Install failed:  Error creating shortcuts.");
+
+                            MessageBox.Show("Unable to create shortcuts!");
+                        }
+                    }
+
+                    /* Delete the source directory if specified by the user.  --Kris */
+                    SetStatus("Cleaning-up the establishment....", 90);
+
+                    try
+                    {
+                        if (deleteSrc && Directory.Exists(Path.Combine(installPath, "program")))
+                        {
+                            Directory.Delete(Path.Combine(installPath, "program"), true);
+                        }
+
+                        if (deleteSrc && Directory.Exists(Path.Combine(installPath, "src")))
+                        {
+                            Directory.Delete(Path.Combine(installPath, "src"), true);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Unable to clean-up establishment in ExecuteInstall.");
+                    }
+
+                    SetStatus("Updating system registry....", 90);
+
+                    try
+                    {
+                        appKey = softwareKey.CreateSubKey("FaceBERN!");  // Sticking with the old name because it's more likely to be unique.  --Kris
+
+                        appKey.SetValue("Installed", installPath, RegistryValueKind.String);
+                        appKey.SetValue("BranchName", branchName, RegistryValueKind.String);
+                        appKey.SetValue("GithubRemoteName", "origin", RegistryValueKind.String);
+                        appKey.SetValue("PostInstallNeeded", "1", RegistryValueKind.String);
+
+                        appKey.Flush();
+                        softwareKey.Flush();
+
+                        appKey.Close();
+                        softwareKey.Close();
+                    }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Install failed:  Error updating system registry.");
+                    }
+
+                    SetStatus("Installation complete!", 100);
+
+                    System.Threading.Thread.Sleep(1000);
+
+                    try
+                    {
+                        /* Display the thank you form.  --Kris */
+                        using (ThankYouForm thankYouForm = new ThankYouForm(installerVersion))
+                        {
+                            thankYouForm.ShowDialog();
+                            SetStartAfter(thankYouForm.launchFacebernCheckbox.Checked);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ReportException(e, "Error displaying thank you form in ExecuteInstall.");
+                    }
+
+                    Exit();
                 }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unhandled exception in ExecuteInstall.");
 
-                SetStatus("Finalizing filesystem....", 80);
-
-                /* Copy the executables.  --Kris */
-                CopyExecutables(installPath);
-
-                /* Copy all dependencies.  --Kris */
-                CopyDependencies(installPath);
-
-                /* Set the directory and file permissions.  --Kris */
-                //SetPermissions(installPath);  // The built-in ACL libraries are terrible and wholly unreliable.  Resorting to Plan B.  --Kris
-                SetACLPermissions(installPath);
-
-                /* Create shortcuts.  --Kris */
-                if (createStartMenuShortcut || createDesktopShortcut)
-                {
-                    SetStatus("Creating shortcut(s)....", 85);
-
-                    CreateShortcuts(installPath, createStartMenuShortcut, createDesktopShortcut);
-                }
-
-                /* Delete the source directory if specified by the user.  --Kris */
-                SetStatus("Cleaning-up the establishment....", 90);
-
-                if (deleteSrc && Directory.Exists(Path.Combine(installPath, "program")))
-                {
-                    Directory.Delete(Path.Combine(installPath, "program"), true);
-                }
-
-                if (deleteSrc && Directory.Exists(Path.Combine(installPath, "src")))
-                {
-                    Directory.Delete(Path.Combine(installPath, "src"), true);
-                }
-
-                SetStatus("Updating system registry....", 90);
-
-                appKey = softwareKey.CreateSubKey("FaceBERN!");  // Sticking with the old name because it's more likely to be unique.  --Kris
-
-                appKey.SetValue("Installed", installPath, RegistryValueKind.String);
-                appKey.SetValue("BranchName", branchName, RegistryValueKind.String);
-                appKey.SetValue("GithubRemoteName", "origin", RegistryValueKind.String);
-                appKey.SetValue("PostInstallNeeded", "1", RegistryValueKind.String);
-
-                appKey.Flush();
-                softwareKey.Flush();
-
-                appKey.Close();
-                softwareKey.Close();
-
-                SetStatus("Installation complete!", 100);
-
-                System.Threading.Thread.Sleep(1000);
-
-                /* Display the thank you form.  --Kris */
-                using (ThankYouForm thankYouForm = new ThankYouForm(installerVersion))
-                {
-                    thankYouForm.ShowDialog();
-                    SetStartAfter(thankYouForm.launchFacebernCheckbox.Checked);
-                }
-
-                Exit();
+                MessageBox.Show("Install error!");
             }
         }
 
         private void CopyDependencies(string installPath)
         {
-            string resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
-            if (Directory.Exists(Path.Combine(installPath, resourceDir)))
+            string resourceDir = "(unknown)";
+            try
             {
-                string[] files = Directory.GetFiles(Path.Combine(installPath, resourceDir));
-
-                foreach (string s in files)
+                resourceDir = Path.Combine("src", "Windows", @"FaceBERN!", "Resources");
+                if (Directory.Exists(Path.Combine(installPath, resourceDir)))
                 {
-                    if (System.IO.File.Exists(Path.Combine(installPath, Path.GetFileName(s))))
+                    string[] files = Directory.GetFiles(Path.Combine(installPath, resourceDir));
+
+                    foreach (string s in files)
                     {
-                        DeleteFile(Path.Combine(installPath, Path.GetFileName(s)));
+                        if (System.IO.File.Exists(Path.Combine(installPath, Path.GetFileName(s))))
+                        {
+                            DeleteFile(Path.Combine(installPath, Path.GetFileName(s)));
+                        }
+                    }
+
+                    foreach (string s in files)
+                    {
+                        CopyFile(s, Path.Combine(installPath, Path.GetFileName(s)));
                     }
                 }
-
-                foreach (string s in files)
+                else
                 {
-                    CopyFile(s, Path.Combine(installPath, Path.GetFileName(s)));
+                    SetStatus("ERROR!  Resources dir not found!");
+                    throw new Exception("Resources dir '" + resourceDir + "' not found!");
                 }
             }
-            else
+            catch (Exception e)
             {
-                SetStatus("ERROR!  Resources dir not found!");
-                return;
+                ReportException(e, "Error copying dependencies to:  " + installPath);
             }
         }
 
@@ -407,6 +583,7 @@ namespace Installer
                     catch (Exception ex)
                     {
                         CopyFile(src, dest, retry);
+                        ReportException(ex, "Unable to copy file from '" + src + "' to '" + dest + "'.  Retry = " + retry.ToString());
                     }
                 }
                 else
@@ -436,6 +613,8 @@ namespace Installer
             }
             catch (Exception e)
             {
+                ReportException(e, "Error deleting file '" + src + "'.  Retry = " + retry.ToString());
+
                 if (retry > 0)
                 {
                     retry--;
@@ -451,45 +630,53 @@ namespace Installer
         private void CopyExecutables(string installPath)
         {
             List<string> executables = new List<string>();
-            executables.Add(@"Birdie");
-            executables.Add(@"BirdieSetup");
-            foreach (string program in executables)
+
+            try
             {
-                string exe = program + ".exe";
-                if (Directory.Exists(Path.Combine(installPath, "program"))
-                    && System.IO.File.Exists(Path.Combine(installPath, "program", exe)))
+                executables.Add(@"Birdie");
+                executables.Add(@"BirdieSetup");
+                foreach (string program in executables)
                 {
-                    System.IO.File.Copy(Path.Combine(installPath, "program", exe), Path.Combine(installPath, exe), true);
-                }
-                else
-                {
-                    string binDir = Path.Combine("src", "Windows", program, "bin");
-                    if (Directory.Exists(Path.Combine(installPath, binDir)))
+                    string exe = program + ".exe";
+                    if (Directory.Exists(Path.Combine(installPath, "program"))
+                        && System.IO.File.Exists(Path.Combine(installPath, "program", exe)))
                     {
-                        if (Directory.Exists(Path.Combine(installPath, binDir, "Release"))
-                            && System.IO.File.Exists(Path.Combine(installPath, binDir, "Release", exe)))
-                        {
-                            System.IO.File.Copy(Path.Combine(installPath, binDir, "Release", exe),
-                                        Path.Combine(installPath, exe), true);
-                        }
-                        else if (Directory.Exists(Path.Combine(installPath, binDir, "Debug"))
-                            && System.IO.File.Exists(Path.Combine(installPath, binDir, "Debug", exe)))
-                        {
-                            System.IO.File.Copy(Path.Combine(installPath, binDir, "Debug", exe),
-                                        Path.Combine(installPath, exe), true);
-                        }
-                        else
-                        {
-                            SetStatus("ERROR(2)!  " + exe + " not found!");
-                            return;
-                        }
+                        System.IO.File.Copy(Path.Combine(installPath, "program", exe), Path.Combine(installPath, exe), true);
                     }
                     else
                     {
-                        SetStatus("ERROR!  " + exe + " not found!");
-                        return;
+                        string binDir = Path.Combine("src", "Windows", program, "bin");
+                        if (Directory.Exists(Path.Combine(installPath, binDir)))
+                        {
+                            if (Directory.Exists(Path.Combine(installPath, binDir, "Release"))
+                                && System.IO.File.Exists(Path.Combine(installPath, binDir, "Release", exe)))
+                            {
+                                System.IO.File.Copy(Path.Combine(installPath, binDir, "Release", exe),
+                                            Path.Combine(installPath, exe), true);
+                            }
+                            else if (Directory.Exists(Path.Combine(installPath, binDir, "Debug"))
+                                && System.IO.File.Exists(Path.Combine(installPath, binDir, "Debug", exe)))
+                            {
+                                System.IO.File.Copy(Path.Combine(installPath, binDir, "Debug", exe),
+                                            Path.Combine(installPath, exe), true);
+                            }
+                            else
+                            {
+                                SetStatus("ERROR(2)!  " + exe + " not found!");
+                                throw new Exception("Error(2) locating executable:  " + exe);
+                            }
+                        }
+                        else
+                        {
+                            SetStatus("ERROR!  " + exe + " not found!");
+                            throw new Exception("Error locating executable:  " + exe);
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Error copying executables to:  " + installPath);
             }
         }
 
@@ -658,61 +845,221 @@ namespace Installer
 
         private void SetStartAfter(bool startAfter)
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { SetStartAfter(startAfter); }));
+                if (Main == null)
+                {
+                    return;
+                }
+
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { SetStartAfter(startAfter); }));
+                }
+                else
+                {
+                    Main.SetStartAfter(startAfter);
+                }
             }
-            else
+            catch (Exception e)
             {
-                Main.SetStartAfter(startAfter);
+                ReportException(e, "Exception thrown in SetStartAfter.");
             }
         }
 
         private void SetStatus(string text, int percent = -1)
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { SetStatus(text, percent); }));
-            }
-            else
-            {
-                Main.SetStatus(text, percent);
-            }
+                if (Main == null)
+                {
+                    return;
+                }
 
-            Main.Refresh();
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { SetStatus(text, percent); }));
+                }
+                else
+                {
+                    Main.SetStatus(text, percent);
+                }
+
+                Main.Refresh();
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception thrown in SetStatus.");
+            }
         }
 
         private void StoreException(Exception e)
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { StoreException(e); }));
-            }
-            else
-            {
-                Main.StoreException(e);
-            }
+                if (Main == null)
+                {
+                    return;
+                }
 
-            Main.Refresh();
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { StoreException(e); }));
+                }
+                else
+                {
+                    Main.StoreException(e);
+                }
+
+                Main.Refresh();
+            }
+            catch (Exception ex)
+            {
+                ReportException(e, "Exception thrown in StoreException.");
+            }
+        }
+
+        /* Query the Birdie API and return the raw result.  --Kris */
+        internal IRestResponse BirdieQuery(string path, string method = "GET", Dictionary<string, string> queryParams = null, string body = "", bool reportException = true)
+        {
+            /* We don't ever want this to terminate program execution on failure.  --Kris */
+            try
+            {
+                Method meth;
+                switch (method.ToUpper())
+                {
+                    default:
+                        throw new Exception("API ERROR:  Unsupported method '" + method + "'!");
+                    case "GET":
+                        meth = Method.GET;
+                        break;
+                    case "POST":
+                        meth = Method.POST;
+                        break;
+                    case "PUT":
+                        meth = Method.PUT;
+                        break;
+                    case "DELETE":
+                        meth = Method.DELETE;
+                        break;
+                }
+
+                RestRequest req = new RestRequest(path, meth);
+
+                req.JsonSerializer.ContentType = "application/json; charset=utf-8";
+
+                if (queryParams != null && queryParams.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string> pair in queryParams)
+                    {
+                        req.AddParameter(pair.Key, pair.Value);
+                    }
+                }
+
+                if (body != null && body.Length > 0 && !(method.ToUpper().Equals("GET")))
+                {
+                    //req.AddBody(JsonConvert.DeserializeObject<Dictionary<string, string>>(body));
+                    req.AddParameter("text/json", body, ParameterType.RequestBody);
+                }
+
+                return restClient.Execute(req);
+            }
+            catch (Exception e)
+            {
+                if (reportException == true)
+                {
+                    try
+                    {
+                        ReportException(e, "Birdie API query error.");
+
+                        SetStatus("Warning:  Birdie API query error : " + e.Message);
+                    }
+                    catch (Exception) { }
+                }
+
+                return null;
+            }
+        }
+
+        internal void ReportException(Exception ex, string logMsg = null)
+        {
+            try
+            {
+                string message = null;
+                string stackTrace = null;
+                string source = null;
+                string type = null;
+                DateTime discovered;
+                Dictionary<dynamic, dynamic> data = new Dictionary<dynamic, dynamic>();
+
+                message = ex.Message;
+                stackTrace = ex.StackTrace;
+                source = ex.Source;
+                type = ex.GetType().ToString();
+                discovered = DateTime.Now;
+                if (ex.Data != null && ex.Data.Count > 0)
+                {
+                    data = new Dictionary<dynamic, dynamic>();
+                    foreach (DictionaryEntry pair in ex.Data)
+                    {
+                        data.Add(pair.Key, pair.Value);
+                    }
+                }
+
+                Dictionary<string, dynamic> body = new Dictionary<string, dynamic>();
+                body.Add("exType", type);
+                body.Add("exMessage", message);
+                body.Add("exStackTrace", stackTrace);
+                body.Add("exSource", source);
+                body.Add("exToString", ex.ToString());
+                if (data != null)
+                {
+                    try
+                    {
+                        body.Add("exData", JsonConvert.SerializeObject(data));
+                    }
+                    catch (Exception) { }
+                }
+                body.Add("appName", @"FaceBERN! Installer");
+                body.Add("clientId", null);
+
+                IRestResponse res = BirdieQuery(@"/exceptions", "POST", null, JsonConvert.SerializeObject(body), false);
+            }
+            catch (Exception) { }
         }
 
         private void Exit()
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { Exit(); }));
+                if (Main == null)
+                {
+                    Application.Exit();
+                    return;
+                }
+
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { Exit(); }));
+                }
+                else
+                {
+                    Main.Exit();
+                }
             }
-            else
+            catch (Exception e)
             {
-                Main.Exit();
+                ReportException(e, "Exception thrown in Exit.");
+
+                Application.Exit();
             }
         }
     }

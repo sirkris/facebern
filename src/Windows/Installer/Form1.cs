@@ -183,6 +183,14 @@ namespace Installer
             WriteResourceToFile("git2-381caf5.dll");
             WriteResourceToFile("LibGit2Sharp.dll");
 
+            SetStatus("Extracting Rest Sharp library....");
+
+            WriteResourceToFile("RestSharp.dll");
+
+            SetStatus("Extracting Newtonsoft.Json library....");
+
+            WriteResourceToFile("Newtonsoft.Json.dll");
+
             SetStatus("Extracting SetACL utility....");
 
             WriteResourceToFile("SetACL.exe");

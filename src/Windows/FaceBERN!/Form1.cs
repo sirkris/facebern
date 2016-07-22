@@ -198,7 +198,7 @@ namespace FaceBERN_
 
         public void SetDefaults()
         {
-            /* Only show the DEBUG menu if we've launched in DEBUG mode.  --Kris */
+            /* Only show the DEBUG menu if we've launched in DEBUG mode.  You can view it in RELEASE mode, as well, by holding down CTRL+ALT while typing "debug" (no quotes; case-insensitive).  --Kris */
 #if (!DEBUG)
             DEBUGToolStripMenuItem.Visible = false;
 #endif
