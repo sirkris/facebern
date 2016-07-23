@@ -1745,6 +1745,7 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 ReportException(e, "Exception in GetTweetsFromReddit.");
+                return null;
             }
         }
 
