@@ -1714,153 +1714,183 @@ namespace FaceBERN_
         // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
         private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
         {
-            List<TweetsQueue> res = GetTweetsFromSubreddit("StillSandersForPres", Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
-            // TODO - Add more subs when able.  --Kris
-
-            if (appendTweetsQueue)
+            try
             {
-                foreach (TweetsQueue entry in res)
+                List<TweetsQueue> res = GetTweetsFromSubreddit("StillSandersForPres", Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+                // TODO - Add more subs when able.  --Kris
+
+                if (appendTweetsQueue)
                 {
-                    bool dup = false;
-                    foreach (TweetsQueue globalEntry in tweetsQueue)
+                    foreach (TweetsQueue entry in res)
                     {
-                        if (globalEntry.tweet.Trim().ToLower().Equals(entry.tweet.Trim().ToLower()))
+                        bool dup = false;
+                        foreach (TweetsQueue globalEntry in tweetsQueue)
                         {
-                            dup = true;
-                            break;
+                            if (globalEntry.tweet.Trim().ToLower().Equals(entry.tweet.Trim().ToLower()))
+                            {
+                                dup = true;
+                                break;
+                            }
+                        }
+
+                        if (dup == false)
+                        {
+                            tweetsQueue.Add(entry);
                         }
                     }
-
-                    if (dup == false)
-                    {
-                        tweetsQueue.Add(entry);
-                    }
                 }
-            }
 
-            return res;
+                return res;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in GetTweetsFromReddit.");
+            }
         }
 
         private List<TweetsQueue> GetTweetsFromSubreddit(string sub, int? campaignId = null)
         {
-            if (reddit == null)
+            try
             {
-                reddit = new Reddit(false);
+                if (reddit == null)
+                {
+                    reddit = new Reddit(false);
+                }
+
+                // No need to login to Reddit since all we're doing is a search.  --Kris
+                List<RedditPost> redditPosts = SearchSubredditForFlairPosts("Tweet This!", sub, campaignId, "month");
+
+                List<TweetsQueue> res = new List<TweetsQueue>();
+                foreach (RedditPost redditPost in redditPosts)
+                {
+                    res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", @"http://www.reddit.com" + redditPost.permalink, DateTime.Now, redditPost.GetCreated(),
+                        @"/u/" + redditPost.GetAuthor(), DateTime.Now, DateTime.Now.AddDays(3), campaignId));
+                }
+
+                return res;
             }
-
-            // No need to login to Reddit since all we're doing is a search.  --Kris
-            List<RedditPost> redditPosts = SearchSubredditForFlairPosts("Tweet This!", sub, campaignId, "month");
-
-            List<TweetsQueue> res = new List<TweetsQueue>();
-            foreach (RedditPost redditPost in redditPosts)
+            catch (Exception e)
             {
-                res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", @"http://www.reddit.com" + redditPost.permalink, DateTime.Now, redditPost.GetCreated(),
-                    @"/u/" + redditPost.GetAuthor(), DateTime.Now, DateTime.Now.AddDays(3), campaignId));
+                ReportException(e, "Exception in GetTweetsFromSubreddit.");
+                return null;
             }
-
-            return res;
         }
 
         /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
         private void ConsumeTweetsQueue(int? campaignId = null)
         {
-            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            try
             {
-                return;
-            }
-
-            /* Tweets history is already sorted with the latest entry being the most-recent tweet.  --Kris */
-            double r;
-            if (Globals.Config.ContainsKey("TweetIntervalMinutes")
-                && Double.TryParse(Globals.Config["TweetIntervalMinutes"], out r)
-                && tweetsHistory != null
-                && tweetsHistory.Count > 0
-                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
-                && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now 
-                && Globals.devOverride != true)
-            {
-                return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
-            }
-
-            Log("Consuming tweets queue....");
-
-            if (tweetsQueue != null && tweetsQueue.Count > 0)
-            {
-                List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
-                TweetsQueue appendTweetsQueue = null;
-                bool tweeted = false;
-                foreach (TweetsQueue entry in tweetsQueue)
+                if (!(Globals.Config["EnableTwitter"].Equals("1")))
                 {
-                    if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
-                        || DateTime.Now >= entry.end)
-                    {
-                        continue;
-                    }
+                    return;
+                }
 
-                    /* If a campaign ID is passed, ignore anything in the queue without that ID.  --Kris */
-                    if (campaignId != null
-                        && entry.GetCampaignId() != campaignId)
-                    {
-                        continue;
-                    }
+                /* Tweets history is already sorted with the latest entry being the most-recent tweet.  --Kris */
+                double r;
+                if (Globals.Config.ContainsKey("TweetIntervalMinutes")
+                    && Double.TryParse(Globals.Config["TweetIntervalMinutes"], out r)
+                    && tweetsHistory != null
+                    && tweetsHistory.Count > 0
+                    && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
+                    && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now
+                    && Globals.devOverride != true)
+                {
+                    return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
+                }
 
-                    if (!(tweeted) 
-                        && DateTime.Now >= entry.start)
+                Log("Consuming tweets queue....");
+
+                if (tweetsQueue != null && tweetsQueue.Count > 0)
+                {
+                    List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
+                    TweetsQueue appendTweetsQueue = null;
+                    bool tweeted = false;
+                    foreach (TweetsQueue entry in tweetsQueue)
                     {
-                        string statusId;
-                        if (Tweet(entry.tweet, out statusId))  // Perform the actual tweet.  --Kris
+                        if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
+                            || DateTime.Now >= entry.end)
                         {
-                            entry.SetStatusID(statusId);
-                            AppendTweetsHistory(entry);
+                            continue;
                         }
-                        else
+
+                        /* If a campaign ID is passed, ignore anything in the queue without that ID.  --Kris */
+                        if (campaignId != null
+                            && entry.GetCampaignId() != campaignId)
                         {
-                            Log("Warning:  Unable to tweet from queue.  Will try again later.");
+                            continue;
+                        }
 
-                            entry.IncrementFailures();
-
-                            if (entry.GetFailures() > 1)
+                        if (!(tweeted)
+                            && DateTime.Now >= entry.start)
+                        {
+                            string statusId;
+                            if (Tweet(entry.tweet, out statusId))  // Perform the actual tweet.  --Kris
                             {
-                                Log("Warning:  Repeated failures on this tweet.  Removed from queue.");
+                                entry.SetStatusID(statusId);
+                                AppendTweetsHistory(entry);
                             }
                             else
                             {
-                                appendTweetsQueue = entry;  // Move it to the bottom of the queue so it won't block others.  TODO - Still comes first?!  Investigate when I have time.  --Kris
+                                Log("Warning:  Unable to tweet from queue.  Will try again later.");
+
+                                entry.IncrementFailures();
+
+                                if (entry.GetFailures() > 1)
+                                {
+                                    Log("Warning:  Repeated failures on this tweet.  Removed from queue.");
+                                }
+                                else
+                                {
+                                    appendTweetsQueue = entry;  // Move it to the bottom of the queue so it won't block others.  TODO - Still comes first?!  Investigate when I have time.  --Kris
+                                }
                             }
+
+                            tweeted = true;
                         }
-
-                        tweeted = true;
+                        else
+                        {
+                            newTweetsQueue.Add(entry);
+                        }
                     }
-                    else
+
+                    if (appendTweetsQueue != null)
                     {
-                        newTweetsQueue.Add(entry);
+                        newTweetsQueue.Add(appendTweetsQueue);
                     }
-                }
 
-                if (appendTweetsQueue != null)
-                {
-                    newTweetsQueue.Add(appendTweetsQueue);
+                    tweetsQueue = newTweetsQueue;
+                    PersistLocalTweetsQueue();
                 }
-
-                tweetsQueue = newTweetsQueue;
-                PersistLocalTweetsQueue();
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in ConsumeTweetsQueue.");
             }
         }
 
         /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
         private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, int? campaignId = null, string t = "day", bool? self = null)
         {
-            if (self == null)
+            try
             {
-                List<RedditPost> res = new List<RedditPost>();
-                res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, false));
-                res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, true));
+                if (self == null)
+                {
+                    List<RedditPost> res = new List<RedditPost>();
+                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, false));
+                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, true));
 
-                return res;
+                    return res;
+                }
+                else
+                {
+                    return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub), sub, campaignId);
+                }
             }
-            else
+            catch (Exception e)
             {
-                return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub), sub, campaignId);
+                ReportException(e, "Exception in SearchSubredditForFlairPosts.");
+                return null;
             }
         }
 
@@ -1944,83 +1974,108 @@ namespace FaceBERN_
         /* Post a tweet.  --Kris */
         private bool Tweet(string tweet, out string statusId)
         {
-            statusId = null;
-
-            if (!(Globals.Config["EnableTwitter"].Equals("1")))
+            try
             {
-                Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
+                statusId = null;
 
-                return false;
-            }
+                if (!(Globals.Config["EnableTwitter"].Equals("1")))
+                {
+                    Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
 
-            if (!(TwitterIsAuthorized()))
-            {
-                return false;
-            }
+                    return false;
+                }
 
-            if (tweetsHistory.Where(entry => entry.tweet.Equals(tweet)).ToList().Count > 0)
-            {
-                Log("Tweet '" + tweet + "' has already been tweeted recently.  Skipped.");
+                if (!(TwitterIsAuthorized()))
+                {
+                    return false;
+                }
 
-                return true;
-            }
+                if (tweetsHistory.Where(entry => entry.tweet.Equals(tweet)).ToList().Count > 0)
+                {
+                    Log("Tweet '" + tweet + "' has already been tweeted recently.  Skipped.");
 
-            LoadTwitterTokens();
-            
+                    return true;
+                }
+
+                LoadTwitterTokens();
+
 #if (DEBUG)
             Log("DEBUG - " + tweet);
             return true;
 #endif
-            
-            TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
-            if (res.Result == RequestResult.Success)
-            {
-                Log("Tweeted '" + tweet + "' successfully.");
-            }
-            else
-            {
-                Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
-            }
 
-            /* Get the ID of the tweet.  This is necessary in order to give the user the option to delete ("undo") the tweet later.  Would be nice if they included it in the API result....  --Kris */
-            statusId = GetTwitterStatusId(tweet);
-            
-            return (res.Result == RequestResult.Success);
+                TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
+                if (res.Result == RequestResult.Success)
+                {
+                    Log("Tweeted '" + tweet + "' successfully.");
+                }
+                else
+                {
+                    Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
+                }
+
+                /* Get the ID of the tweet.  This is necessary in order to give the user the option to delete ("undo") the tweet later.  Would be nice if they included it in the API result....  --Kris */
+                statusId = GetTwitterStatusId(tweet);
+
+                return (res.Result == RequestResult.Success);
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Unable to tweet:  " + tweet);
+                statusId = null;
+                return false;
+            }
         }
 
         internal string GetTwitterStatusId(string tweet)
         {
-            TwitterStatusCollection coll = GetTwitterUserTimeline();
-            foreach (TwitterStatus status in coll)
+            try
             {
-                // TODO - Strip out all links and compare.  --Kris
-                string checkTweet = ( status.Text.LastIndexOf(@"https://t.co/") != -1 ? status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/")) : status.Text );
-                if (tweet.IndexOf(checkTweet) != -1)
+                TwitterStatusCollection coll = GetTwitterUserTimeline();
+                foreach (TwitterStatus status in coll)
                 {
-                    return status.Id.ToString();
+                    // TODO - Strip out all links and compare.  --Kris
+                    string checkTweet = (status.Text.LastIndexOf(@"https://t.co/") != -1 ? status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/")) : status.Text);
+                    if (tweet.IndexOf(checkTweet) != -1)
+                    {
+                        return status.Id.ToString();
+                    }
                 }
-            }
 
-            return null;
+                return null;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in GetTwitterStatusId.");
+                return null;
+            }
         }
 
         private TwitterStatusCollection GetTwitterUserTimeline()
         {
-            if (!(TwitterIsAuthorized()))
+            try
             {
+                if (!(TwitterIsAuthorized()))
+                {
+                    return null;
+                }
+
+                LoadTwitterTokens(true);
+
+                if (twitterTimelineCache == null || twitterTimelineCacheLastRefresh == null
+                    || twitterTimelineCacheLastRefresh.Value.AddMinutes(Globals.__TWITTER_TIMELINE_CACHE_SHELF_LIFE__) <= DateTime.Now)
+                {
+                    twitterTimelineCache = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
+                    twitterTimelineCacheLastRefresh = DateTime.Now;
+                }
+
+                return twitterTimelineCache;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in GetTwitterUserTimeline.");
                 return null;
             }
-
-            LoadTwitterTokens(true);
-
-            if (twitterTimelineCache == null || twitterTimelineCacheLastRefresh == null
-                || twitterTimelineCacheLastRefresh.Value.AddMinutes(Globals.__TWITTER_TIMELINE_CACHE_SHELF_LIFE__) <= DateTime.Now)
-            {
-                twitterTimelineCache = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
-                twitterTimelineCacheLastRefresh = DateTime.Now;
-            }
-
-            return twitterTimelineCache;
         }
 
         internal bool DeleteTweet(string twitterStatusId, bool apiOnly = false)
@@ -2121,21 +2176,29 @@ namespace FaceBERN_
 
         private bool LoadTwitterTokens(bool onlyIfNull = false)
         {
-            if (!(TwitterIsAuthorized()))
+            try
             {
+                if (!(TwitterIsAuthorized()))
+                {
+                    return false;
+                }
+
+                if (twitterTokens == null || onlyIfNull == false)
+                {
+                    twitterTokens = new OAuthTokens();
+                    twitterTokens.ConsumerKey = twitterConsumerKey;
+                    twitterTokens.ConsumerSecret = twitterConsumerSecret;
+                    twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
+                    twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in LoadTwitterTokens.");
                 return false;
             }
-
-            if (twitterTokens == null || onlyIfNull == false)
-            {
-                twitterTokens = new OAuthTokens();
-                twitterTokens.ConsumerKey = twitterConsumerKey;
-                twitterTokens.ConsumerSecret = twitterConsumerSecret;
-                twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
-                twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
-            }
-
-            return true;
         }
 
         private void DestroyTwitterTokens()
@@ -2145,16 +2208,24 @@ namespace FaceBERN_
 
         private bool TwitterIsAuthorized()
         {
-            if (twitterAccessCredentials == null || twitterAccessCredentials.IsAssociated() == false)
+            try
             {
-                LoadTwitterCredentialsFromRegistry();
-                if (twitterAccessCredentials.IsAssociated() == false)
+                if (twitterAccessCredentials == null || twitterAccessCredentials.IsAssociated() == false)
                 {
-                    return false;
+                    LoadTwitterCredentialsFromRegistry();
+                    if (twitterAccessCredentials.IsAssociated() == false)
+                    {
+                        return false;
+                    }
                 }
-            }
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in TwitterIsAuthorized.");
+                return false;
+            }
         }
 
         /* Messy check to see if we'll need to open a browser window for GOTV on this iteration.  Will replace later when Facebook has been moved to its own class (TODO).  --Kris */
