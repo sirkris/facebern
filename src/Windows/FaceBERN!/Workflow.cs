@@ -3891,6 +3891,11 @@ namespace FaceBERN_
                     {
                         return;
                     }
+                    else if (Main.outBox.Text.Length >= text.Length
+                        && Main.outBox.Text.Substring(Main.outBox.Text.Length - text.Length - 1, text.Length).Equals(text))
+                    {
+                        return;
+                    }
 
                     lastLogMsg = text;
 
