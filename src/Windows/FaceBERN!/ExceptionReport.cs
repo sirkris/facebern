@@ -112,6 +112,7 @@ namespace FaceBERN_
                 }
                 body.Add("logMsg", logMsg);
                 body.Add("appName", @"FaceBERN!");
+                body.Add("appVersion", Globals.__VERSION__);
                 body.Add("clientId", workflow.GetAppID());
 
                 IRestResponse res = workflow.BirdieQuery(@"/exceptions", "POST", null, JsonConvert.SerializeObject(body));

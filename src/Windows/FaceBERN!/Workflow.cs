@@ -986,7 +986,9 @@ namespace FaceBERN_
         /* Tell the Birdie API we're still active.  --Kris */
         private void KeepAlive()
         {
-            IRestResponse res = BirdieQuery("/clients/" + GetAppID() + "/keepAlive", "PUT");
+            Dictionary<string, string> body = new Dictionary<string, string> { { "appVersion", Globals.__VERSION__ } };
+
+            IRestResponse res = BirdieQuery("/clients/" + GetAppID() + "/keepAlive", "PUT", null, JsonConvert.SerializeObject(body));
 
             if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
             {
