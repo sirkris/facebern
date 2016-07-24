@@ -1901,65 +1901,80 @@ namespace FaceBERN_
             {
                 List<RedditPost> res = new List<RedditPost>();
 
-                if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
+                try
                 {
-                    return res;  // No results.  --Kris
+                    if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
+                    {
+                        return res;  // No results.  --Kris
+                    }
+                }
+                catch (Exception e)
+                {
+                    ReportExceptionSilently(e, "Exception handling data children from redditObj in ParseRedditPosts.");
+                    return res;
                 }
 
-                int i = 0;
-                foreach (dynamic o in redditObj["data"]["children"])
+                try
                 {
-                    i++;
-
-                    try
+                    int i = 0;
+                    foreach (dynamic o in redditObj["data"]["children"])
                     {
-                        if (o != null
-                            && o["data"] != null
-                            && o["data"]["title"] != null
-                            && o["data"]["subreddit"] != null
-                            && o["data"]["url"] != null
-                            && o["data"]["permalink"] != null
-                            && o["data"]["score"] != null
-                            && o["data"]["created"] != null)
-                        {
-                            /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
-                            if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
-                            {
-                                continue;
-                            }
+                        i++;
 
-                            try
-                            {
-                                res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(), 
-                                    o["data"]["permalink"].ToString(), (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(), 
-                                    (string) o["data"]["selftext"], campaignId));
-                            }
-                            catch (Exception e)
-                            {
-                                Log("Warning:  Error parsing Reddit post : " + e.ToString());
-
-                                ReportException(e, "Error parsing Reddit post.");
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
                         try
                         {
-                            LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where o = " + JsonConvert.SerializeObject(o) + ".");
+                            if (o != null
+                                && o["data"] != null
+                                && o["data"]["title"] != null
+                                && o["data"]["subreddit"] != null
+                                && o["data"]["url"] != null
+                                && o["data"]["permalink"] != null
+                                && o["data"]["score"] != null
+                                && o["data"]["created"] != null)
+                            {
+                                /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
+                                if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
+                                {
+                                    continue;
+                                }
+
+                                try
+                                {
+                                    res.Add(new RedditPost((bool)o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(),
+                                        o["data"]["permalink"].ToString(), (int)o["data"]["score"], TimestampToDateTime((double)o["data"]["created"]), o["data"]["author"].ToString(),
+                                        (string)o["data"]["selftext"], campaignId));
+                                }
+                                catch (Exception e)
+                                {
+                                    Log("Warning:  Error parsing Reddit post : " + e.ToString());
+
+                                    ReportException(e, "Error parsing Reddit post.");
+                                }
+                            }
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
                             try
                             {
-                                LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where i = " + i.ToString() + "; unable to serialize object o.");
+                                LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where o = " + JsonConvert.SerializeObject(o) + ".");
                             }
                             catch (Exception)
                             {
-                                // Just forget it.  No point logging it without any useful information.  --Kris
+                                try
+                                {
+                                    LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where i = " + i.ToString() + "; unable to serialize object o.");
+                                }
+                                catch (Exception)
+                                {
+                                    // Just forget it.  No point logging it without any useful information.  --Kris
+                                }
                             }
                         }
                     }
+                }
+                catch (Exception e)
+                {
+                    ReportExceptionSilently(e, "Exception iterating through data children for redditObj in ParseRedditPosts.");
                 }
 
                 return res;
