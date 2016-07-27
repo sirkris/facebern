@@ -1298,10 +1298,15 @@ namespace FaceBERN_
         private void ExecuteDevCommand(string cmd)
         {
             string cmdDesc;
+            DebugTextForm dtf = null;
             switch (cmd.Trim().ToLower())
             {
                 default:
                     return;
+                case "admin":  // Associate the client with a Birdie API admin user account.  --Kris
+                    dtf = new DebugTextForm("Please enter your invitation code:");
+                    cmdDesc = "Associate admin account.  You will next be prompted for an invitation code.";
+                    break;
                 case "debug":  // Make the DEBUG menu appear on the Release build.  --Kris
                     DEBUGToolStripMenuItem.Visible = true;
                     cmdDesc = "Show debug menu.";
@@ -1311,6 +1316,44 @@ namespace FaceBERN_
             keysPressed = null;
 
             MessageBox.Show("Executed dev command:  " + cmdDesc);
+
+            /* Any actions we want to take after the message box is dismissed by the user.  --Kris */
+            switch (cmd.Trim().ToLower())
+            {
+                default:
+                    return;
+                case "admin":  // Associate the client with a Birdie API admin user account.  --Kris
+                    dtf.ShowDialog();
+                    if (dtf.DialogResult == System.Windows.Forms.DialogResult.OK)
+                    {
+                        waitForm = new WaitForm("Processing request....");
+
+                        this.Enabled = false;
+                        this.UseWaitCursor = true;
+
+                        Workflow workflow = new Workflow(this);
+                        if (workflow.ValidateBirdieInvitationCode(dtf.textBox1.Text))
+                        {
+                            MessageBox.Show("Invitation code accepted!  Click OK to load the admin registration form.");
+
+                            this.Enabled = false;
+                            this.UseWaitCursor = true;
+
+                            
+
+                            this.UseWaitCursor = false;
+                            this.Enabled = true;
+                        }
+                        else
+                        {
+                            MessageBox.Show("The invitation code you entered is invalid!  Please contact the admin who gave you the code for assistance.");
+                        }
+
+                        this.UseWaitCursor = false;
+                        this.Enabled = true;
+                    }
+                    break;
+            }
         }
 
         private void deleteTweetToolStripMenuItem_Click(object sender, EventArgs e)

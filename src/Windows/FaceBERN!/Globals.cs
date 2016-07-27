@@ -27,6 +27,9 @@ namespace FaceBERN_
         public static string CampaignsINI       = @"campaigns.ini";
         public static string StatesINIDir       = @"states";
 
+        /* The Birdie API protocol/host.  --Kris */
+        public static string BirdieHost         = @"http://birdie.freeddns.org";
+
         /* How long to wait for an action element to appear before dying.  --Kris */
         public static int __TIMEOUT__ = 3;  // Seconds
 

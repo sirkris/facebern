@@ -80,7 +80,7 @@ namespace FaceBERN_
             }
 
             /* Initialize the Birdie API client. --Kris */
-            restClient = new RestClient("http://birdie.freeddns.org");
+            restClient = new RestClient(Globals.BirdieHost);
 
             reddit = new Reddit(false);
 
@@ -1998,6 +1998,13 @@ namespace FaceBERN_
 
                 return null;
             }
+        }
+
+        internal bool ValidateBirdieInvitationCode(string invitationCode)
+        {
+            IRestResponse res = BirdieQuery("/admin/invited?invitationCode=" + invitationCode);
+
+            return (res.StatusCode == System.Net.HttpStatusCode.OK);
         }
 
         /* Post a tweet.  --Kris */
