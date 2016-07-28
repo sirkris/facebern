@@ -211,6 +211,7 @@ namespace FaceBERN_
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
             Globals.Config.Add("EnableFacebanking", "1");
             Globals.Config.Add("EnableTwitter", "1");
+            Globals.Config.Add("EnableAdmin", "0");
             Globals.Config.Add("TweetIntervalMinutes", "30");
             Globals.Config.Add("HideFacebookBrowser", "1");
             Globals.Config.Add("SelectedBrowser", "Firefox");
@@ -683,13 +684,37 @@ namespace FaceBERN_
             StartButtonClick();
         }
 
+        public void buttonStart_Refresh()
+        {
+            if (Globals.executionState == Globals.STATE_READY)
+            {
+                buttonStart_ToStart();
+            }
+            else
+            {
+                buttonStart_ToStop();
+            }
+        }
+
         public void buttonStart_ToStart()
         {
-            buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
+            if (Globals.Config["EnableAdmin"].Equals("1"))
+            {
+                buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
+                                                                                    Color.FromArgb(150, 150, 255), 
+                                                                                    Color.FromArgb(0, 0, 160), 
+                                                                                    Color.FromArgb(0, 0, 50) 
+                                                                    }, new Single[] { 0.0F, 0.5F, 1.0F });
+            }
+            else
+            {
+                buttonStart.ColorFillBlend = new CButtonLib.cBlendItems(new Color[] { 
                                                                                     Color.FromArgb(150, 255, 150), 
                                                                                     Color.FromArgb(0, 160, 0), 
                                                                                     Color.FromArgb(0, 50, 0) 
                                                                     }, new Single[] { 0.0F, 0.5F, 1.0F });
+            }
+
             buttonStart.Text = "Go, Birdie!";
 
             browserModeComboBox.Enabled = true;
@@ -747,6 +772,19 @@ namespace FaceBERN_
                 }
 
                 Globals.Config.Add(directive.Key, directive.Value);
+            }
+
+            if (Globals.Config.ContainsKey("EnableAdmin")
+                && Globals.Config["EnableAdmin"].Equals("1"))
+            {
+                Credentials credentials = new Credentials(false, false, true);
+                if (credentials.IsBirdieAdmin() == false)
+                {
+                    Globals.Config["EnableAdmin"] = "0";
+                }
+
+                credentials.Destroy();
+                credentials = null;
             }
 
             LogConfig();
@@ -875,6 +913,8 @@ namespace FaceBERN_
             SetExecState(Globals.STATE_READY, logName);
             stop = false;
 
+            buttonStart_Refresh();
+
             LogW("Ready.");
         }
 
@@ -924,28 +964,55 @@ namespace FaceBERN_
             Log(null, "save", false, logName, logObj);
         }
 
-        /* Append to log and optionally display in log window (should only include log entries that are relevant/useful to the end-user).  --Kris */
-        internal void LogW(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, string logName = null, Log logObj = null)
+        internal void LogW(string text, bool show, bool appendW, bool newline, bool timestamp, bool breakOnFailure)
         {
-            string logText = (timestamp ? "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " : "") + text;
+            LogW(text, show, appendW, newline, timestamp, null, null, breakOnFailure);
+        }
 
-            if (logName == null)
+        /* Append to log and optionally display in log window (should only include log entries that are relevant/useful to the end-user).  --Kris */
+        internal void LogW(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, string logName = null, Log logObj = null, bool breakOnFailure = false)
+        {
+            try
             {
-                logName = Form1.logName;
+                string logText = (timestamp ? "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " : "") + text;
+
+                if (logName == null)
+                {
+                    logName = Form1.logName;
+                }
+
+                Log(logText, "append", newline, logName, logObj);
+
+                if (show == true)
+                {
+                    this.outBox.Text = (appendW ? this.outBox.Text : "") + text + (newline ? Environment.NewLine : "");
+                    this.outBox.SelectionStart = this.outBox.Text.Length;
+                    this.outBox.ScrollToCaret();
+
+                    HideCaret(outBox.Handle);
+                }
+
+                saveLog(logName, logObj);
             }
-
-            Log(logText, "append", newline, logName, logObj);
-
-            if (show == true)
+            catch (Exception e)
             {
-                this.outBox.Text = (appendW ? this.outBox.Text : "") + text + (newline ? Environment.NewLine : "");
-                this.outBox.SelectionStart = this.outBox.Text.Length;
-                this.outBox.ScrollToCaret();
-
-                HideCaret(outBox.Handle);
+                if (breakOnFailure)
+                {
+                    // To prevent infinite recursion.  --Kris
+                    try
+                    {
+                        SetExecState(Globals.STATE_BROKEN);
+                    }
+                    catch (Exception)
+                    {
+                        // Just let it go.  --Kris
+                    }
+                }
+                else
+                {
+                    ReportException(e, "Exception raised in Form1 LogW method.");
+                }
             }
-
-            saveLog(logName, logObj);
         }
 
         /* Clear the log window.  --Kris */
@@ -1283,6 +1350,36 @@ namespace FaceBERN_
             }
         }
 
+        private void ReportException(Exception ex, string logMsg = null, bool silent = false)
+        {
+            try
+            {
+                if (!(silent))
+                {
+                    Log("Reporting exception....");
+                }
+
+                ExceptionReport exr = new ExceptionReport(this, ex, logMsg);
+            }
+            catch (Exception e)
+            {
+                if (!(silent))
+                {
+                    LogW("Warning:  Error reporting exception : " + e.ToString(), true, true, true, true, true);
+                }
+            }
+        }
+
+        internal void ReportExceptionSilently(Exception ex, string logMsg = null)
+        {
+            try
+            {
+                ReportException(ex, logMsg, true);
+            }
+            catch (Exception)
+            { }
+        }
+
         private void ReportErrorAsException(string errMsg)
         {
             try
@@ -1295,64 +1392,168 @@ namespace FaceBERN_
             }
         }
 
+        private void LogAndReportException(Exception e, string text, bool show = true)
+        {
+            LogW(text, show);
+            ReportException(e, text);
+        }
+
         private void ExecuteDevCommand(string cmd)
         {
-            string cmdDesc;
-            DebugTextForm dtf = null;
-            switch (cmd.Trim().ToLower())
+            try
             {
-                default:
-                    return;
-                case "admin":  // Associate the client with a Birdie API admin user account.  --Kris
-                    dtf = new DebugTextForm("Please enter your invitation code:");
-                    cmdDesc = "Associate admin account.  You will next be prompted for an invitation code.";
-                    break;
-                case "debug":  // Make the DEBUG menu appear on the Release build.  --Kris
-                    DEBUGToolStripMenuItem.Visible = true;
-                    cmdDesc = "Show debug menu.";
-                    break;
-            }
+                string cmdDesc;
+                DebugTextForm dtf = null;
+                BirdieAdminLogin bal = null;
+                switch (cmd.Trim().ToLower())
+                {
+                    default:
+                        return;
+                    case "admin":  // Associate the client with a Birdie API admin user account.  --Kris
+                        dtf = new DebugTextForm("Please enter your invitation code:");
+                        cmdDesc = "Associate admin account.  You will next be prompted for an invitation code.";
+                        break;
+                    case "adminlogin":  // Associate the client with an existing Birdie API admin user account.  --Kris
+                        bal = new BirdieAdminLogin();
+                        cmdDesc = "Associate admin account.  You will next be prompted for your Birdie admin username and password.";
+                        break;
+                    case "debug":  // Make the DEBUG menu appear on the Release build.  --Kris
+                        DEBUGToolStripMenuItem.Visible = true;
+                        cmdDesc = "Show debug menu.";
+                        break;
+                    case "removeadmin":  // De-associate the Birdie API admin user account.  --Kris
+                        Credentials credentials = new Credentials();
+                        credentials.DestroyBirdie(true);
+                        credentials = null;
 
-            keysPressed = null;
+                        Globals.Config["EnableAdmin"] = "0";
+                        Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
 
-            MessageBox.Show("Executed dev command:  " + cmdDesc);
+                        cmdDesc = "De-associate admin account.  This client is now no longer associated with a Birdie API admin user.";
+                        break;
+                }
 
-            /* Any actions we want to take after the message box is dismissed by the user.  --Kris */
-            switch (cmd.Trim().ToLower())
-            {
-                default:
-                    return;
-                case "admin":  // Associate the client with a Birdie API admin user account.  --Kris
-                    dtf.ShowDialog();
-                    if (dtf.DialogResult == System.Windows.Forms.DialogResult.OK)
-                    {
-                        waitForm = new WaitForm("Processing request....");
+                keysPressed = null;
 
-                        this.Enabled = false;
-                        this.UseWaitCursor = true;
+                MessageBox.Show("Executed dev command:  " + cmdDesc);
 
-                        Workflow workflow = new Workflow(this);
-                        if (workflow.ValidateBirdieInvitationCode(dtf.textBox1.Text))
+                /* Any actions we want to take after the message box is dismissed by the user.  --Kris */
+                switch (cmd.Trim().ToLower())
+                {
+                    default:
+                        return;
+                    case "admin":  // Associate the client with a Birdie API admin user account.  --Kris
+                        dtf.ShowDialog();
+                        if (dtf.DialogResult == System.Windows.Forms.DialogResult.OK)
                         {
-                            MessageBox.Show("Invitation code accepted!  Click OK to load the admin registration form.");
-
                             this.Enabled = false;
                             this.UseWaitCursor = true;
 
-                            
+                            Workflow workflow = new Workflow(this);
+                            if (workflow.ValidateBirdieInvitationCode(dtf.textBox1.Text))
+                            {
+                                MessageBox.Show("Invitation code accepted!  Click OK to load the admin registration form.");
+
+                                this.Enabled = false;
+                                this.UseWaitCursor = true;
+
+                                BirdieAdminRegistration bag = new BirdieAdminRegistration();
+                                bag.ShowDialog();
+
+                                if (bag.DialogResult == System.Windows.Forms.DialogResult.OK)
+                                {
+                                    RestSharp.IRestResponse res;
+                                    if (workflow.RegisterBirdieAdmin(dtf.textBox1.Text, bag.username, bag.password, out res))
+                                    {
+                                        Credentials credentials = new Credentials(false, false, false);  // Any existing admin credentials will be overwritten.  --Kris
+                                        credentials.SetBirdie(bag.username, bag.password);
+                                        credentials.Destroy();
+                                        credentials = null;
+
+                                        Globals.Config["EnableAdmin"] = "1";
+                                        Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
+
+                                        buttonStart_Refresh();
+
+                                        MessageBox.Show(@"Admin account registered successfully!  You can now access the 'Admin' tab in Tools->Settings.");
+                                    }
+                                    else
+                                    {
+                                        try
+                                        {
+                                            Exception ex = new Exception("Admin registration failed.");
+                                            ex.Data.Add("invitationCode", dtf.textBox1.Text);
+                                            ex.Data.Add("username", bag.username);
+                                            ex.Data.Add("passLength", bag.password.Length.ToString());
+                                            ex.Data.Add("res", JsonConvert.SerializeObject(res));
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            ReportException(e, "Workflow.RegisterBirdieAdmin returned false in Form1.ExecuteDevCommand.");
+                                        }
+
+                                        MessageBox.Show("Admin registration failed!");
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Request cancelled.");
+                                }
+
+                                this.UseWaitCursor = false;
+                                this.Enabled = true;
+                            }
+                            else
+                            {
+                                MessageBox.Show("The invitation code you entered is invalid!  Please contact the admin who gave you the code for assistance.");
+                            }
 
                             this.UseWaitCursor = false;
                             this.Enabled = true;
                         }
+
+                        break;
+                    case "adminlogin":
+                        bal.ShowDialog();
+                        if (bal.DialogResult == System.Windows.Forms.DialogResult.OK)
+                        {
+                            this.Enabled = false;
+                            this.UseWaitCursor = true;
+
+                            Workflow workflow = new Workflow(this);
+                            if (workflow.ValidateBirdieCredentials(bal.username, bal.password))
+                            {
+                                Credentials credentials = new Credentials(false, false, false);  // Any existing admin credentials will be overwritten.  --Kris
+                                credentials.SetBirdie(bal.username, bal.password);
+                                credentials.Destroy();
+                                credentials = null;
+
+                                Globals.Config["EnableAdmin"] = "1";
+                                Globals.sINI.Save(Path.Combine(Globals.ConfigDir, Globals.MainINI), Globals.Config);
+
+                                buttonStart_Refresh();
+
+                                MessageBox.Show(@"Admin account associated successfully!  You can now access the 'Admin' tab in Tools->Settings.");
+                            }
+                            else
+                            {
+                                MessageBox.Show("Birdie admin login failed!");
+                            }
+                        }
                         else
                         {
-                            MessageBox.Show("The invitation code you entered is invalid!  Please contact the admin who gave you the code for assistance.");
+                            MessageBox.Show("Request cancelled.");
                         }
 
                         this.UseWaitCursor = false;
                         this.Enabled = true;
-                    }
-                    break;
+
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Exception in ExecuteDevCommand.");
             }
         }
 

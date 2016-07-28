@@ -87,6 +87,11 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOk = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.tabAdmin = new System.Windows.Forms.TabPage();
+            this.enableAdminCheckbox = new System.Windows.Forms.CheckBox();
+            this.label17 = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.adminUsernameTextbox = new System.Windows.Forms.TextBox();
             this.settingsTabControl.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabStates.SuspendLayout();
@@ -94,6 +99,7 @@
             this.tabFacebook.SuspendLayout();
             this.tabTwitter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).BeginInit();
+            this.tabAdmin.SuspendLayout();
             this.SuspendLayout();
             // 
             // settingsTabControl
@@ -103,6 +109,7 @@
             this.settingsTabControl.Controls.Add(this.tabCampaigns);
             this.settingsTabControl.Controls.Add(this.tabFacebook);
             this.settingsTabControl.Controls.Add(this.tabTwitter);
+            this.settingsTabControl.Controls.Add(this.tabAdmin);
             this.settingsTabControl.Location = new System.Drawing.Point(12, 12);
             this.settingsTabControl.Name = "settingsTabControl";
             this.settingsTabControl.SelectedIndex = 0;
@@ -749,6 +756,61 @@
             this.buttonOk.UseVisualStyleBackColor = true;
             this.buttonOk.Click += new System.EventHandler(this.buttonOk_Click);
             // 
+            // tabAdmin
+            // 
+            this.tabAdmin.Controls.Add(this.adminUsernameTextbox);
+            this.tabAdmin.Controls.Add(this.label15);
+            this.tabAdmin.Controls.Add(this.label17);
+            this.tabAdmin.Controls.Add(this.enableAdminCheckbox);
+            this.tabAdmin.Location = new System.Drawing.Point(4, 22);
+            this.tabAdmin.Name = "tabAdmin";
+            this.tabAdmin.Size = new System.Drawing.Size(752, 449);
+            this.tabAdmin.TabIndex = 5;
+            this.tabAdmin.Text = "Admin";
+            this.tabAdmin.UseVisualStyleBackColor = true;
+            this.tabAdmin.Enter += new System.EventHandler(this.tabAdmin_Enter);
+            // 
+            // enableAdminCheckbox
+            // 
+            this.enableAdminCheckbox.AutoSize = true;
+            this.enableAdminCheckbox.Location = new System.Drawing.Point(391, 14);
+            this.enableAdminCheckbox.Name = "enableAdminCheckbox";
+            this.enableAdminCheckbox.Size = new System.Drawing.Size(15, 14);
+            this.enableAdminCheckbox.TabIndex = 19;
+            this.enableAdminCheckbox.UseVisualStyleBackColor = true;
+            this.enableAdminCheckbox.CheckedChanged += new System.EventHandler(this.enableAdminCheckbox_CheckedChanged);
+            // 
+            // label17
+            // 
+            this.label17.AutoSize = true;
+            this.label17.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label17.Location = new System.Drawing.Point(284, 12);
+            this.label17.Name = "label17";
+            this.label17.Size = new System.Drawing.Size(101, 16);
+            this.label17.TabIndex = 20;
+            this.label17.Text = "Enable Admin:";
+            this.label17.Click += new System.EventHandler(this.label17_Click);
+            // 
+            // label15
+            // 
+            this.label15.AutoSize = true;
+            this.label15.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label15.Location = new System.Drawing.Point(263, 55);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(122, 16);
+            this.label15.TabIndex = 21;
+            this.label15.Text = "Admin Username:";
+            // 
+            // adminUsernameTextbox
+            // 
+            this.adminUsernameTextbox.Enabled = false;
+            this.adminUsernameTextbox.Location = new System.Drawing.Point(391, 54);
+            this.adminUsernameTextbox.Name = "adminUsernameTextbox";
+            this.adminUsernameTextbox.ReadOnly = true;
+            this.adminUsernameTextbox.Size = new System.Drawing.Size(280, 20);
+            this.adminUsernameTextbox.TabIndex = 22;
+            this.adminUsernameTextbox.TabStop = false;
+            // 
             // FormSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -766,6 +828,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Settings";
+            this.Load += new System.EventHandler(this.FormSettings_Load);
             this.settingsTabControl.ResumeLayout(false);
             this.tabGeneral.ResumeLayout(false);
             this.tabGeneral.PerformLayout();
@@ -778,6 +841,8 @@
             this.tabTwitter.ResumeLayout(false);
             this.tabTwitter.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tweetIntervalMinutesNumericUpDown)).EndInit();
+            this.tabAdmin.ResumeLayout(false);
+            this.tabAdmin.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -841,5 +906,10 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TabPage tabCampaigns;
         private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.TabPage tabAdmin;
+        private System.Windows.Forms.Label label17;
+        private System.Windows.Forms.CheckBox enableAdminCheckbox;
+        private System.Windows.Forms.Label label15;
+        private System.Windows.Forms.TextBox adminUsernameTextbox;
     }
 }

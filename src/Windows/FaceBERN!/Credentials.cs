@@ -21,8 +21,8 @@ namespace FaceBERN_
         private SecureString twitterUsername;
         private SecureString twitterUserID;
 
-        private SecureString birdieUsername;
-        private SecureString birdiePassword;
+        private SecureString birdieUsername = null;
+        private SecureString birdiePassword = null;
 
         private RegistryKey softwareKey;
         private RegistryKey appKey;
@@ -284,6 +284,17 @@ namespace FaceBERN_
             }
 
             return true;
+        }
+
+        // Note that this only checks for stored admin credentials; no actual remote authentication occurs here!  --Kris
+        internal bool IsBirdieAdmin()
+        {
+            if (birdieUsername == null || birdiePassword == null)
+            {
+                LoadBirdie();
+            }
+
+            return (birdieUsername != null && birdiePassword != null);
         }
 
         internal void Destroy(bool clearRegistry = false)

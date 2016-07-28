@@ -183,6 +183,18 @@
     <Compile Include="About.Designer.cs">
       <DependentUpon>About.cs</DependentUpon>
     </Compile>
+    <Compile Include="BirdieAdminLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BirdieAdminLogin.Designer.cs">
+      <DependentUpon>BirdieAdminLogin.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BirdieAdminRegistration.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BirdieAdminRegistration.Designer.cs">
+      <DependentUpon>BirdieAdminRegistration.cs</DependentUpon>
+    </Compile>
     <Compile Include="Campaign.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="DebugTextForm.cs">
@@ -275,6 +287,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="About.resx">
       <DependentUpon>About.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BirdieAdminLogin.resx">
+      <DependentUpon>BirdieAdminLogin.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BirdieAdminRegistration.resx">
+      <DependentUpon>BirdieAdminRegistration.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="DebugTextForm.resx">
       <DependentUpon>DebugTextForm.cs</DependentUpon>

@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace FaceBERN_
 {
-    public partial class BirdieAdminRegistration : Form
+    public partial class BirdieAdminLogin : Form
     {
         internal string username
         {
@@ -24,7 +24,7 @@ namespace FaceBERN_
             private set;
         }
 
-        public BirdieAdminRegistration()
+        public BirdieAdminLogin()
         {
             InitializeComponent();
             button1.Enabled = false;
@@ -62,11 +62,6 @@ namespace FaceBERN_
                 errors.Add("Username must be at least 3 characters in length.");
             }
 
-            if (!(passwordTextbox.Text.Equals(retypePasswordTextbox.Text)))
-            {
-                errors.Add("Passwords must match.");
-            }
-
             if (passwordTextbox.Text.Length < 6)
             {
                 errors.Add("Password must be at least 6 characters in length.");
@@ -89,11 +84,6 @@ namespace FaceBERN_
         }
 
         private void passwordTextbox_TextChanged(object sender, EventArgs e)
-        {
-            button1.Enabled = ValidateFields();
-        }
-
-        private void retypePasswordTextbox_TextChanged(object sender, EventArgs e)
         {
             button1.Enabled = ValidateFields();
         }
