@@ -21,16 +21,21 @@ namespace FaceBERN_
         private SecureString twitterUsername;
         private SecureString twitterUserID;
 
+        private SecureString birdieUsername = null;
+        private SecureString birdiePassword = null;
+
         private RegistryKey softwareKey;
         private RegistryKey appKey;
         private RegistryKey credentialsKey;
         private RegistryKey facebookKey;
         private RegistryKey twitterKey;
+        private RegistryKey birdieKey;
 
         private byte[] facebookEntropy;
         private byte[] twitterEntropy;
+        private byte[] birdieEntropy;
 
-        internal Credentials(bool loadFacebook = false, bool loadTwitter = false)
+        internal Credentials(bool loadFacebook = false, bool loadTwitter = false, bool loadBirdie = false)
         {
             try
             {
@@ -40,6 +45,7 @@ namespace FaceBERN_
 
                 facebookKey = credentialsKey.CreateSubKey("Facebook");
                 twitterKey = credentialsKey.CreateSubKey("Twitter");
+                birdieKey = credentialsKey.CreateSubKey("Birdie");
 
                 SaveKeys();
             }
@@ -58,6 +64,11 @@ namespace FaceBERN_
             if (loadTwitter)
             {
                 LoadTwitter();
+            }
+
+            if (loadBirdie)
+            {
+                LoadBirdie();
             }
         }
 
@@ -209,13 +220,92 @@ namespace FaceBERN_
             return true;
         }
 
+        internal bool SetBirdie(string username, string password)
+        {
+            return SetBirdie(ToSecureString(username), ToSecureString(password));
+        }
+
+        internal bool SetBirdie(SecureString username, SecureString password)
+        {
+            try
+            {
+                birdieUsername = username;
+                birdiePassword = password;
+
+                birdieEntropy = (byte[]) birdieKey.GetValue("entropy", null);
+
+                if (birdieEntropy == null)
+                {
+                    birdieEntropy = new byte[20];
+                    using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                    {
+                        rng.GetBytes(birdieEntropy);
+                    }
+                }
+
+                byte[] u = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(username)), birdieEntropy, DataProtectionScope.CurrentUser);
+                byte[] p = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToString(password)), birdieEntropy, DataProtectionScope.CurrentUser);
+
+                birdieKey.SetValue("entropy", birdieEntropy, RegistryValueKind.Binary);
+                birdieKey.SetValue("u", u, RegistryValueKind.Binary);
+                birdieKey.SetValue("p", p, RegistryValueKind.Binary);
+
+                birdieKey.Flush();
+            }
+            catch (IOException e)
+            {
+                // TODO - Log the exception.  --Kris
+
+                birdieUsername = null;
+                birdiePassword = null;
+
+                return false;
+            }
+
+            return true;
+        }
+
+        internal bool LoadBirdie()
+        {
+            try
+            {
+                birdieEntropy = (byte[]) birdieKey.GetValue("entropy", null);
+                byte[] u = (byte[]) birdieKey.GetValue("u", null);
+                byte[] p = (byte[]) birdieKey.GetValue("p", null);
+
+                birdieUsername = (u != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(u, birdieEntropy, DataProtectionScope.CurrentUser))) : null);
+                birdiePassword = (p != null ? ToSecureString(Encoding.Unicode.GetString(ProtectedData.Unprotect(p, birdieEntropy, DataProtectionScope.CurrentUser))) : null);
+            }
+            catch (IOException e)
+            {
+                // TODO - Log the exception.  --Kris
+
+                return false;
+            }
+
+            return true;
+        }
+
+        // Note that this only checks for stored admin credentials; no actual remote authentication occurs here!  --Kris
+        internal bool IsBirdieAdmin()
+        {
+            if (birdieUsername == null || birdiePassword == null)
+            {
+                LoadBirdie();
+            }
+
+            return (birdieUsername != null && birdiePassword != null);
+        }
+
         internal void Destroy(bool clearRegistry = false)
         {
             DestroyFacebook(clearRegistry);
             DestroyTwitter(clearRegistry);
+            DestroyBirdie(clearRegistry);
 
             facebookKey.Close();
             twitterKey.Close();
+            birdieKey.Close();
             credentialsKey.Close();
             appKey.Close();
             softwareKey.Close();
@@ -273,10 +363,32 @@ namespace FaceBERN_
             }
         }
 
+        internal void DestroyBirdie(bool clearRegistry = false)
+        {
+            if (birdieUsername != null)
+            {
+                birdieUsername.Dispose();
+            }
+            if (birdiePassword != null)
+            {
+                birdiePassword.Dispose();
+            }
+
+            if (clearRegistry)
+            {
+                birdieKey.DeleteValue("entropy", false);
+                birdieKey.DeleteValue("u", false);
+                birdieKey.DeleteValue("p", false);
+
+                SaveKeys();
+            }
+        }
+
         private void SaveKeys()
         {
             facebookKey.Flush();
             twitterKey.Flush();
+            birdieKey.Flush();
             credentialsKey.Flush();
             appKey.Flush();
             softwareKey.Flush();
@@ -310,6 +422,16 @@ namespace FaceBERN_
         internal SecureString GetTwitterUserID()
         {
             return twitterUserID;
+        }
+
+        internal SecureString GetBirdieUsername()
+        {
+            return birdieUsername;
+        }
+
+        internal SecureString GetBirdiePassword()
+        {
+            return birdiePassword;
         }
 
         internal bool IsAssociated()

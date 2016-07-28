@@ -20,7 +20,8 @@ namespace FaceBERN_
         private List<int> displayedCampaignIds;
         private List<CheckBox> lastAddedCheckboxes = null;
 
-        private Credentials twitterCredentials;
+        private Credentials twitterCredentials = null;
+        private Credentials birdieCredentials = null;
 
         private Form1 Main;
 
@@ -29,6 +30,15 @@ namespace FaceBERN_
             InitializeComponent();
             this.Main = Main;
             this.TopMost = topMost;
+        }
+
+        private void FormSettings_Load(object sender, EventArgs e)
+        {
+            birdieCredentials = new Credentials(false, false, true);
+            if (birdieCredentials.IsBirdieAdmin() == false)
+            {
+                settingsTabControl.TabPages.Remove(tabAdmin);
+            }
         }
 
         private void buttonOk_Click(object sender, EventArgs e)
@@ -48,6 +58,12 @@ namespace FaceBERN_
             {
                 twitterCredentials.Destroy();
                 twitterCredentials = null;
+            }
+
+            if (birdieCredentials != null)
+            {
+                birdieCredentials.Destroy();
+                birdieCredentials = null;
             }
 
             this.Close();
@@ -92,6 +108,7 @@ namespace FaceBERN_
             Globals.Config["AutoUpdate"] = (autoUpdateCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableFacebanking"] = (enableFacebankingCheckbox.Checked ? "1" : "0");
             Globals.Config["EnableTwitter"] = (enableTwitterCheckbox.Checked ? "1" : "0");
+            Globals.Config["EnableAdmin"] = (enableAdminCheckbox.Checked ? "1" : "0");
             Globals.Config["TweetIntervalMinutes"] = tweetIntervalMinutesNumericUpDown.Value.ToString();
             Globals.Config["HideFacebookBrowser"] = (hideWebBrowserCheckbox.Checked ? "1" : "0");
 
@@ -130,6 +147,8 @@ namespace FaceBERN_
 
             /* Enable/disable any checkboxes based on the new settings.  --Kris */
             LoadCampaignCheckboxes();
+
+            Main.buttonStart_Refresh();
 
             buttonApply.Enabled = false;
         }
@@ -226,6 +245,12 @@ namespace FaceBERN_
 
                     ShowTwitterCredentials();
                     ShowOrHideAccountFields();
+
+                    break;
+                case "admin":
+                    enableAdminCheckbox.Checked = (Globals.Config["EnableAdmin"] == "1" ? true : false);
+
+                    ShowAdminCredentials();
 
                     break;
             }
@@ -327,6 +352,11 @@ namespace FaceBERN_
             button2.Text = (twitterCredentials.IsAssociated() ? "De-Associate Twitter Account" : "Associate Twitter Account");
         }
 
+        private void ShowAdminCredentials()
+        {
+            adminUsernameTextbox.Text = birdieCredentials.ToString(birdieCredentials.GetBirdieUsername());
+        }
+
         private void tabGeneral_Load(object sender, EventArgs e)
         {
             SetFormDefaults("general");
@@ -350,6 +380,11 @@ namespace FaceBERN_
         private void tabTwitter_Load(object sender, EventArgs e)
         {
             SetFormDefaults("twitter");
+        }
+
+        private void tabAdmin_Enter(object sender, EventArgs e)
+        {
+            SetFormDefaults("admin");
         }
 
         private void SetStateFields()
@@ -745,6 +780,16 @@ namespace FaceBERN_
         private void label6_Click(object sender, EventArgs e)
         {
             hideWebBrowserCheckbox.Checked = !(hideWebBrowserCheckbox.Checked);
+        }
+
+        private void label17_Click(object sender, EventArgs e)
+        {
+            enableAdminCheckbox.Checked = !(enableAdminCheckbox.Checked);
+        }
+
+        private void enableAdminCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            buttonApply.Enabled = true;
         }
     }
 }

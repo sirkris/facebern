@@ -80,7 +80,7 @@ namespace FaceBERN_
             }
 
             /* Initialize the Birdie API client. --Kris */
-            restClient = new RestClient("http://birdie.freeddns.org");
+            restClient = new RestClient(Globals.BirdieHost);
 
             reddit = new Reddit(false);
 
@@ -1998,6 +1998,56 @@ namespace FaceBERN_
 
                 return null;
             }
+        }
+
+        internal bool ValidateBirdieCredentials(string username, string password)
+        {
+            string passHash = "";
+            using (System.Security.Cryptography.SHA512 sha = new System.Security.Cryptography.SHA512Managed())
+            {
+                byte[] passHashBytes = sha.ComputeHash(Encoding.Default.GetBytes(password));
+
+                for (int i = 0; i < passHashBytes.Length; i++)
+                {
+                    passHash += passHashBytes[i].ToString("X2");
+                }
+            }
+
+            bool success = false;
+            if (username != null && username.Length > 0 && passHash != null && passHash.Length > 0)
+            {
+                IRestResponse res = BirdieQuery("/admin/users?username=" + username + "&passwordHash=" + passHash);
+
+                success = (res.StatusCode == System.Net.HttpStatusCode.OK);  // Returns 404 if there's no matching record found.  --Kris
+            }
+
+            return success;
+        }
+
+        internal bool ValidateBirdieInvitationCode(string invitationCode)
+        {
+            IRestResponse res = BirdieQuery("/admin/invited?invitationCode=" + invitationCode);
+
+            return (res.StatusCode == System.Net.HttpStatusCode.OK);
+        }
+
+        internal bool RegisterBirdieAdmin(string invitationCode, string username, string password, out IRestResponse res)
+        {
+            res = null;
+            if (ValidateBirdieInvitationCode(invitationCode) == false)
+            {
+                return false;
+            }
+
+            Dictionary<string, string> body = new Dictionary<string, string> { 
+                                                                                { "username", username }, 
+                                                                                { "password", password }, 
+                                                                                { "invitationCode", invitationCode } 
+            };
+
+            res = BirdieQuery("/admin/users", "POST", null, JsonConvert.SerializeObject(body));
+
+            return (res.StatusCode == System.Net.HttpStatusCode.Created);
         }
 
         /* Post a tweet.  --Kris */
@@ -3967,7 +4017,7 @@ namespace FaceBERN_
 
         private void LogAndReportException(Exception e, string text, bool show = true)
         {
-            Log(text);
+            Log(text, show);
             ReportException(e, text);
         }
 
