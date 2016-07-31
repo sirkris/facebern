@@ -42,6 +42,12 @@ namespace FaceBERN_
         /* How long to wait between each iteration of the main workflow loop.  --Kris */
         public static int __WORKFLOW_WAIT_INTERVAL__ = 5;  // Minutes
 
+        /* How long to wait between each iteration of the Facebook workflow loop.  --Kris */
+        public static int __WORKFLOW_FACEBOOK_WAIT_INTERVAL__ = 60;  // Minutes
+
+        /* How long to wait between each iteration of the Twitter workflow loop.  --Kris */
+        public static int __WORKFLOW_TWITTER_WAIT_INTERVAL__ = 5;  // Minutes
+
         /* How long to wait between each iteration fo the main InterCom loop.  --Kris */
         public static int __INTERCOM_WAIT_INTERVAL__ = 4;  // Minutes
 
@@ -56,6 +62,8 @@ namespace FaceBERN_
         public static Dictionary<string, string> Config;
         public static Process process = null;
         public static Thread thread = null;
+        public static Thread facebookThread = null;
+        public static Thread twitterThread = null;
         public static int executionState = -2;
         public static List<string> bernieFacebookIDs;
         public static bool devOverride = false;  // Enable by holding down the Shift key while clicking Start.  This will force GOTV for all states, regardless of dates or recent prior checks.  --Kris

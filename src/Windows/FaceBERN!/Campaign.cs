@@ -16,6 +16,8 @@ namespace FaceBERN_
         public bool enabled;
         public bool requiresFacebook;
         public bool requiresTwitter;
+        public int? requiresAccessLevel = null;
+        public string adminGroups = null;
 
         public bool userSelected;  // Whether or not the user checked the box for this campaign in Settings.  --Kris
         public bool approvedByDefault;
@@ -47,6 +49,11 @@ namespace FaceBERN_
         }
 
         public Campaign() { }
+
+        public void RefreshCampaignData()
+        {
+
+        }
 
         public int GetCampaignId()
         {
@@ -136,6 +143,26 @@ namespace FaceBERN_
         public void SetEnd(DateTime? end)
         {
             this.end = end;
+        }
+
+        public int? GetRequiresAccessLevel()
+        {
+            return requiresAccessLevel;
+        }
+
+        public void SetRequiresAccessLevel(int? requiresAccessLevel)
+        {
+            this.requiresAccessLevel = requiresAccessLevel;
+        }
+
+        public string GetAdminGroups()
+        {
+            return adminGroups;
+        }
+
+        public void SetAdminGroups(string adminGroups)
+        {
+            this.adminGroups = adminGroups;
         }
     }
 }
