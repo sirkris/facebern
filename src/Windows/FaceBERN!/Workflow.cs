@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using RestSharp;
+using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1063,6 +1064,19 @@ namespace FaceBERN_
                         meth = Method.DELETE;
                         break;
                 }
+
+                /* If this client is associated with a Birdie admin account, include the Basic Authorization headers.  --Kris */
+                Credentials credentials = new Credentials(false, false, true);
+                if (credentials.IsBirdieAdmin())
+                {
+                    restClient.Authenticator = new SimpleAuthenticator(
+                                                                        "username", credentials.ToString(credentials.GetBirdieUsername()),
+                                                                        "password", credentials.ToString(credentials.GetBirdiePassword())
+                                                    );
+                }
+
+                credentials.Destroy();
+                credentials = null;
 
                 RestRequest req = new RestRequest(path, meth);
 
