@@ -1744,21 +1744,6 @@ namespace FaceBERN_
             SetExecState(lastState);
         }
 
-        /* Update active and total users.  --Kris */
-        private void UpdateActiveUsers(int active, int total)
-        {
-            if (Main.InvokeRequired)
-            {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { UpdateActiveUsers(active, total); }));
-            }
-            else
-            {
-                Main.SetActiveUsers(active, total);
-            }
-        }
-
         private void UpdateInvitationsCount(int x = 1, bool clear = false)
         {
             if (Main.InvokeRequired)
