@@ -197,6 +197,7 @@
     </Compile>
     <Compile Include="Campaign.cs" />
     <Compile Include="Campaigns\Admin\ShareOnFacebook.cs" />
+    <Compile Include="Campaigns\Generic.cs" />
     <Compile Include="Campaigns\RunBernieRun.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="DebugTextForm.cs">
@@ -285,6 +286,7 @@
     <Compile Include="WebDriver.cs" />
     <Compile Include="Workflow.cs" />
     <Compile Include="WorkflowFacebook.cs" />
+    <Compile Include="WorkflowTwitter.cs" />
     <EmbeddedResource Include="01001011011100100110100101110011001000000100001101110010011000010110100101100111.resx">
       <DependentUpon>01001011011100100110100101110011001000000100001101110010011000010110100101100111.cs</DependentUpon>
     </EmbeddedResource>

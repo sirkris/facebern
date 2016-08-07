@@ -16,12 +16,14 @@ namespace FaceBERN_
         private Form1 Main;
         private List<TweetsQueue> history;
         private Workflow workflow;
+        private WorkflowTwitter workflowTwitter;
 
         public TweetsHistory(Form1 Main)
         {
             InitializeComponent();
             this.Main = Main;
             workflow = new Workflow(Main);
+            workflowTwitter = new WorkflowTwitter(Main);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -38,7 +40,7 @@ namespace FaceBERN_
         {
             try
             {
-                history = workflow.GetTweetsHistoryFromBirdie();
+                history = workflowTwitter.GetTweetsHistoryFromBirdie();
                 List<TweetsQueue> history_remote = history;
 
                 if (history == null || history.Count == 0)
@@ -52,11 +54,11 @@ namespace FaceBERN_
 
                     for (int ii = 0; ii < history.Count; ii++)
                     {
-                        history[ii].SetStatusID(workflow.GetTwitterStatusId(history[ii].GetTweet()));
+                        history[ii].SetStatusID(workflowTwitter.GetTwitterStatusId(history[ii].GetTweet()));
                     }
 
                     /* Use this opportunity to update Birdie API with the status IDs.  --Kris */
-                    bool undoOk = workflow.UpdateBirdieTwitterStatusIDs(history);
+                    bool undoOk = workflowTwitter.UpdateBirdieTwitterStatusIDs(history);
 
                     int i = 0;
                     foreach (TweetsQueue entry in Enumerable.Reverse(history))
@@ -140,7 +142,7 @@ namespace FaceBERN_
                 DialogResult dr = MessageBox.Show("Are you sure you want to delete tweet \"" + tweet + "\"?", "Confirm Tweet Deletion", MessageBoxButtons.YesNo);
                 if (dr == DialogResult.Yes)
                 {
-                    workflow.DeleteTweet(twitterStatusId);
+                    workflowTwitter.DeleteTweet(twitterStatusId);
 
                     LoadHistory();
                 }

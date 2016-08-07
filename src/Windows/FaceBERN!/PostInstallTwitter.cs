@@ -124,8 +124,8 @@ namespace FaceBERN_
                     this.Enabled = false;
 
                     // Don't do it as an asynchronous thread.  Better to lock the UI down here, anyway.  --Kris
-                    Workflow workflow = new Workflow(Main);
-                    workflow.AuthorizeTwitter(Main.browserModeComboBox.SelectedIndex);
+                    WorkflowTwitter workflowTwitter = new WorkflowTwitter(Main);
+                    workflowTwitter.AuthorizeTwitter(Main.browserModeComboBox.SelectedIndex);
 
                     twitterCredentials = new Credentials(false, true);
 

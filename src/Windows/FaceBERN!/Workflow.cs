@@ -48,7 +48,7 @@ namespace FaceBERN_
 
         protected string twitterConsumerKey = "NB74pt5RpC7QuszjGy8qy7rju";
         protected string twitterConsumerSecret = "ifP1aw4ggRjkCktFEnU2T0zS2HA0XxlCpzjb601SMRo7U4HoNR";
-        protected Credentials twitterAccessCredentials = null;
+        internal Credentials twitterAccessCredentials = null;
         protected OAuthTokens twitterTokens = null;
 
         protected List<TweetsQueue> tweetsQueue = null;
@@ -113,6 +113,8 @@ namespace FaceBERN_
                 DateTime start = DateTime.Now;
                 lastUpdate = start;
 
+                WorkflowTwitter workflowTwitter = new WorkflowTwitter(Main);
+
                 if (skipStartup == false)
                 {
                     invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
@@ -161,10 +163,10 @@ namespace FaceBERN_
                     UpdateInvitationsCount(invited.Count, remoteInvitesSent);
 
                     /* Update our local tweets count for both ours and remote.  --Kris */
-                    UpdateRemoteTweetsCount();
+                    workflowTwitter.UpdateRemoteTweetsCount();
 
                     /* Update the number of tweets waiting in our local queue.  --Kris */
-                    UpdateLocalTweetsQueueCount();
+                    workflowTwitter.UpdateLocalTweetsQueueCount();
 
                     /* Update our local count for both active users and total users.  --Kris */
                     UpdateRemoteUsers();
@@ -867,10 +869,10 @@ namespace FaceBERN_
         private void ExecuteTwitter(int browser)
         {
             WorkflowTwitter workflowTwitter = new WorkflowTwitter(Main);
-            workflowTwitter.ExecuteFacebook(browser);
+            workflowTwitter.ExecuteTwitter(browser);
         }
 
-        public Thread ExecuteThread()
+        public Thread ExecuteThread(bool loadSubWorkflows = true)
         {
             SetExecState(Globals.STATE_VALIDATING);
 
@@ -884,7 +886,8 @@ namespace FaceBERN_
                 browser = Main.browserModeComboBox.SelectedIndex;
             }
             
-            Thread thread = new Thread(() => Execute(browser, WorkflowLog));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
+            Thread thread = new Thread(() => 
+                                Execute(browser, WorkflowLog, loadSubWorkflows));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
 
             thread.IsBackground = true;
 
@@ -900,7 +903,7 @@ namespace FaceBERN_
             return thread;
         }
 
-        public void Execute(int browser, Log WorkflowLog)
+        public void Execute(int browser, Log WorkflowLog, bool loadSubWorkflows = true)
         {
             try
             {
@@ -918,22 +921,30 @@ namespace FaceBERN_
 
                 invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
 
-                /* Load the local recent tweets history.  --Kris */
-                LoadTweetsHistory();
-
                 //Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
                 // TEST - This will end up going into the loop below.  --Kris
                 //GOTV();
 
+                if (loadSubWorkflows)
+                {
+                    if (Globals.Config["EnableFacebanking"].Equals("1"))
+                    {
+                        Globals.facebookThread = ExecuteFacebookThread(browser);
+                    }
+                    else
+                    {
+                        Log("Facebanking has been disabled.  Facebook workflow skipped.");
+                    }
 
-                if (Globals.Config["EnableFacebanking"].Equals("1"))
-                {
-                    Globals.facebookThread = ExecuteFacebookThread(browser);
-                }
-                else
-                {
-                    Log("Facebanking has been disabled.  Facebook workflow skipped.");
+                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    {
+                        Globals.twitterThread = ExecuteTwitterThread(browser);
+                    }
+                    else
+                    {
+                        Log("Twitter has been disabled.  Twitter workflow skipped.");
+                    }
                 }
 
                 /* Loop until terminated by the user.  --Kris */
@@ -952,14 +963,8 @@ namespace FaceBERN_
                         Log("Tweetbanking has been disabled.  Twitter workflow skipped.");
                     }*/
 
-                    /* Update the tweets queue, if enabled.  --Kris */
-                    if (Globals.Config["EnableTwitter"].Equals("1"))
-                    {
-                        UpdateLocalTweetsQueue();
-                    }
-
                     /* Execute any selected campaigns.  --Kris */
-                    ExecuteCampaigns();
+                    //ExecuteCampaigns();
 
                     /* Check for updates every 6 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
@@ -1020,7 +1025,7 @@ namespace FaceBERN_
 
                         SetExecState(Globals.STATE_RESTARTING);
 
-                        Globals.thread = ExecuteThread();
+                        Globals.thread = ExecuteThread(false);
                     }
                     else
                     {
@@ -1114,7 +1119,7 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterCredentialsFromRegistry();
+            //LoadTwitterCredentialsFromRegistry();
 
             if (twitterAccessCredentials.IsAssociated() == false)
             {
@@ -1124,9 +1129,9 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterTokens();
+            //LoadTwitterTokens();
 
-            ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+            //ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
         }
 
         private void Twitter()  // DEPRECATED
@@ -1136,7 +1141,7 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterCredentialsFromRegistry();
+            //LoadTwitterCredentialsFromRegistry();
 
             if (twitterAccessCredentials.IsAssociated() == false)
             {
@@ -1146,7 +1151,7 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterTokens();
+            //LoadTwitterTokens();
 
             // Uncomment below for DEBUG.  --Kris
             /*
@@ -1160,12 +1165,12 @@ namespace FaceBERN_
             */
 
             /* Load the tweets queue from the specified source(s).  --Kris */
-            UpdateLocalTweetsQueue();
+            //UpdateLocalTweetsQueue();
 
             /* If there are any tweets in the queue and we're past the tweet interval, tweet the next entry from it.  --Kris */
-            ConsumeTweetsQueue();
+            //ConsumeTweetsQueue();
 
-            DestroyTwitterTokens();
+            //DestroyTwitterTokens();
         }
 
         public DateTime TimestampToDateTime(double timestamp)
@@ -1324,7 +1329,7 @@ namespace FaceBERN_
             WorkflowLog.Init(logName);
         }
 
-        protected void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true, bool breakOnFailure = false)
+        internal void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true, bool breakOnFailure = false)
         {
             try
             {

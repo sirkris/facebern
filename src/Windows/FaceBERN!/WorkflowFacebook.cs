@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Security;
 using System.Text;
@@ -50,7 +51,22 @@ namespace FaceBERN_
                     /* Get-out-the-vote!  --Kris */
                     GOTV();
 
-                    // TODO - Iterate through campaigns and execute the enabled ones.  --Kris
+                    /* Iterate through the campaigns and execute.  Each campaign will contain its own sanity checks (including checking if it's enabled).  --Kris */
+                    IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns"));
+                    foreach (Type t in types)
+                    {
+                        Log("Executing Facebook for campaign:  " + t.Name);
+
+                        try
+                        {
+                            dynamic instance = Activator.CreateInstance(t, this);
+                            instance.ExecuteFacebook();
+                        }
+                        catch (Exception e)
+                        {
+                            ReportException(e, "Unable to execute campaign!  Skipped.");
+                        }
+                    }
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
                     Log("Facebook workflow complete!  Waiting " + Globals.__WORKFLOW_FACEBOOK_WAIT_INTERVAL__.ToString() + " minutes for next run....");

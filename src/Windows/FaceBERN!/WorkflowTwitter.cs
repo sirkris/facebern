@@ -6,6 +6,7 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,16 +38,54 @@ namespace FaceBERN_
             {
                 Log("Commencing Twitter workflow....");
 
+                if (!(Globals.Config["EnableTwitter"].Equals("1")))
+                {
+                    Log("Twitter is disabled.  Twitter workflow aborted.");
+                    return;
+                }
+
+                LoadTwitterCredentialsFromRegistry();
+
+                if (twitterAccessCredentials.IsAssociated() == false)
+                {
+                    Log("Warning:  Twitter is enabled but you don't have your Twitter account associated!  Twitter workflow aborted.");
+                    Log(@"You can link " + Globals.__APPNAME__ + " to your Twitter account under Tools->Settings.");
+
+                    return;
+                }
+
+                LoadTwitterTokens();
+
+                /* Load the local recent tweets history.  --Kris */
+                LoadTweetsHistory();
+
                 /* Loop until terminated by the user.  --Kris */
                 while (Globals.executionState > 0)
                 {
-                    if (!(Globals.Config["EnableTwitter"].Equals("1")))
-                    {
-                        Log("Twitter is disabled.  Twitter workflow aborted.");
-                        return;
-                    }
+                    /* Update the tweets queue.  --Kris */
+                    UpdateLocalTweetsQueue();
 
-                    // TODO - Iterate through campaigns and execute the enabled ones.  --Kris
+                    /* Iterate through the campaigns and execute.  Each campaign will contain its own sanity checks (including checking if it's enabled).  --Kris */
+                    IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns"));
+                    foreach (Type t in types)
+                    {
+                        if (t.Name.Equals("Generic"))
+                        {
+                            continue;
+                        }
+                        
+                        Log("Executing Twitter for campaign:  " + t.Name);
+
+                        try
+                        {
+                            dynamic instance = Activator.CreateInstance(t, null, this, true);
+                            instance.ExecuteTwitter();
+                        }
+                        catch (Exception e)
+                        {
+                            ReportException(e, "Unable to execute campaign!  Skipped.");
+                        }
+                    }
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
                     Log("Twitter workflow complete!  Waiting " + Globals.__WORKFLOW_TWITTER_WAIT_INTERVAL__.ToString() + " minutes for next run....");
@@ -88,11 +127,12 @@ namespace FaceBERN_
                     {
                         System.Threading.Thread.Sleep(5000);
 
-                        Log("Spawning new Twitter thread....");
+                        Log("Restarting Twitter thread....");
 
                         SetExecState(Globals.STATE_RESTARTING);
 
-                        Globals.facebookThread = ExecuteFacebookThread(browser);
+                        //Globals.twitterThread = ExecuteTwitterThread(browser);
+                        ExecuteTwitter(browser);
                     }
                     else
                     {
@@ -770,7 +810,7 @@ namespace FaceBERN_
         }
 
         /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
-        private void ConsumeTweetsQueue(int? campaignId = null)
+        internal void ConsumeTweetsQueue(int? campaignId = null)
         {
             try
             {
@@ -1271,7 +1311,7 @@ namespace FaceBERN_
         }
 
         /* Update the number of tweets in the queue displayed on the main form.  --Kris */
-        private void UpdateLocalTweetsQueueCount()
+        internal void UpdateLocalTweetsQueueCount()
         {
             UpdateLocalTweetsQueue(true);
             GetTweetsQueue();
@@ -1280,7 +1320,7 @@ namespace FaceBERN_
         }
 
         /* Get the number of tweets tweeted by everyone.  --Kris */
-        private void UpdateRemoteTweetsCount()
+        internal void UpdateRemoteTweetsCount()
         {
             IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + GetAppID() + "&return=count", "GET");
 

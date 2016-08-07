@@ -38,6 +38,8 @@
             this.fileToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.twitterToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.tweetsQueueManagerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.historyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tweetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -70,10 +72,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.buttonStart = new CButtonLib.CButton();
             this.executeInBackgroundCheckbox = new System.Windows.Forms.CheckBox();
-            this.twitterToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.tweetsQueueManagerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.label5 = new System.Windows.Forms.Label();
             this.labelTweetsQueued = new System.Windows.Forms.Label();
+            this.copyLogWindowToClipboardToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -151,11 +152,26 @@
             this.toolsToolStripMenuItem1.Size = new System.Drawing.Size(48, 20);
             this.toolsToolStripMenuItem1.Text = "Tools";
             // 
+            // twitterToolStripMenuItem1
+            // 
+            this.twitterToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tweetsQueueManagerToolStripMenuItem});
+            this.twitterToolStripMenuItem1.Name = "twitterToolStripMenuItem1";
+            this.twitterToolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
+            this.twitterToolStripMenuItem1.Text = "Twitter";
+            // 
+            // tweetsQueueManagerToolStripMenuItem
+            // 
+            this.tweetsQueueManagerToolStripMenuItem.Name = "tweetsQueueManagerToolStripMenuItem";
+            this.tweetsQueueManagerToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.tweetsQueueManagerToolStripMenuItem.Text = "Tweets Queue Manager";
+            this.tweetsQueueManagerToolStripMenuItem.Click += new System.EventHandler(this.tweetsQueueManagerToolStripMenuItem_Click);
+            // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.Image = global::FaceBERN_.Properties.Resources.Settings;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
@@ -170,7 +186,7 @@
             // tweetsToolStripMenuItem
             // 
             this.tweetsToolStripMenuItem.Name = "tweetsToolStripMenuItem";
-            this.tweetsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.tweetsToolStripMenuItem.Size = new System.Drawing.Size(111, 22);
             this.tweetsToolStripMenuItem.Text = "Tweets";
             this.tweetsToolStripMenuItem.Click += new System.EventHandler(this.tweetsToolStripMenuItem_Click);
             // 
@@ -180,6 +196,7 @@
             this.launchPostInstallerToolStripMenuItem,
             this.throwExceptionToolStripMenuItem,
             this.executeInstallerToolStripMenuItem,
+            this.copyLogWindowToClipboardToolStripMenuItem,
             this.twitterToolStripMenuItem});
             this.DEBUGToolStripMenuItem.Name = "DEBUGToolStripMenuItem";
             this.DEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
@@ -188,21 +205,21 @@
             // launchPostInstallerToolStripMenuItem
             // 
             this.launchPostInstallerToolStripMenuItem.Name = "launchPostInstallerToolStripMenuItem";
-            this.launchPostInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.launchPostInstallerToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
             this.launchPostInstallerToolStripMenuItem.Text = "Launch Post-Installer";
             this.launchPostInstallerToolStripMenuItem.Click += new System.EventHandler(this.launchPostInstallerToolStripMenuItem_Click);
             // 
             // throwExceptionToolStripMenuItem
             // 
             this.throwExceptionToolStripMenuItem.Name = "throwExceptionToolStripMenuItem";
-            this.throwExceptionToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.throwExceptionToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
             this.throwExceptionToolStripMenuItem.Text = "Throw Exception";
             this.throwExceptionToolStripMenuItem.Click += new System.EventHandler(this.throwExceptionToolStripMenuItem_Click);
             // 
             // executeInstallerToolStripMenuItem
             // 
             this.executeInstallerToolStripMenuItem.Name = "executeInstallerToolStripMenuItem";
-            this.executeInstallerToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.executeInstallerToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
             this.executeInstallerToolStripMenuItem.Text = "Execute Installer";
             this.executeInstallerToolStripMenuItem.Click += new System.EventHandler(this.executeInstallerToolStripMenuItem_Click);
             // 
@@ -211,7 +228,7 @@
             this.twitterToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.deleteTweetToolStripMenuItem});
             this.twitterToolStripMenuItem.Name = "twitterToolStripMenuItem";
-            this.twitterToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.twitterToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
             this.twitterToolStripMenuItem.Text = "API";
             // 
             // deleteTweetToolStripMenuItem
@@ -474,21 +491,6 @@
             this.executeInBackgroundCheckbox.Text = "Execute in the background";
             this.executeInBackgroundCheckbox.UseVisualStyleBackColor = false;
             // 
-            // twitterToolStripMenuItem1
-            // 
-            this.twitterToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tweetsQueueManagerToolStripMenuItem});
-            this.twitterToolStripMenuItem1.Name = "twitterToolStripMenuItem1";
-            this.twitterToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
-            this.twitterToolStripMenuItem1.Text = "Twitter";
-            // 
-            // tweetsQueueManagerToolStripMenuItem
-            // 
-            this.tweetsQueueManagerToolStripMenuItem.Name = "tweetsQueueManagerToolStripMenuItem";
-            this.tweetsQueueManagerToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
-            this.tweetsQueueManagerToolStripMenuItem.Text = "Tweets Queue Manager";
-            this.tweetsQueueManagerToolStripMenuItem.Click += new System.EventHandler(this.tweetsQueueManagerToolStripMenuItem_Click);
-            // 
             // label5
             // 
             this.label5.AutoSize = true;
@@ -511,6 +513,13 @@
             this.labelTweetsQueued.Size = new System.Drawing.Size(14, 13);
             this.labelTweetsQueued.TabIndex = 42;
             this.labelTweetsQueued.Text = "0";
+            // 
+            // copyLogWindowToClipboardToolStripMenuItem
+            // 
+            this.copyLogWindowToClipboardToolStripMenuItem.Name = "copyLogWindowToClipboardToolStripMenuItem";
+            this.copyLogWindowToClipboardToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
+            this.copyLogWindowToClipboardToolStripMenuItem.Text = "Copy Log Window to Clipboard";
+            this.copyLogWindowToClipboardToolStripMenuItem.Click += new System.EventHandler(this.copyLogWindowToClipboardToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -602,6 +611,7 @@
         private System.Windows.Forms.ToolStripMenuItem tweetsQueueManagerToolStripMenuItem;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label labelTweetsQueued;
+        private System.Windows.Forms.ToolStripMenuItem copyLogWindowToClipboardToolStripMenuItem;
     }
 }
 

@@ -6,22 +6,18 @@ using System.Threading.Tasks;
 
 namespace FaceBERN_.Campaigns.Admin
 {
-    public class ShareOnFacebook : FaceBERN_.Campaign
+    public class ShareOnFacebook : Generic
     {
-        public ShareOnFacebook(bool refresh = true)
-        {
-            if (refresh)
-            {
-                RefreshCampaignData();
-            }
-        }
+        public ShareOnFacebook(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, bool refresh = true)
+            : base(workflowFacebook, workflowTwitter, refresh)
+        { }
         
-        public bool ExecuteFacebook()
+        public override bool ExecuteFacebook()
         {
             return true;
         }
 
-        public bool ExecuteTwitter()
+        public override bool ExecuteTwitter()
         {
             return true;
         }

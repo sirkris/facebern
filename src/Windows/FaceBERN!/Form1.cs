@@ -1572,8 +1572,8 @@ namespace FaceBERN_
                     return;
                 }
 
-                Workflow workflow = new Workflow(this);
-                if (workflow.DeleteTweet(twitterStatusIdForm.textBox1.Text, true))
+                WorkflowTwitter workflowTwitter = new WorkflowTwitter(this);
+                if (workflowTwitter.DeleteTweet(twitterStatusIdForm.textBox1.Text, true))
                 {
                     MessageBox.Show("Tweet " + twitterStatusIdForm.textBox1.Text + " deleted from API (not Twitter) successfully.");
                 }
@@ -1588,6 +1588,11 @@ namespace FaceBERN_
         {
             TweetsQueueManager tqm = new TweetsQueueManager(this);
             tqm.Show();
+        }
+
+        private void copyLogWindowToClipboardToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(outBox.Text);
         }
     }
 }

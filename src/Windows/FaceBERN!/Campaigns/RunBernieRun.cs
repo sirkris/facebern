@@ -6,23 +6,27 @@ using System.Threading.Tasks;
 
 namespace FaceBERN_.Campaigns
 {
-    public class RunBernieRun : FaceBERN_.Campaign
+    public class RunBernieRun : Generic
     {
-        public RunBernieRun(bool refresh = true)
-        {
-            if (refresh)
-            {
-                RefreshCampaignData();
-            }
-        }
+        public RunBernieRun(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, bool refresh = true)
+            : base(workflowFacebook, workflowTwitter, refresh)
+        { }
         
-        public bool ExecuteFacebook()
+        public override bool ExecuteFacebook()
         {
             return true;
         }
 
-        public bool ExecuteTwitter()
+        public override bool ExecuteTwitter()
         {
+            if (Globals.CampaignConfigs[Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES] == false)
+            {
+                workflowTwitter.Log("The campaign to send tweets from /r/StillSandersForPres is disabled.  Skipped.");
+                return false;
+            }
+
+            workflowTwitter.ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+
             return true;
         }
     }
