@@ -131,8 +131,7 @@ namespace FaceBERN_
 
                         SetExecState(Globals.STATE_RESTARTING);
 
-                        //Globals.twitterThread = ExecuteTwitterThread(browser);
-                        ExecuteTwitter(browser);
+                        Globals.twitterThread = ExecuteTwitterThread(browser);
                     }
                     else
                     {

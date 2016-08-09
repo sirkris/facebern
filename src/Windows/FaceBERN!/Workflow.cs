@@ -710,10 +710,11 @@ namespace FaceBERN_
                 Credentials credentials = new Credentials(false, false, true);
                 if (credentials.IsBirdieAdmin())
                 {
-                    restClient.Authenticator = new SimpleAuthenticator(
+                    /*restClient.Authenticator = new SimpleAuthenticator(
                                                                         "username", credentials.ToString(credentials.GetBirdieUsername()),
                                                                         "password", credentials.ToString(credentials.GetBirdiePassword())
-                                                    );
+                                                    );*/
+                    restClient.Authenticator = new HttpBasicAuthenticator(credentials.ToString(credentials.GetBirdieUsername()), credentials.ToString(credentials.GetBirdiePassword()));
                 }
 
                 credentials.Destroy();
