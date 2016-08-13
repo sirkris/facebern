@@ -25,37 +25,37 @@ namespace FaceBERN_
         private string logName = "Workflow";
         public Log WorkflowLog;
         private Form1 Main;
-        private Reddit reddit;
-        private int browser = 0;
-        private bool ftbFriended = false;
+        protected Reddit reddit;
+        protected int browser = 0;
+        protected bool ftbFriended = false;
 
         public long invitesSent = 0;  // Tracked for current session only.  --Kris
 
         public List<Person> invited;
         public List<string> tweets;
 
-        private WebDriver webDriver = null;
+        protected WebDriver webDriver = null;
 
-        private RestClient restClient;
+        protected RestClient restClient;
 
-        private int remoteInvitesSent = 0;
+        protected int remoteInvitesSent = 0;
 
-        private List<Person> remoteUpdateQueue = null;
+        protected List<Person> remoteUpdateQueue = null;
 
-        private Random rand;
+        protected Random rand;
 
         private string lastLogMsg = null;
 
-        private string twitterConsumerKey = "NB74pt5RpC7QuszjGy8qy7rju";
-        private string twitterConsumerSecret = "ifP1aw4ggRjkCktFEnU2T0zS2HA0XxlCpzjb601SMRo7U4HoNR";
-        private Credentials twitterAccessCredentials = null;
-        private OAuthTokens twitterTokens = null;
+        protected string twitterConsumerKey = "NB74pt5RpC7QuszjGy8qy7rju";
+        protected string twitterConsumerSecret = "ifP1aw4ggRjkCktFEnU2T0zS2HA0XxlCpzjb601SMRo7U4HoNR";
+        internal Credentials twitterAccessCredentials = null;
+        protected OAuthTokens twitterTokens = null;
 
-        private List<TweetsQueue> tweetsQueue = null;
-        private List<TweetsQueue> tweetsHistory = null;
+        protected List<TweetsQueue> tweetsQueue = null;
+        protected List<TweetsQueue> tweetsHistory = null;
 
-        private TwitterStatusCollection twitterTimelineCache = null;
-        private DateTime? twitterTimelineCacheLastRefresh = null;
+        protected TwitterStatusCollection twitterTimelineCache = null;
+        protected DateTime? twitterTimelineCacheLastRefresh = null;
 
         private List<ExceptionReport> exceptions;
 
@@ -113,6 +113,8 @@ namespace FaceBERN_
                 DateTime start = DateTime.Now;
                 lastUpdate = start;
 
+                WorkflowTwitter workflowTwitter = new WorkflowTwitter(Main);
+
                 if (skipStartup == false)
                 {
                     invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
@@ -161,10 +163,10 @@ namespace FaceBERN_
                     UpdateInvitationsCount(invited.Count, remoteInvitesSent);
 
                     /* Update our local tweets count for both ours and remote.  --Kris */
-                    UpdateRemoteTweetsCount();
+                    workflowTwitter.UpdateRemoteTweetsCount();
 
                     /* Update the number of tweets waiting in our local queue.  --Kris */
-                    UpdateLocalTweetsQueueCount();
+                    workflowTwitter.UpdateLocalTweetsQueueCount();
 
                     /* Update our local count for both active users and total users.  --Kris */
                     UpdateRemoteUsers();
@@ -416,7 +418,7 @@ namespace FaceBERN_
             softwareKey.Close();
         }
 
-        private void AppendLatestInvitesQueue(List<Person> invites, bool clear = false)
+        protected void AppendLatestInvitesQueue(List<Person> invites, bool clear = false)
         {
             if (clear)
             {
@@ -438,17 +440,17 @@ namespace FaceBERN_
             softwareKey.Close();
         }
 
-        private void AppendLatestInvitesQueue(Person invite)
+        protected void AppendLatestInvitesQueue(Person invite)
         {
             AppendLatestInvitesQueue(new List<Person> { invite });
         }
 
-        private void ClearLatestInvitesQueue()
+        protected void ClearLatestInvitesQueue()
         {
             AppendLatestInvitesQueue(null, true);
         }
 
-        private int? GetIntFromRes(IRestResponse res, string op = "complete operation")
+        protected int? GetIntFromRes(IRestResponse res, string op = "complete operation")
         {
             int r;
             if (res.StatusCode == System.Net.HttpStatusCode.OK)
@@ -489,37 +491,6 @@ namespace FaceBERN_
             remoteInvitesSent = r.Value;
 
             UpdateInvitationsCount(-1, r.Value);
-        }
-
-        /* Get the number of tweets tweeted by everyone.  --Kris */
-        private void UpdateRemoteTweetsCount()
-        {
-            IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + GetAppID() + "&return=count", "GET");
-
-            int? myTweets = GetIntFromRes(res, "update this client's tweet count");
-            if (myTweets == null)
-            {
-                return;
-            }
-
-            res = BirdieQuery(@"/twitter/tweets?return=count", "GET");
-
-            int? totalTweets = GetIntFromRes(res, "update total tweets count");
-            if (totalTweets == null)
-            {
-                return;
-            }
-
-            UpdateTweetsCount(myTweets.Value, totalTweets.Value);
-        }
-
-        /* Update the number of tweets in the queue displayed on the main form.  --Kris */
-        private void UpdateLocalTweetsQueueCount()
-        {
-            UpdateLocalTweetsQueue(true);
-            GetTweetsQueue();
-
-            UpdateTweetsQueuedCount(tweetsQueue.Count);
         }
 
         /* Get the active campaigns.  --Kris */
@@ -592,73 +563,6 @@ namespace FaceBERN_
             }
         }
 
-        /* Report one or more new tweets to Birdie API.  --Kris */
-        private void ReportNewTweets(List<TweetsQueue> tweets)
-        {
-            for (int i = 0; i < tweets.Count; i++)
-            {
-                tweets[i].SetTweetedBy(GetAppID());
-            }
-
-            IRestResponse res = BirdieQuery(@"/twitter/tweets", "POST", null, JsonConvert.SerializeObject(tweets));
-
-            if (res.StatusCode == System.Net.HttpStatusCode.Created)
-            {
-                Log("Tweet(s) reported successfully.", false);
-            }
-            else
-            {
-                Log("Warning:  Tweets reporting to Birdie API failed : " + res.StatusCode);
-            }
-
-            UpdateRemoteTweetsCount();
-        }
-
-        private void ReportNewTweet(TweetsQueue tweet)
-        {
-            ReportNewTweets(new List<TweetsQueue> { tweet });
-        }
-
-        private List<TweetsQueue> BirdieToTweetsQueue(dynamic deserializedJSON, bool overwrite = true, bool returnOnly = false)
-        {
-            if (overwrite || tweetsQueue == null)
-            {
-                tweetsQueue = new List<TweetsQueue>();
-            }
-
-            List<TweetsQueue> res = new List<TweetsQueue>();
-            foreach (dynamic o in deserializedJSON)
-            {
-                if (o != null
-                    && o["tweet"] != null
-                    && o["entered"] != null
-                    && o["enteredBy"] != null
-                    && o["start"] != null
-                    && o["end"] != null)
-                {
-                    try
-                    {
-                        res.Add(new TweetsQueue(o["tweet"].ToString(), (o["source"] != null ? o["source"].ToString() : "Birdie"), null, DateTime.Now, DateTime.Parse(o["entered"].ToString()),
-                            o["enteredBy"].ToString(), DateTime.Parse(o["start"].ToString()), DateTime.Parse(o["end"].ToString()), (int?) (o["campaignId"] != null ? o["campaignId"] : null),
-                            (o["tid"] != null ? (int) o["tid"] : 0), (o["tweetedAt"] != null ? DateTime.Parse(o["tweetedAt"].ToString()) : null), (string) o["twitterStatusId"]));
-                    }
-                    catch (Exception e)
-                    {
-                        Log("Warning:  Unable to import tweets queue from Birdie API : " + e.ToString());
-
-                        ReportException(e, "Warning:  Unable to import tweets queue from Birdie API.");
-                    }
-                }
-            }
-
-            if (returnOnly == false)
-            {
-                tweetsQueue.AddRange(res);
-            }
-
-            return res;
-        }
-
         private List<Campaign> BirdieToCampaigns(dynamic deserializedJSON, bool overwrite = true)
         {
             if (overwrite || Globals.campaigns == null)
@@ -710,269 +614,6 @@ namespace FaceBERN_
             }
 
             return Globals.campaigns;
-        }
-
-        internal List<TweetsQueue> GetTweetsQueue()
-        {
-            return tweetsQueue;
-        }
-
-        internal bool RemoveFromLocalTweetsQueue(string tweet)
-        {
-            bool entryFound = false;
-
-            List<TweetsQueue> newQueue = new List<TweetsQueue>();
-            foreach (TweetsQueue entry in tweetsQueue)
-            {
-                if (entry.GetTweet() != tweet)
-                {
-                    newQueue.Add(entry);
-                }
-                else
-                {
-                    entryFound = true;
-
-                    // Adding to the backend "history" to keep it from being re-added.  This will NOT make it appear in the history window.  --Kris
-                    AppendTweetsHistory(entry, true);
-                }
-            }
-
-            tweetsQueue = newQueue;
-
-            PersistLocalTweetsQueue();
-
-            return entryFound;
-        }
-
-        /* Update the local cache of this client's tweets queue.  Just doing a straight-up replace since that'll clean-out any expired/disabled entries.  --Kris */
-        internal void UpdateLocalTweetsQueue(bool continueIfDisabled = false)
-        {
-            if (!(Globals.Config["EnableTwitter"].Equals("1")) 
-                && continueIfDisabled == false)
-            {
-                return;
-            }
-
-            Log("Updating tweets queue....");
-
-            /* Get any tweets in the Birdie API queue.  --Kris */
-            IRestResponse res = BirdieQuery(@"/twitter/tweetsQueue?showActiveOnly&showQueueFor=" + GetAppID(), "GET");
-
-            tweetsQueue = BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content));
-
-            /* Grab any local data from the registry.  --Kris */
-            List<TweetsQueue> localTweetsQueue;
-            try
-            {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
-
-                localTweetsQueue = JsonConvert.DeserializeObject<List<TweetsQueue>>((string) twitterKey.GetValue("tweetsQueue", new List<TweetsQueue>()));
-
-                twitterKey.Close();
-                appKey.Close();
-                softwareKey.Close();
-            }
-            catch (Exception)
-            {
-                localTweetsQueue = new List<TweetsQueue>();
-            }
-
-            foreach (TweetsQueue entry in localTweetsQueue)
-            {
-                bool found = false;
-                for ( int i = 0; i < tweetsQueue.Count; i++ )
-                {
-                    if (tweetsQueue[i].GetTweet() == entry.GetTweet())
-                    {
-                        tweetsQueue[i].SetFailures(entry.GetFailures());
-                        found = true;
-                    }
-                }
-
-                if (found == false)
-                {
-                    tweetsQueue.Add(entry);
-                }
-            }
-
-            /* Get any tweets from Reddit, if enabled.  --Kris */
-            GetTweetsFromReddit();
-
-            /* Filter anything out that appears in our "history" cache.  --Kris */
-            FilterTweetedFromQueue();
-
-            PersistLocalTweetsQueue();
-        }
-
-        private void FilterTweetedFromQueue()
-        {
-            LoadTweetsHistory(true);
-
-            List<TweetsQueue> newQueue = new List<TweetsQueue>();
-            foreach (TweetsQueue entry in tweetsQueue)
-            {
-                bool match = false;
-                foreach (TweetsQueue hEntry in tweetsHistory)
-                {
-                    if (hEntry.GetTweet() == entry.GetTweet())
-                    {
-                        match = true;
-                        break;
-                    }
-                }
-
-                if (match == false)
-                {
-                    newQueue.Add(entry);
-                }
-            }
-
-            tweetsQueue = newQueue;
-        }
-
-        /* Persist the queue in the system registry.  --Kris */
-        private void PersistLocalTweetsQueue()
-        {
-            try
-            {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
-
-                twitterKey.SetValue("tweetsQueue", JsonConvert.SerializeObject(tweetsQueue), RegistryValueKind.String);
-
-                twitterKey.Close();
-                appKey.Close();
-                softwareKey.Close();
-            }
-            catch (Exception e)
-            {
-                Log("Warning:  Unable to persist tweets queue to registry : " + e.ToString());
-
-                ReportException(e, "Unable to persist tweets queue to registry.");
-            }
-        }
-
-        /* Update our history of recent tweets.  This is used to prevent duplicate tweet spam in the event of an error or abuse.  --Kris */
-        private void AppendTweetsHistory(List<TweetsQueue> entries, bool skipReport = false)
-        {
-            if (tweetsHistory == null)
-            {
-                tweetsHistory = new List<TweetsQueue>();
-            }
-
-            for (int i = 0; i < entries.Count; i++)
-            {
-                entries[i].SetTweeted(DateTime.Now);
-            }
-            
-            tweetsHistory.AddRange(entries);
-
-            SanitizeTweetsHistory();  // Removes duplicates and tweets more than 30 days old.  Also sorts by date/time tweeted (ascending).  --Kris
-
-            try
-            {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
-
-                twitterKey.SetValue("tweetsHistory", JsonConvert.SerializeObject(tweetsHistory), RegistryValueKind.String);
-
-                twitterKey.Close();
-                appKey.Close();
-                softwareKey.Close();
-            }
-            catch (Exception e)
-            {
-                Log("Warning:  Unable to update tweets queue in registry : " + e.ToString());
-
-                ReportException(e, "Unable to update tweets queue in registry.");
-            }
-
-            if (!(skipReport))
-            {
-                ReportNewTweets(entries);
-            }
-        }
-
-        private void AppendTweetsHistory(TweetsQueue entry, bool skipReport = false)
-        {
-            AppendTweetsHistory(new List<TweetsQueue> { entry }, skipReport);
-        }
-
-        private void SanitizeTweetsHistory()
-        {
-            List<TweetsQueue> newTweetsHistory = new List<TweetsQueue>();
-            foreach (TweetsQueue entry in tweetsHistory)
-            {
-                if (!(newTweetsHistory.Contains(entry))
-                    && entry.tweeted != null
-                    && DateTime.Now <= entry.tweeted.Value.AddDays(30))
-                {
-                    newTweetsHistory.Add(entry);
-                }
-            }
-
-            tweetsHistory = newTweetsHistory.OrderBy(entry => entry.tweeted.Value).ToList();
-        }
-
-        /* Load recent tweets history.  This is used for backend deduping/etc; the "official" tweets history (that you see in the History window) is pulled separately from Birdie API.  --Kris */
-        private List<TweetsQueue> LoadTweetsHistory(bool includeRemote = false)
-        {
-            try
-            {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                RegistryKey twitterKey = appKey.CreateSubKey("Twitter");
-
-                tweetsHistory = JsonConvert.DeserializeObject<List<TweetsQueue>>(
-                    (string) twitterKey.GetValue("tweetsHistory", JsonConvert.SerializeObject(new List<TweetsQueue>()), RegistryValueOptions.None)
-                );
-
-                twitterKey.Close();
-                appKey.Close();
-                softwareKey.Close();
-            }
-            catch (Exception e)
-            {
-                Log("Warning:  Error loading recent tweets history from registry : " + e.ToString());
-
-                ReportException(e, "Error loading recent tweets history from registry.");
-
-                tweetsHistory = new List<TweetsQueue>();
-            }
-
-            if (includeRemote)
-            {
-                List<TweetsQueue> historyRemote = GetTweetsHistoryFromBirdie();
-
-                List<TweetsQueue> newHistory = new List<TweetsQueue>();
-                foreach (TweetsQueue entry in historyRemote)
-                {
-                    bool match = false;
-                    foreach (TweetsQueue lEntry in tweetsHistory)
-                    {
-                        if (lEntry.GetTweet() == entry.GetTweet())
-                        {
-                            match = true;
-                            break;
-                        }
-                    }
-
-                    if (match == false)
-                    {
-                        newHistory.Add(entry);
-                    }
-                }
-
-                tweetsHistory.AddRange(newHistory);
-            }
-
-            SanitizeTweetsHistory();
-
-            return tweetsHistory;
         }
 
         /* Get the number of active and total users.  --Kris */
@@ -1069,10 +710,11 @@ namespace FaceBERN_
                 Credentials credentials = new Credentials(false, false, true);
                 if (credentials.IsBirdieAdmin())
                 {
-                    restClient.Authenticator = new SimpleAuthenticator(
+                    /*restClient.Authenticator = new SimpleAuthenticator(
                                                                         "username", credentials.ToString(credentials.GetBirdieUsername()),
                                                                         "password", credentials.ToString(credentials.GetBirdiePassword())
-                                                    );
+                                                    );*/
+                    restClient.Authenticator = new HttpBasicAuthenticator(credentials.ToString(credentials.GetBirdieUsername()), credentials.ToString(credentials.GetBirdiePassword()));
                 }
 
                 credentials.Destroy();
@@ -1105,65 +747,13 @@ namespace FaceBERN_
             }
         }
 
-        internal List<TweetsQueue> GetTweetsHistoryFromBirdie()
-        {
-            try
-            {
-                IRestResponse res = BirdieQuery(@"/twitter/tweets?tweetedBy=" + Globals.appId + @"&verbose", "GET");
-
-                if (res.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    return BirdieToTweetsQueue(JsonConvert.DeserializeObject(res.Content), false, true);
-                }
-                else
-                {
-                    Log("Warning:  Bad response from API for GetTweetsHistoryFromBirdie() : " + res.StatusDescription);
-
-                    return null;
-                }
-            }
-            catch (Exception e)
-            {
-                LogAndReportException(e, "Warning:  Failed to retrieve tweets history from Birdie.");
-
-                return null;
-            }
-        }
-
-        internal bool UpdateBirdieTwitterStatusIDs(List<TweetsQueue> history)
-        {
-            try
-            {
-                IRestResponse res = BirdieQuery(@"/twitter/tweets", "PUT", null, JsonConvert.SerializeObject(history));  // API ignores everything except tid and twitterStatusId for PUT.  --Kris
-
-                if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
-                {
-                    return true;  // Query succeeded and one or more records were updated.  --Kris
-                }
-                else if (res.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    return true;  // Query succeeded but no records needed to be updated, either because they don't exist or because the value didn't change.  --Kris
-                }
-                else
-                {
-                    Log("Warning:  Bad response from API for UpdateBirdieTwitterStatusIDs() : " + res.StatusDescription);
-
-                    return false;  // Query failed.  --Kris
-                }
-            }
-            catch (Exception e)
-            {
-                LogAndReportException(e, "Warning:  Failed to update tweets history to Birdie.");
-
-                return false;
-            }
-        }
-
         public Thread ExecuteShutdownThread(Thread workflowThread)
         {
             SetExecState(Globals.STATE_STOPPING);
 
             Thread thread = new Thread(() => ExecuteShutdown(workflowThread));
+
+            thread.IsBackground = true;
 
             Main.LogW("Attempting to start Shutdown thread....", false);
 
@@ -1225,6 +815,8 @@ namespace FaceBERN_
 
             Thread thread = new Thread(() => ExecuteTwitterAuth(browser));
 
+            thread.IsBackground = true;
+
             Main.LogW("Attempting to start TwitterAuth thread....", false);
 
             thread.Start();
@@ -1235,187 +827,61 @@ namespace FaceBERN_
             return thread;
         }
 
-        public void ExecuteTwitterAuth(int browser)
+        private void ExecuteTwitterAuth(int browser)
         {
-            try
-            {
-                Log("Commencing Twitter authorization workflow....");
-
-                AuthorizeTwitter(browser);
-
-                Log("Twitter authorization complete!");
-
-                Ready();
-            }
-            catch (Exception e)
-            {
-                LogAndReportException(e, "Unhandled exception in TwitterAuth thread.");
-            }
+            WorkflowTwitter workflowTwitter = new WorkflowTwitter(Main);
+            workflowTwitter.ExecuteTwitterAuth(browser);
         }
 
-        private void LoadTwitterCredentialsFromRegistry()
+        public Thread ExecuteFacebookThread(int browser)
         {
-            twitterAccessCredentials = new Credentials(false, true);
+            SetExecState(Globals.STATE_TWITTERPIN);
+
+            Thread thread = new Thread(() => ExecuteFacebook(browser));
+
+            thread.IsBackground = true;
+
+            Main.LogW("Attempting to start Facebook thread....", false);
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("Facebook thread started successfully.", false);
+
+            return thread;
         }
 
-        private void SaveTwitterCredentialsToRegistry(string accessToken, string accessTokenSecret)
+        private void ExecuteFacebook(int browser)
         {
-            if (twitterAccessCredentials == null)
-            {
-                twitterAccessCredentials = new Credentials();
-            }
-
-            twitterAccessCredentials.SetTwitter(twitterAccessCredentials.ToSecureString(accessToken), twitterAccessCredentials.ToSecureString(accessTokenSecret));
+            WorkflowFacebook workflowFacebook = new WorkflowFacebook(Main);
+            workflowFacebook.ExecuteFacebook(browser);
         }
 
-        private string GetTwitterAccessToken()
+        public Thread ExecuteTwitterThread(int browser)
         {
-            if (twitterAccessCredentials == null)
-            {
-                LoadTwitterCredentialsFromRegistry();
-            }
+            SetExecState(Globals.STATE_TWITTERPIN);
 
-            return (twitterAccessCredentials.GetTwitterAccessToken() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken()) : null);
+            Thread thread = new Thread(() => ExecuteTwitter(browser));
+
+            thread.IsBackground = true;
+
+            Main.LogW("Attempting to start Twitter thread....", false);
+
+            thread.Start();
+            while (thread.IsAlive == false) { }
+
+            Main.LogW("Twitter thread started successfully.", false);
+
+            return thread;
         }
 
-        private string GetTwitterAccessTokenSecret()
+        private void ExecuteTwitter(int browser)
         {
-            if (twitterAccessCredentials == null)
-            {
-                LoadTwitterCredentialsFromRegistry();
-            }
-
-            return (twitterAccessCredentials.GetTwitterAccessTokenSecret() != null ? twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret()) : null);
+            WorkflowTwitter workflowTwitter = new WorkflowTwitter(Main);
+            workflowTwitter.ExecuteTwitter(browser);
         }
 
-        internal void AuthorizeTwitter(int browser)
-        {
-            Log("Checking Twitter credentials....");
-
-            if (twitterAccessCredentials == null)
-            {
-                LoadTwitterCredentialsFromRegistry();
-            }
-
-            /* If access token/secret aren't stored, do the workflow for obtaining that.  --Kris */
-            if (twitterAccessCredentials.IsAssociated() == false)
-            {
-                Log("User credentials not stored.  Loading Twitter authorization page....");
-
-                string requestToken = OAuthUtility.GetRequestToken(twitterConsumerKey, twitterConsumerSecret, "oob").Token;
-                string authURI = OAuthUtility.BuildAuthorizationUri(requestToken).AbsoluteUri;
-
-                string pin = "";
-
-                /* Open a browser window, navigate to the authorization PIN page, and attempt to extract the PIN automatically for convenience.  --Kris */
-                bool pinError = false;
-                string pinErrorMessage = "";
-                try
-                {
-                    webDriver = new WebDriver(Main, browser);
-                    webDriver.FixtureSetup();
-                    webDriver.TestSetUp(authURI);
-
-                    System.Threading.Thread.Sleep(3000);
-
-                    /* Wait for user to login and for PIN page to load.  If not detected after timeoutSeconds seconds, pop it up, anyway.  --Kris */
-                    int timeoutSeconds = 30;
-                    Log("Waiting for PIN detection.  Please wait until " + Globals.__APPNAME__ + " asks you to enter your PIN (up to " + timeoutSeconds.ToString() + " seconds)....");
-                    DateTime start = DateTime.Now;
-                    do
-                    {
-                        try
-                        {
-                            if (webDriver.GetElementById("oauth_pin") != null)
-                            {
-                                List<IWebElement> eles = webDriver.GetElementsByTagName("code");
-                                foreach (IWebElement element in eles)
-                                {
-                                    if (element.Text != null && element.Text.Trim().Length >= 5)
-                                    {
-                                        pin = element.Text.Trim();
-                                        break;
-                                    }
-                                }
-                            }
-
-                            System.Threading.Thread.Sleep(1000);
-                        }
-                        catch (Exception e)
-                        {
-                            pin = "";
-                            pinError = true;
-                            pinErrorMessage = e.Message;
-                        }
-                    } while (pin == "" && DateTime.Now.Subtract(start).Seconds < timeoutSeconds);
-                }
-                catch (Exception e)
-                {
-                    Log("Warning:  Error using WebDriver to obtain PIN.  Opening in default browser, instead....");
-
-                    if (browser > 0)
-                    {
-                        ReportException(e, 
-                            "Error using WebDriver to obtain PIN for browser " + Globals.BrowserName(browser) + " : " 
-                            + (pinError ? "Unable to extract PIN (" + pinErrorMessage + ")" : "Unable to launch browser") + "."
-                        );
-                    }
-                    
-                    System.Diagnostics.Process.Start(authURI);
-
-                    System.Threading.Thread.Sleep(5000);  // After the delay, they'll have to enter the PIN manually.  --Kris
-                }
-
-                /* We already have the PIN but we still need the user to confirm.  --Kris */
-                TwitPin twitPin = new TwitPin(pin);
-                DialogResult res = twitPin.ShowDialog();
-                if (res == DialogResult.OK)
-                {
-                    pin = twitPin.pin;
-                }
-                else
-                {
-                    Log("User cancelled PIN input!  Twitter authorization aborted.");
-                    return;
-                }
-
-                webDriver.FixtureTearDown();
-                webDriver = null;
-
-                if (pin == null || pin.Trim() == "")
-                {
-                    Log("No PIN entered!  Twitter credentials not stored!");
-                }
-                else
-                {
-                    OAuthTokenResponse accessToken = OAuthUtility.GetAccessToken(twitterConsumerKey, twitterConsumerSecret, requestToken, pin);
-
-                    if (accessToken != null && accessToken.Token != null && accessToken.TokenSecret != null && accessToken.ScreenName != null)
-                    {
-                        twitterAccessCredentials.SetTwitter(accessToken.Token, accessToken.TokenSecret, accessToken.ScreenName, accessToken.UserId.ToString());
-
-                        Log("Twitter credentials stored successfully!");
-                    }
-                    else
-                    {
-                        Log("Twitter authorization FAILED!  Did you enter the PIN correctly?");
-                    }
-                }
-            }
-            else
-            {
-                Log("Twitter credentials loaded successfully.");
-            }
-        }
-
-        internal Credentials AuthorizeTwitterWithReturn(int browser)
-        {
-            AuthorizeTwitter(browser);
-
-            return twitterAccessCredentials;
-        }
-
-        public Thread ExecuteThread()
+        public Thread ExecuteThread(bool loadSubWorkflows = true)
         {
             SetExecState(Globals.STATE_VALIDATING);
 
@@ -1429,7 +895,8 @@ namespace FaceBERN_
                 browser = Main.browserModeComboBox.SelectedIndex;
             }
             
-            Thread thread = new Thread(() => Execute(browser, WorkflowLog));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
+            Thread thread = new Thread(() => 
+                                Execute(browser, WorkflowLog, loadSubWorkflows));  // Selected index corresponds to global browser constants; don't change the order without changing them!  --Kris
 
             thread.IsBackground = true;
 
@@ -1445,7 +912,7 @@ namespace FaceBERN_
             return thread;
         }
 
-        public void Execute(int browser, Log WorkflowLog)
+        public void Execute(int browser, Log WorkflowLog, bool loadSubWorkflows = true)
         {
             try
             {
@@ -1463,29 +930,36 @@ namespace FaceBERN_
 
                 invited = GetInvitedPeople();  // Get list of people you already invited with this program from the system registry.  --Kris
 
-                /* Load the local recent tweets history.  --Kris */
-                LoadTweetsHistory();
-
                 //Main.Invoke(new MethodInvoker(delegate() { Main.Refresh(); }));
 
                 // TEST - This will end up going into the loop below.  --Kris
                 //GOTV();
 
+                if (loadSubWorkflows)
+                {
+                    if (Globals.Config["EnableFacebanking"].Equals("1"))
+                    {
+                        Globals.facebookThread = ExecuteFacebookThread(browser);
+                    }
+                    else
+                    {
+                        Log("Facebanking has been disabled.  Facebook workflow skipped.");
+                    }
+
+                    if (Globals.Config["EnableTwitter"].Equals("1"))
+                    {
+                        Globals.twitterThread = ExecuteTwitterThread(browser);
+                    }
+                    else
+                    {
+                        Log("Twitter has been disabled.  Twitter workflow skipped.");
+                    }
+                }
 
                 /* Loop until terminated by the user.  --Kris */
                 while (Globals.executionState > 0)
                 {
                     Log("Beginning workflow....");
-
-                    if (Globals.Config["EnableFacebanking"].Equals("1"))
-                    {
-                        /* Get-out-the-vote!  --Kris */
-                        GOTV();
-                    }
-                    else
-                    {
-                        Log("Facebanking has been disabled.  GOTV skipped.");
-                    }
 
                     // Deprecated.  --Kris
                     /*if (Globals.Config["EnableTwitter"].Equals("1"))
@@ -1498,14 +972,8 @@ namespace FaceBERN_
                         Log("Tweetbanking has been disabled.  Twitter workflow skipped.");
                     }*/
 
-                    /* Update the tweets queue, if enabled.  --Kris */
-                    if (Globals.Config["EnableTwitter"].Equals("1"))
-                    {
-                        UpdateLocalTweetsQueue();
-                    }
-
                     /* Execute any selected campaigns.  --Kris */
-                    ExecuteCampaigns();
+                    //ExecuteCampaigns();
 
                     /* Check for updates every 6 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
@@ -1517,7 +985,7 @@ namespace FaceBERN_
                     }
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
-                    Log("Workflow complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
+                    Log("Controller workflow iteration complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
                     
                     SetExecState(Globals.STATE_WAITING);
                     System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
@@ -1566,7 +1034,7 @@ namespace FaceBERN_
 
                         SetExecState(Globals.STATE_RESTARTING);
 
-                        Globals.thread = ExecuteThread();
+                        Globals.thread = ExecuteThread(false);
                     }
                     else
                     {
@@ -1660,7 +1128,7 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterCredentialsFromRegistry();
+            //LoadTwitterCredentialsFromRegistry();
 
             if (twitterAccessCredentials.IsAssociated() == false)
             {
@@ -1670,12 +1138,11 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterTokens();
+            //LoadTwitterTokens();
 
-            ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
+            //ConsumeTweetsQueue(Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
         }
 
-        // TODO - Move any Twitter workflow methods to a new dedicated class.  --Kris
         private void Twitter()  // DEPRECATED
         {
             if (!(Globals.Config["EnableTwitter"].Equals("1")))
@@ -1683,7 +1150,7 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterCredentialsFromRegistry();
+            //LoadTwitterCredentialsFromRegistry();
 
             if (twitterAccessCredentials.IsAssociated() == false)
             {
@@ -1693,7 +1160,7 @@ namespace FaceBERN_
                 return;
             }
 
-            LoadTwitterTokens();
+            //LoadTwitterTokens();
 
             // Uncomment below for DEBUG.  --Kris
             /*
@@ -1707,311 +1174,17 @@ namespace FaceBERN_
             */
 
             /* Load the tweets queue from the specified source(s).  --Kris */
-            UpdateLocalTweetsQueue();
+            //UpdateLocalTweetsQueue();
 
             /* If there are any tweets in the queue and we're past the tweet interval, tweet the next entry from it.  --Kris */
-            ConsumeTweetsQueue();
+            //ConsumeTweetsQueue();
 
-            DestroyTwitterTokens();
+            //DestroyTwitterTokens();
         }
 
-        // TODO - Find an API call to handle this, as there could be URLs embedded within the text, as well.  --Kris
-        private string ComposeTweet(string text, string url = "")
-        {
-            int twitterCharLimit = 140;
-            int maxUrlLength = 25;  // TODO - Query and update this.  Published as 22 for now, so should be able to get away with this for awhile.  --Kris
-
-            int urlLength = (url.Length <= maxUrlLength ? url.Length : maxUrlLength);
-
-            if ((text.Length + 1 + urlLength) <= twitterCharLimit)
-            {
-                return text + " " + url;
-            }
-            else
-            {
-                return (text.Substring(0, (twitterCharLimit - 4 - urlLength)) + "... " + url);
-            }
-        }
-
-        private DateTime TimestampToDateTime(double timestamp)
+        public DateTime TimestampToDateTime(double timestamp)
         {
             return new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(timestamp);
-        }
-
-        // Note - Regardless of whether appendTweetsQueue is true, this function's return value will consist solely of the tweets from this particular Reddit search without the existing queue.  --Kris
-        private List<TweetsQueue> GetTweetsFromReddit(bool appendTweetsQueue = true)
-        {
-            try
-            {
-                List<TweetsQueue> res = GetTweetsFromSubreddit("StillSandersForPres", Globals.CAMPAIGN_TWEET_STILLSANDERSFORPRES);
-                // TODO - Add more subs when able.  --Kris
-
-                if (appendTweetsQueue)
-                {
-                    foreach (TweetsQueue entry in res)
-                    {
-                        bool dup = false;
-                        foreach (TweetsQueue globalEntry in tweetsQueue)
-                        {
-                            if (globalEntry.tweet.Trim().ToLower().Equals(entry.tweet.Trim().ToLower()))
-                            {
-                                dup = true;
-                                break;
-                            }
-                        }
-
-                        if (dup == false)
-                        {
-                            tweetsQueue.Add(entry);
-                        }
-                    }
-                }
-
-                return res;
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in GetTweetsFromReddit.");
-                return null;
-            }
-        }
-
-        private List<TweetsQueue> GetTweetsFromSubreddit(string sub, int? campaignId = null)
-        {
-            try
-            {
-                if (reddit == null)
-                {
-                    reddit = new Reddit(false);
-                }
-
-                // No need to login to Reddit since all we're doing is a search.  --Kris
-                List<RedditPost> redditPosts = SearchSubredditForFlairPosts("Tweet This!", sub, campaignId, "month");
-
-                List<TweetsQueue> res = new List<TweetsQueue>();
-                foreach (RedditPost redditPost in redditPosts)
-                {
-                    res.Add(new TweetsQueue(ComposeTweet(redditPost.GetTitle(), redditPost.GetURL()), "Reddit", @"http://www.reddit.com" + redditPost.permalink, DateTime.Now, redditPost.GetCreated(),
-                        @"/u/" + redditPost.GetAuthor(), DateTime.Now, DateTime.Now.AddDays(3), campaignId));
-                }
-
-                return res;
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in GetTweetsFromSubreddit.");
-                return null;
-            }
-        }
-
-        /* Tweet the next tweet in the queue.  Just do one at a time in order to prevent spam.  --Kris */
-        private void ConsumeTweetsQueue(int? campaignId = null)
-        {
-            try
-            {
-                if (!(Globals.Config["EnableTwitter"].Equals("1")))
-                {
-                    return;
-                }
-
-                /* Tweets history is already sorted with the latest entry being the most-recent tweet.  --Kris */
-                double r;
-                if (Globals.Config.ContainsKey("TweetIntervalMinutes")
-                    && Double.TryParse(Globals.Config["TweetIntervalMinutes"], out r)
-                    && tweetsHistory != null
-                    && tweetsHistory.Count > 0
-                    && tweetsHistory[tweetsHistory.Count - 1].GetTweeted() != null
-                    && tweetsHistory[tweetsHistory.Count - 1].GetTweeted().Value.AddMinutes(r) > DateTime.Now
-                    && Globals.devOverride != true)
-                {
-                    return;  // If it hasn't been TweetIntervalMinutes minutes since the last tweet, don't do it yet.  --Kris
-                }
-
-                Log("Consuming tweets queue....");
-
-                if (tweetsQueue != null && tweetsQueue.Count > 0)
-                {
-                    List<TweetsQueue> newTweetsQueue = new List<TweetsQueue>();
-                    TweetsQueue appendTweetsQueue = null;
-                    bool tweeted = false;
-                    foreach (TweetsQueue entry in tweetsQueue)
-                    {
-                        if (tweetsHistory.Where(hEntry => hEntry.tweet.Equals(entry.tweet)).ToList().Count > 0
-                            || DateTime.Now >= entry.end)
-                        {
-                            continue;
-                        }
-
-                        /* If a campaign ID is passed, ignore anything in the queue without that ID.  --Kris */
-                        if (campaignId != null
-                            && entry.GetCampaignId() != campaignId)
-                        {
-                            continue;
-                        }
-
-                        if (!(tweeted)
-                            && DateTime.Now >= entry.start)
-                        {
-                            string statusId;
-                            if (Tweet(entry.tweet, out statusId))  // Perform the actual tweet.  --Kris
-                            {
-                                entry.SetStatusID(statusId);
-                                AppendTweetsHistory(entry);
-                            }
-                            else
-                            {
-                                Log("Warning:  Unable to tweet from queue.  Will try again later.");
-
-                                entry.IncrementFailures();
-
-                                if (entry.GetFailures() > 1)
-                                {
-                                    Log("Warning:  Repeated failures on this tweet.  Removed from queue.");
-                                }
-                                else
-                                {
-                                    appendTweetsQueue = entry;  // Move it to the bottom of the queue so it won't block others.  TODO - Still comes first?!  Investigate when I have time.  --Kris
-                                }
-                            }
-
-                            tweeted = true;
-                        }
-                        else
-                        {
-                            newTweetsQueue.Add(entry);
-                        }
-                    }
-
-                    if (appendTweetsQueue != null)
-                    {
-                        newTweetsQueue.Add(appendTweetsQueue);
-                    }
-
-                    tweetsQueue = newTweetsQueue;
-                    PersistLocalTweetsQueue();
-                }
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in ConsumeTweetsQueue.");
-            }
-        }
-
-        /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
-        private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, int? campaignId = null, string t = "day", bool? self = null)
-        {
-            try
-            {
-                if (self == null)
-                {
-                    List<RedditPost> res = new List<RedditPost>();
-                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, false));
-                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, true));
-
-                    return res;
-                }
-                else
-                {
-                    return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub), sub, campaignId);
-                }
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in SearchSubredditForFlairPosts.");
-                return null;
-            }
-        }
-
-        private List<RedditPost> ParseRedditPosts(dynamic redditObj, string sub = null, int? campaignId = null)
-        {
-            try
-            {
-                List<RedditPost> res = new List<RedditPost>();
-
-                try
-                {
-                    if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
-                    {
-                        return res;  // No results.  --Kris
-                    }
-                }
-                catch (Exception e)
-                {
-                    ReportExceptionSilently(e, "Exception handling data children from redditObj in ParseRedditPosts.");
-                    return res;
-                }
-
-                try
-                {
-                    int i = 0;
-                    foreach (dynamic o in redditObj["data"]["children"])
-                    {
-                        i++;
-
-                        try
-                        {
-                            if (o != null
-                                && o["data"] != null
-                                && o["data"]["title"] != null
-                                && o["data"]["subreddit"] != null
-                                && o["data"]["url"] != null
-                                && o["data"]["permalink"] != null
-                                && o["data"]["score"] != null
-                                && o["data"]["created"] != null)
-                            {
-                                /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
-                                if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
-                                {
-                                    continue;
-                                }
-
-                                try
-                                {
-                                    res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(),
-                                        o["data"]["permalink"].ToString(), (int) o["data"]["score"], TimestampToDateTime((double) o["data"]["created"]), o["data"]["author"].ToString(),
-                                        (string) o["data"]["selftext"], campaignId));
-                                }
-                                catch (Exception e)
-                                {
-                                    Log("Warning:  Error parsing Reddit post : " + e.ToString());
-
-                                    ReportException(e, "Error parsing Reddit post.");
-                                }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            try
-                            {
-                                LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where o = " + JsonConvert.SerializeObject(o) + ".");
-                            }
-                            catch (Exception)
-                            {
-                                try
-                                {
-                                    LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where i = " + i.ToString() + "; unable to serialize object o.");
-                                }
-                                catch (Exception)
-                                {
-                                    // Just forget it.  No point logging it without any useful information.  --Kris
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    ReportExceptionSilently(e, "Exception iterating through data children for redditObj in ParseRedditPosts.");
-                }
-
-                return res;
-            }
-            catch (Exception e)
-            {
-                LogAndReportException(e, "Exception in ParseRedditPosts.");
-
-                return null;
-            }
         }
 
         internal bool ValidateBirdieCredentials(string username, string password)
@@ -2064,573 +1237,39 @@ namespace FaceBERN_
             return (res.StatusCode == System.Net.HttpStatusCode.Created);
         }
 
-        /* Post a tweet.  --Kris */
-        private bool Tweet(string tweet, out string statusId)
+        public List<Person> GetInvitedPeople()
         {
-            try
-            {
-                statusId = null;
-
-                if (!(Globals.Config["EnableTwitter"].Equals("1")))
-                {
-                    Log("Warning:  Can't tweet '" + tweet + "' because Twitter is disabled in the settings.");
-
-                    return false;
-                }
-
-                if (!(TwitterIsAuthorized()))
-                {
-                    return false;
-                }
-
-                if (tweetsHistory.Where(entry => entry.tweet.Equals(tweet)).ToList().Count > 0)
-                {
-                    Log("Tweet '" + tweet + "' has already been tweeted recently.  Skipped.");
-
-                    return true;
-                }
-
-                LoadTwitterTokens();
-
-#if (DEBUG)
-            Log("DEBUG - " + tweet);
-            return true;
-#endif
-
-                TwitterResponse<TwitterStatus> res = TwitterStatus.Update(twitterTokens, tweet);
-                if (res.Result == RequestResult.Success)
-                {
-                    Log("Tweeted '" + tweet + "' successfully.");
-                }
-                else
-                {
-                    Log("ERROR posting tweet '" + tweet + "' : " + res.ErrorMessage);
-                }
-
-                /* Get the ID of the tweet.  This is necessary in order to give the user the option to delete ("undo") the tweet later.  Would be nice if they included it in the API result....  --Kris */
-                statusId = GetTwitterStatusId(tweet);
-
-                return (res.Result == RequestResult.Success);
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Unable to tweet:  " + tweet);
-                statusId = null;
-                return false;
-            }
-        }
-
-        internal string GetTwitterStatusId(string tweet)
-        {
-            try
-            {
-                TwitterStatusCollection coll = GetTwitterUserTimeline();
-                foreach (TwitterStatus status in coll)
-                {
-                    // TODO - Strip out all links and compare.  --Kris
-                    string checkTweet = (status.Text.LastIndexOf(@"https://t.co/") != -1 ? status.Text.Substring(0, status.Text.LastIndexOf(@"https://t.co/")) : status.Text);
-                    if (tweet.IndexOf(checkTweet) != -1)
-                    {
-                        return status.Id.ToString();
-                    }
-                }
-
-                return null;
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in GetTwitterStatusId.");
-                return null;
-            }
-        }
-
-        private TwitterStatusCollection GetTwitterUserTimeline()
-        {
-            try
-            {
-                if (!(TwitterIsAuthorized()))
-                {
-                    return null;
-                }
-
-                LoadTwitterTokens(true);
-
-                if (twitterTimelineCache == null || twitterTimelineCacheLastRefresh == null
-                    || twitterTimelineCacheLastRefresh.Value.AddMinutes(Globals.__TWITTER_TIMELINE_CACHE_SHELF_LIFE__) <= DateTime.Now)
-                {
-                    twitterTimelineCache = TwitterTimeline.UserTimeline(twitterTokens).ResponseObject;
-                    twitterTimelineCacheLastRefresh = DateTime.Now;
-                }
-
-                return twitterTimelineCache;
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in GetTwitterUserTimeline.");
-                return null;
-            }
-        }
-
-        internal bool DeleteTweet(string twitterStatusId, bool apiOnly = false)
-        {
-            TwitterResponse<TwitterStatus> res = null;
+            List<Person> invited = new List<Person>();
 
             try
             {
-                bool doApi;
-                if (!(apiOnly))
+                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
+                RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
+
+                string invitedJSON = (string)GOTVKey.GetValue("invitedJSON", null);
+                if (invitedJSON != null && invitedJSON.Trim() != "")
                 {
-                    LoadTwitterCredentialsFromRegistry();
-
-                    if (twitterAccessCredentials.IsAssociated() == false)
-                    {
-                        MessageBox.Show("Unable to delete tweet because that account is no longer associated with " + Globals.__APPNAME__ + @"!");
-                        return false;
-                    }
-
-                    LoadTwitterTokens();
-
-                    res = TwitterStatus.Delete(twitterTokens, decimal.Parse(twitterStatusId));
-
-                    doApi = (res.Result == RequestResult.Success);
-                }
-                else
-                {
-                    doApi = true;
+                    invited = JsonConvert.DeserializeObject<List<Person>>(invitedJSON);
                 }
 
-                if (doApi)
-                {
-                    /* Now that the tweet is deleted from Twitter, update the Birdie API.  --Kris */
-                    IRestResponse bRes = BirdieQuery(@"/twitter/tweets", "DELETE", null, JsonConvert.SerializeObject(new Dictionary<string, string> { 
-                                                                                                                            { "twitterStatusId", twitterStatusId }, 
-                                                                                                                            { "tweetedBy", Globals.appId } 
-                                                                                                                        }));
-
-                    if (bRes.StatusCode == System.Net.HttpStatusCode.NoContent)
-                    {
-                        MessageBox.Show("Tweet deleted successfully!");
-
-                        return true;
-                    }
-                    else
-                    {
-                        Exception ex;
-                        if (apiOnly)
-                        {
-                            ex = new Exception("Birdie API query to delete tweet from history failed.  No attempt was made to delete it from Twitter.");
-                        }
-                        else
-                        {
-                            ex = new Exception("Tweet deleted successfully from Twitter, but not history.");
-                        }
-
-                        try
-                        {
-                            ex.Data.Add("bRes", JsonConvert.SerializeObject(bRes));
-                        }
-                        catch (Exception) { }
-
-                        throw ex;
-                    }
-                }
-                else
-                {
-                    throw new Exception("Error deleting tweet; Twitter API returned non-success response in result : " + JsonConvert.SerializeObject(res));
-                }
-            }
-            catch (Exception e)
-            {
-                ReportExceptionSilently(e, "Error deleting tweet : " + twitterStatusId);
-
-                MessageBox.Show("Error deleting tweet (" + twitterStatusId + ")!");
-                return false;
-            }
-        }
-
-        /* This function is used for testing Twitter integration.  Not currently used by any production workflows.  --Kris */
-        private TwitterResponse<TwitterStatusCollection> GetMyTweets(int count = 20)
-        {
-            if (!(TwitterIsAuthorized()))
-            {
-                return null;
-            }
-
-            LoadTwitterTokens();
-
-            UserTimelineOptions userTimelineOptions = new UserTimelineOptions();
-            userTimelineOptions.APIBaseAddress = "https://api.twitter.com/1.1/";
-            userTimelineOptions.Count = count;
-            userTimelineOptions.UseSSL = true;
-            userTimelineOptions.ScreenName = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterUsername());
-
-            return TwitterTimeline.UserTimeline(twitterTokens, userTimelineOptions);
-        }
-
-        private bool LoadTwitterTokens(bool onlyIfNull = false)
-        {
-            try
-            {
-                if (!(TwitterIsAuthorized()))
-                {
-                    return false;
-                }
-
-                if (twitterTokens == null || onlyIfNull == false)
-                {
-                    twitterTokens = new OAuthTokens();
-                    twitterTokens.ConsumerKey = twitterConsumerKey;
-                    twitterTokens.ConsumerSecret = twitterConsumerSecret;
-                    twitterTokens.AccessToken = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessToken());
-                    twitterTokens.AccessTokenSecret = twitterAccessCredentials.ToString(twitterAccessCredentials.GetTwitterAccessTokenSecret());
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in LoadTwitterTokens.");
-                return false;
-            }
-        }
-
-        private void DestroyTwitterTokens()
-        {
-            twitterTokens = null;
-        }
-
-        private bool TwitterIsAuthorized()
-        {
-            try
-            {
-                if (twitterAccessCredentials == null || twitterAccessCredentials.IsAssociated() == false)
-                {
-                    LoadTwitterCredentialsFromRegistry();
-                    if (twitterAccessCredentials.IsAssociated() == false)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in TwitterIsAuthorized.");
-                return false;
-            }
-        }
-
-        /* Messy check to see if we'll need to open a browser window for GOTV on this iteration.  Will replace later when Facebook has been moved to its own class (TODO).  --Kris */
-        private bool GOTVNeeded()
-        {
-            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderBy(s => s.Value.primaryDate))
-            {
-                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-                {
-                    Log("Thread stop received.  Workflow aborted.");
-                    return false;
-                }
-
-                if (GOTVNeeded(state.Value))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /* Check to see if GOTV should be executed for a given state.  --Kris */
-        private bool GOTVNeeded(States state, bool log = false)
-        {
-            /* Skip if user disabled GOTV for this state.  --Kris */
-            if (state.enableGOTV == false)
-            {
-                Log("GOTV not enabled for " + state.name + ".  Skipped.", log);
-            }
-
-            /* Determine if it's time for GOTV in this state.  --Kris */
-            // TODO - Yes, I know this logic is overly broad and simplistic.  We can expand upon it and enable per-state configurations later.  --Kris
-            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
-            RegistryKey stateKey = GOTVKey.CreateSubKey(state.abbr);
-
-            string lastGOTVDaysBack = stateKey.GetValue("LastGOTVDaysBack", "", RegistryValueOptions.None).ToString();
-            int last = (lastGOTVDaysBack != "" ? Int32.Parse(lastGOTVDaysBack) : -1);
-
-            if (state.primaryDate >= DateTime.Now
-                && state.enableGOTV == true 
-                && state.primaryDate.Subtract(DateTime.Today).TotalDays >= 0
-                && ((last - Math.Floor(state.primaryDate.Subtract(DateTime.Now).TotalDays)) >= state.GOTVWaitInterval) || Globals.devOverride == true)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        // TODO - Move these Facebook methods to a new dedicated class.  Will hold off for now because I'm lazy.  --Kris
-        private void GOTV()
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_VALIDATING);
-
-            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-            RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
-
-            string lastCheck;
-            if ((lastCheck = GOTVKey.GetValue("LastCheck", "", RegistryValueOptions.None).ToString()) != "" 
-                && Globals.devOverride != true)
-            {
-                if (DateTime.Now.Subtract(new DateTime(long.Parse(lastCheck))).TotalHours < Int32.Parse(Globals.Config["GOTVIntervalHours"]))
-                {
-                    GOTVKey.Close();
-                    appKey.Close();
-                    softwareKey.Close();
-
-                    SetExecState(lastState);
-
-                    return;
-                }
-            }
-
-            Log("Running GOTV checklist....");
-
-            if (!(GOTVNeeded()))
-            {
-                Log("No GOTV is needed at this time.");
-
-                return;
-            }
-
-            /* Initialize the Selenium WebDriver.  --Kris */
-            webDriver = new WebDriver(Main, browser, (Globals.Config["HideFacebookBrowser"].Equals("1")));
-
-            /* Initialize the browser.  --Kris */
-            webDriver.FixtureSetup();
-            
-            webDriver = FacebookLogin();
-            if (webDriver.error > 0)
-            {
                 GOTVKey.Close();
                 appKey.Close();
                 softwareKey.Close();
-
-                SetExecState(lastState);
-
-                Log("Error " + webDriver.error + " logging into Facebook.  GOTV aborted.");
-                return;
-            }
-
-            // TEST (TODO - Move to the state loop below and make sure count > 0 for each given state).
-            //List<Person> friends = GetFacebookFriendsOfFriends(ref webDriver, "WA");
-
-            // TEST
-            //CreateGOTVEvent(ref webDriver, ref friends, "NY");
-            
-            /* Cycle through each state and execute GOTV actions, where appropriate.  --Kris */
-            //string[] defaultGOTVDaysBack = Globals.Config["DefaultGOTVDaysBack"].Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);  // DEPRECATED.
-            foreach (KeyValuePair<string, States> state in Globals.StateConfigs.OrderBy(s => s.Value.primaryDate))
-            {
-                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-                {
-                    Log("Thread stop received.  Workflow aborted.");
-                    return;
-                }
-
-                if (GOTVNeeded(state.Value, true))
-                {
-                    // DEBUG - Uncomment below if you'd like to force-test a single state.  --Kris
-                    /*
-                    if (!(state.Key.Equals("NM")))
-                    {
-                        continue;
-                    }
-                    */
-
-                    Log("Checking GOTV for " + state.Value.name + "....");
-
-                    if (state.Value.FTBEventId == null && !(Globals.Config["UseFTBEvents"].Equals("1")))
-                    {
-                        Log("There is no feelthebern.events event on record for " + state.Key + ".  Skipped.");
-
-                        continue;
-                    }
-
-                    RegistryKey stateKey = GOTVKey.CreateSubKey(state.Key);
-
-                    SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
-
-                    /* Retrieve friends of friends who like Bernie Sanders and live in this state.  --Kris */
-                    //GetFacebookBernieSupporters("124955570892789");  // DEBUG
-                    List<Person> friends = GetFacebookFriendsOfFriends(state.Key);
-
-                    // TODO - Add direct friends who like Bernie Sanders and live in this state.  --Kris
-
-                    if (friends == null || friends.Count == 0)
-                    {
-                        Log("You have no friends or friends of friends in " + state.Key + " who like Bernie Sanders.  Skipped.");
-                    }
-                    else
-                    {
-                        ExecuteGOTV(ref friends, ref stateKey, state.Value);
-                    }
-
-                    SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
-
-                    stateKey.Close();
-
-                    break;
-                }
-                else
-                {
-                    Log("No GOTV needed for " + state.Key + " at this time.");
-                }
-            }
-
-            try
-            {
-                GOTVKey.SetValue("LastCheck", DateTime.Now.Ticks.ToString(), RegistryValueKind.String);
             }
             catch (IOException e)
             {
-                Log("Warning:  Error updating last GOTV check : " + e.Message);
+                Log("Warning:  Error reading previous invitations from registry : " + e.Message);
 
-                ReportException(e, "Error updating last GOTV check.");
+                ReportException(e, "Error reading previous invitations from registry.");
+
+                return null;
             }
 
-            if (webDriver != null)
-            {
-                webDriver.FixtureTearDown();
-                webDriver = null;
-            }
-
-            GOTVKey.Close();
-            appKey.Close();
-            softwareKey.Close();
-
-            SetExecState(lastState);
+            return invited;
         }
 
-        private void ExecuteGOTV(ref List<Person> friends, ref RegistryKey stateKey, States state)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            Log("Executing GOTV for " + state.name + "....");
-
-            /* Attempt to gain access to feelthebern.events event for this state, if applicable.  --Kris */
-            int retries = 5;
-            if (Globals.Config["UseFTBEvents"].Equals("1") && friends.Count > 0)
-            {
-                if (Globals.StateConfigs[state.abbr].FTBEventId != null)
-                {
-                    while (!CheckFTBEventAccess(state.abbr) && retries > 0)
-                    {
-                        retries--;
-                        Log("Access denied for state event page.");
-
-                        if (retries > 0)
-                        {
-                            RequestFTBInvitation();
-
-                            // TODO - Remove this temporary block of code when feelthebern.events has made the requisite updates so we can check for their friend requests.  --Kris
-                            Log("Please wait for the friend request and accept it, then re-run the GOTV for this event.");
-                            return;
-                            // End temporary code block.  --Kris
-
-                            Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for retry");
-
-                            /* Check for and accept friend request from feelthebern.events.  --Kris */
-                            if (!ftbFriended)
-                            {
-                                if ((ftbFriended = AcceptFacebookFTBRequest()))
-                                {
-                                    Wait(Globals.__FTB_REQUEST_ACCESS_WAIT_INTERVAL__, "for event invitations");
-                                }
-                                else
-                                {
-                                    Log("Friend request for feelthebern.events not yet found!");
-                                }
-                            }
-                            else
-                            {
-                                Log("Friend request accepted but still no event invitations received.");
-                            }
-                        }
-                        else
-                        {
-                            Log("Retries exhausted.  Aborting feelthebern.events action for " + state.abbr + ".");
-                            SetExecState(Globals.STATE_ERROR);
-                        }
-                    }
-
-                    /* If there are no errors, proceed with the invitations.  --Kris */
-                    if (Globals.executionState > 0 && CheckFTBEventAccess(state.abbr, false))
-                    {
-                        InviteToEventSidebar(ref friends, state.abbr);
-                    }
-                }
-                else
-                {
-                    Log("No feelthebern.events event exists for " + state.abbr + ".");
-                }
-            }
-
-            /* If there are any people left to invite, create a new private event for every 200 people and do the remaining invites there.  --Kris */
-            if (Globals.Config["UseCustomEvents"].Equals("1") && friends.Count > 0)
-            {
-                int c = friends.Count;
-                int i = 0;
-                while (c > 0)
-                {
-                    if (i > 0)
-                    {
-                        Wait((10 + (5 * i)), "for ratelimit pause between Facebook event creations.");
-                    }
-                    i++;
-
-                    CreateGOTVEvent(ref friends, state.abbr);
-
-                    if (c == friends.Count)
-                    {
-                        break;  // To prevent infinite recursion in the event of an unexpected error.  --Kris
-                    }
-                }
-            }
-
-            try
-            {
-                stateKey.SetValue("LastGOTVDaysBack", Math.Floor(state.primaryDate.Subtract(DateTime.Now).TotalDays).ToString(), RegistryValueKind.String);
-            }
-            catch (IOException e)
-            {
-                Log("Warning:  Error updating last GOTV for " + state.name + " : " + e.Message);
-
-                ReportException(e, "Error updating last GOTV for state : " + state.name);
-            }
-
-            Log("GOTV for " + state.abbr + " complete!");
-
-            SetExecState(lastState);
-        }
-
-        private void Wait(int duration, string reason = "", string unit = "minute")
+        protected void Wait(int duration, string reason = "", string unit = "minute")
         {
             if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
             {
@@ -2662,1348 +1301,6 @@ namespace FaceBERN_
             }
 
             System.Threading.Thread.Sleep(ms);
-
-            SetExecState(lastState);
-        }
-
-        /* Open a new browser session and login to Facebook.  --Kris */
-        private WebDriver FacebookLogin(int retry = 5)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return null;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            /* Navigate the browser to Facebook.  --Kris */
-            webDriver.TestSetUp("http://www.facebook.com");
-
-            // DEBUG
-            /*File.WriteAllText(Path.Combine(Environment.CurrentDirectory, "test.txt"), webDriver.GetPageSource(browser));
-            Log("DEBUG - " + Path.Combine(Environment.CurrentDirectory, "test.txt"));
-            webDriver.error = 1;
-
-            return null;*/
-
-            /* If needed, prompt the user for username/password or use the encrypted copy in the system registry.  --Kris */
-            SetExecState(Globals.STATE_VALIDATING);
-            if (webDriver.GetElementById("loginbutton") != null)
-            {
-                Credentials credentials = new Credentials(true);
-
-                SecureString u = credentials.GetFacebookUsername();  // Load encrypted username if stored in registry.  --Kris
-                SecureString p = credentials.GetFacebookPassword();  // Load encrypted password if stored in registry.  --Kris
-                bool remember = false;
-
-                if (u == null || p == null)
-                {
-                    Log("No stored credentials found.  Prompting for user input....");
-                    LoginPrompt loginPrompt = new LoginPrompt("Facebook");  // Display the login prompt window.  --Kris
-                    Main.Invoke((MethodInvoker)delegate()
-                    {
-                        DialogResult res = loginPrompt.ShowDialog();
-                        if (res == DialogResult.OK)
-                        {
-                            u = credentials.ToSecureString(loginPrompt.u);
-                            p = credentials.ToSecureString(loginPrompt.p);
-                            remember = loginPrompt.remember;
-                        }
-                    });
-                }
-                else
-                {
-                    Log("Facebook credentials loaded successfully.");
-                }
-
-                SetExecState(Globals.STATE_EXECUTING);
-
-                if (u != null && p != null && u.Length > 0 && p.Length > 0)
-                {
-                    /* Encrypt and store the credentials in the system registry if the option is checked.  --Kris */
-                    if (remember)
-                    {
-                        if (credentials.SetFacebook(u, p))
-                        {
-                            Log("Facebook credentials saved successfully.");
-                        }
-                        else
-                        {
-                            Log("Error saving Facebook credentials!");
-                        }
-                    }
-
-                    Log("Logging-in to Facebook....");
-
-                    /* Enter the username and password into the login form on Facebook.  --Kris */
-                    webDriver.TypeInId("email", credentials.ToString(u));
-                    webDriver.TypeInId("pass", credentials.ToString(p));
-
-                    /* Get this sensitive data out of active memory.  --Kris */
-                    if (credentials != null)
-                    {
-                        credentials.Destroy();
-                        credentials = null;
-                    }
-
-                    /* Click the login button on Facebook.  --Kris */
-                    //dynamic element = webDriver.GetElementById("u_0_y");
-                    dynamic element = webDriver.GetElementByCSSSelector("input[type='submit'][value='Log In']");
-                    webDriver.ClickElement(element);
-
-                    Thread.Sleep(3);  // Give the state a chance to unready itself.  Better safe than sorry.  --Kris
-                    webDriver.WaitForPageLoad();
-
-                    /* Check for successful login.  --Kris */
-                    if (webDriver.GetElementById("loginbutton") == null)
-                    {
-                        if (webDriver.GetElementById("u_0_1") != null)  // Checks to see if the "Home" link is present.  --Kris
-                        {
-                            Log("Login to Facebook successful.");
-                        }
-                        else
-                        {
-                            Log("Unexpected post-login page data for Facebook!");
-                            webDriver.error = WebDriver.ERROR_UNEXPECTED;
-                        }
-                    }
-                    else
-                    {
-                        Log("Login to Facebook FAILED!");
-                        // Note - Sometimes this will happen with good credentials due to an odd, intermittent bug where, upon clicking login, the page instead reloads in some Asian language.  --Kris
-                        webDriver.error = WebDriver.ERROR_BADCREDENTIALS;
-                    }
-                }
-                else
-                {
-                    Log("Unable to login to Facebook due to lack of credentials.");
-                    webDriver.error = WebDriver.ERROR_NOCREDENTIALS;
-                }
-            }
-
-            if (webDriver.error > 0)
-            {
-                SetExecState(Globals.STATE_ERROR);
-
-                Log("Error detected:  " + webDriver.error.ToString() + ".  Closing browser session....");
-                webDriver.FixtureTearDown();
-
-                retry--;
-                if (retry > 0)
-                {
-                    SetExecState(Globals.STATE_VALIDATING);
-
-                    webDriver.FixtureSetup();
-
-                    Log("Retrying Facebook login....");
-                    return FacebookLogin(retry);
-                }
-                else
-                {
-                    Log("Maximum retries reached without success.  Facebook login aborted.");
-                }
-            }
-            else
-            {
-                /* While we're here, let's grab the Facebook profile URL for this user and store it.  Login may be different so check every time.  --Kris */
-                string profileURL = null;
-                
-                IWebElement ele = webDriver.GetElementByCSSSelector("[data-testid=\"blue_bar_profile_link\"]");
-                if (ele != null)
-                {
-                    profileURL = webDriver.GetAttribute(ele, "href");
-                    if (profileURL != null && profileURL.Length > 0)
-                    {
-                        try
-                        {
-                            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                            RegistryKey facebookKey = appKey.CreateSubKey("Facebook");
-
-                            /* I don't think we need to bother encrypting this since it's just a public profile URL; if someone has access to your registry, you've got bigger problems, anyway.  --Kris */
-                            facebookKey.SetValue("profileURL", profileURL, RegistryValueKind.String);
-                            facebookKey.SetValue("lastLogin", DateTime.Now.Ticks.ToString(), RegistryValueKind.String);
-
-                            facebookKey.Flush();
-                            appKey.Flush();
-                            softwareKey.Flush();
-
-                            facebookKey.Close();
-                            appKey.Close();
-                            softwareKey.Close();
-
-                            Log("Facebook profile URL retrieved and stored successfully!");
-                        }
-                        catch (IOException e)
-                        {
-                            Log("Warning:  Error storing Facebook profile URL : " + e.Message);
-
-                            ReportException(e, "Error storing Facebook profile URL.");
-                        }
-                    }
-                    else
-                    {
-                        Log("Warning:  NULL or empty value found for Facebook profile URL!");
-                    }
-                }
-                else
-                {
-                    Log("Warning:  Unable to extract Facebook profile URL from page source!");
-                }
-            }
-
-            SetExecState(lastState);
-
-            return webDriver;
-        }
-
-        private bool CreateGOTVEvent(ref List<Person> friends, string stateAbbr, int retry = 5)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return false;
-            }
-
-            int lastState = Globals.executionState;
-            try
-            {
-                SetExecState(Globals.STATE_EXECUTING);
-
-                Log("Creating private GOTV event for " + stateAbbr + "....");
-
-                webDriver.GoToUrl("https://www.facebook.com/events/upcoming");
-
-                webDriver.ClickElement(webDriver.GetElementByCSSSelector("[data-testid=\"event-create-button\"]"));
-
-                System.Threading.Thread.Sleep(5000);  // This one's a bit slower to load and I don't trust the implicit wait in this case.  --Kris
-
-                States state = Globals.StateConfigs[stateAbbr];
-
-                string indefiniteArticle;
-                switch (state.primaryAccess.Substring(0, 1).ToUpper())
-                {
-                    default:
-                        indefiniteArticle = "a";
-                        break;
-                    case "A":
-                    case "E":
-                    case "I":
-                    case "O":
-                    case "U":
-                        indefiniteArticle = "an";
-                        break;
-                }
-
-                /* Default values.  --Kris */
-                // TODO - Make these configurable for each state.  --Kris
-                // TODO - Allow state subreddit mods to specify these values in a JSON post retrieved automatically by FaceBERN!.  --Kris
-                string eventName = "Vote for Bernie in " + state.name + " on " + state.primaryDate.ToString("MMMM d, yyyy");
-                string location = state.name;
-                string description = state.name + " will be holding " + indefiniteArticle + " " + state.primaryAccess + " " + state.primaryType + " on " + state.primaryDate.ToString("MMMM d, yyyy")
-                                    + ".  For more information on how/where to vote and when polls open/close, visit http://vote.berniesanders.com/" + stateAbbr.ToUpper();
-
-                /* Enter the values into the form and create the event.  --Kris */
-                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Include a place or address"), location);
-                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("Add a short, clear name"), eventName);
-                webDriver.TypeText(webDriver.GetElementByTagNameAndAttribute("div", "title", "Tell people more about the event"), description);
-                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), OpenQA.Selenium.Keys.Control + "a");
-                webDriver.TypeText(webDriver.GetInputElementByPlaceholder("mm/dd/yyyy"), state.primaryDate.ToString("MM/dd/yyyy"));
-                webDriver.ClickOnXPath(".//button[.='Create']");
-
-                /* Check to see if we're on the new event page.  --Kris */
-                System.Threading.Thread.Sleep(5000);
-
-                IWebElement inviteButton = webDriver.GetElementByCSSSelector("[data-testid=\"event_invite_button\"]");
-                if (inviteButton == null)
-                {
-                    Log("ERROR:  Event creation failed!  Aborted.");
-                    return false;
-                }
-
-                Log("GOTV event for " + stateAbbr + " created at : " + webDriver.GetURL());
-
-                InviteToEventSidebar(ref friends, stateAbbr);
-
-                SetExecState(lastState);
-
-                return true;
-            }
-            /* Any number of random flukes can happen.  Retries will enable the workflow to proceed in the event of an intermittent or one-time error.  --Kris */
-            catch (Exception e)
-            {
-                retry--;
-                if (retry == 0)
-                {
-                    Log("ERROR:  Retries exhausted!  Event creation aborted.");
-
-                    ReportException(e, "Unable to create event for state '" + stateAbbr + "' after retries.");
-
-                    SetExecState(Globals.STATE_BROKEN);
-
-                    return false;
-                }
-
-                Log("Retrying " + (5 - retry).ToString() + @"/5 after unexpected error : " + e.Message);
-
-                SetExecState(lastState);
-
-                return CreateGOTVEvent(ref friends, stateAbbr, retry);
-            }
-        }
-
-        public List<Person> GetInvitedPeople()
-        {
-            List<Person> invited = new List<Person>();
-
-            try
-            {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
-
-                string invitedJSON = (string) GOTVKey.GetValue("invitedJSON", null);
-                if (invitedJSON != null && invitedJSON.Trim() != "")
-                {
-                    invited = JsonConvert.DeserializeObject<List<Person>>(invitedJSON);
-                }
-
-                GOTVKey.Close();
-                appKey.Close();
-                softwareKey.Close();
-            }
-            catch (IOException e)
-            {
-                Log("Warning:  Error reading previous invitations from registry : " + e.Message);
-
-                ReportException(e, "Error reading previous invitations from registry.");
-
-                return null;
-            }
-
-            return invited;
-        }
-
-        private List<string> GetExclusionList(string excludeDupsContactedAfterTicks = null)
-        {
-            List<Person> invited = GetInvitedPeople();
-            if (invited == null)
-            {
-                return null;
-            }
-            
-            List<string> exclude = new List<string>();
-            if (excludeDupsContactedAfterTicks != null && invited != null && invited.Count > 0)
-            {
-                foreach (Person inv in invited)
-                {
-                    if (inv.getLastGOTVInvite() != null && long.Parse(inv.getLastGOTVInvite()) > long.Parse(excludeDupsContactedAfterTicks))
-                    {
-                        exclude.Add(inv.getFacebookID());
-                    }
-                }
-            }
-
-            return exclude;
-        }
-
-        /* Invite up to 200 people to this event.  Must already be on the event page with the invite button!  --Kris */
-        // Not currently used but may be useful later.  Please leave this function where it is.  --Kris
-        private void InviteToEvent(ref List<Person> friends, string stateAbbr = null, string excludeDupsContactedAfterTicks = null)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            List<Person> invited = GetInvitedPeople();
-            List<string> exclude = GetExclusionList();
-
-            /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
-            if (friends.Count > 0)
-            {
-                Log("Sending invitations....");
-
-                IWebDriver w = webDriver.GetDriver();
-                IWebElement inviteButton = w.FindElement(By.CssSelector("[data-testid=\"event_invite_button\"]"));
-                if (inviteButton == null)
-                {
-                    Log("Invite button not found!  Invitations aborted.");
-                    return;
-                }
-
-                webDriver.ClickElement(inviteButton);
-                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
-
-                IWebElement searchBox = webDriver.GetInputElementByPlaceholder("Search for people or enter their email address");
-                if (searchBox == null)
-                {
-                    Log("Unable to locate search box!  Invitations aborted.");
-                    return;
-                }
-
-                int i = 0;
-                List<Person> oldFriends = new List<Person>();
-                foreach (Person friend in friends)
-                {
-                    if (exclude != null && exclude.Contains(friend.getFacebookID()))
-                    {
-                        Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
-                        continue;
-                    }
-
-                    if (IsInvitedBySomeoneElse(friend.getFacebookID()))
-                    {
-                        Log("This user has already been invited by another Bernie supporter.  Skipped.");
-                        continue;
-                    }
-
-                    webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
-                    webDriver.TypeText(searchBox, @"@" + friend.getName());
-
-                    /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
-                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
-                    webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Tab);
-                    System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-
-                    /* We don't want to trigger any false positives from the spam algos.  --Kris */
-                    if (i % 100 == 0 && i > 1)
-                    {
-                        Wait(5, "for 100-interval ratelimit");
-                    }
-                    else if (i % 50 == 0 && i > 1)
-                    {
-                        Wait(3, "for 50-interval ratelimit");
-                    }
-
-                    else if (i % 20 == 0 && i > 1)
-                    {
-                        Wait(1, "for 20-interval ratelimit");
-                    }
-
-                    if (webDriver.GetElementByXPath(".//div[.='" + friend.getName() + "']", 1) != null)
-                    {
-                        Log("Added " + friend.getName() + " to invite list.");
-
-                        oldFriends.Add(friend);
-
-                        i++;
-                        if (i == 200)  // Leaving one open for good measure.  --Kris
-                        {
-                            Wait(3, "for max-invites ratelimit");
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        /* Try the lookup by Facebook ID before giving up.  --Kris */
-                        webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
-                        webDriver.TypeText(searchBox, @"@" + friend.getFacebookID());
-
-                        System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
-                        webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Tab);
-                        System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 1000);
-
-                        if (webDriver.GetElementByXPath(".//div[.='" + friend.getName() + "']", 1) != null)
-                        {
-                            Log("Added " + friend.getName() + " to invite list.");
-
-                            oldFriends.Add(friend);
-                            AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
-
-                            i++;
-                            if (i == 200)  // Leaving one open for good measure.  --Kris
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            oldFriends.Add(friend);
-
-                            Log("Unable to add " + friend.getName() + " to invite list.");
-                        }
-                    }
-                }
-
-                /* Send the invitations!  --Kris */
-                //webDriver.ClickOnXPath(browser, ".//button[.='Send Invites']");  // Comment if you want to test without actually sending the invitations.  --Kris
-
-                Log("Successfully invited " + i.ToString() + " " + (i == 1 ? "person" : "people") + " to GOTV event" + (stateAbbr != null ? " for " + stateAbbr : "") + ".");
-
-                UpdateInvitationsCount(i);
-
-                foreach (Person friend in oldFriends)
-                {
-                    if (invited.Contains(friend))
-                    {
-                        invited.Remove(friend);
-                    }
-                    else
-                    {
-                        Person remove = null;
-                        foreach (Person inv in invited)
-                        {
-                            if (inv.getFacebookID() == friend.getFacebookID())
-                            {
-                                remove = inv;
-                                break;
-                            }
-                        }
-
-                        if (remove != null)
-                        {
-                            invited.Remove(remove);
-                        }
-                    }
-
-                    friends.Remove(friend);
-
-                    friend.setLastGOTVInvite(DateTime.Now);
-
-                    invited.Add(friend);
-                }
-
-                string invitedJSON = JsonConvert.SerializeObject(invited);
-
-                try
-                {
-                    RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                    RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                    RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
-
-                    GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
-
-                    GOTVKey.Flush();
-                    appKey.Flush();
-                    softwareKey.Flush();
-
-                    GOTVKey.Close();
-                    appKey.Close();
-                    softwareKey.Close();
-                }
-                catch (IOException e)
-                {
-                    Log("Warning:  Error storing updated invitations record : " + e.Message);
-
-                    ReportException(e, "Error storing updated invitations record.");
-                }
-            }
-
-            SetExecState(lastState);
-        }
-
-        /* Query Facebook's Graph API to see if this user has been invited to the event already by someone else.  Credit to daniel.glecker on Slack for finding it.  --Kris */
-        private bool IsInvitedAPI(string eventId, string userId)
-        {
-            /* The API only accepts numberic user ID.  --Kris */
-            int n;
-            if (!(int.TryParse(userId, out n)))
-            {
-                // Use findmyfbid.com to get the userId.  --Kris
-            }
-
-            if (userId == null)
-            {
-                return false;
-            }
-
-            // TODO - API doesn't seem to work.  Scrapped for now.  --Kris
-
-            return false;
-        }
-
-        /* Check to see if any other FaceBERN! users have invited this user.  --Kris */
-        // TODO - Enable check for specific event ID.  --Kris
-        private bool IsInvitedBySomeoneElse(string userId, int retry = 2)
-        {
-            IRestResponse res = BirdieQuery("/facebook/invited/" + userId);
-            if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return false;
-            }
-            else if (res.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                Log("Warning:  Birdie query returned error response in IsInvitedBySomeoneElse().");
-
-                return false;
-            }
-
-            if (res.Content.Equals(""))
-            {
-                Log("Warning:  Birdie query returned empty response in IsInvitedBySomeoneElse().");
-                
-                return false;
-            }
-
-            FacebookUser fbUser = new FacebookUser();
-            try
-            {
-                fbUser = JsonConvert.DeserializeObject<FacebookUser>(res.Content);
-            }
-            catch (JsonSerializationException e)
-            {
-                retry--;
-                if (retry == 0)
-                {
-                    return false;
-                }
-
-                System.Threading.Thread.Sleep(250);
-
-                return IsInvitedBySomeoneElse(userId, retry);
-            }
-            catch (JsonReaderException e)
-            {
-                return false;
-            }
-
-            return (fbUser != null && fbUser.fbUserId != null && fbUser.fbUserId.ToLower().Equals(userId));
-        }
-
-        private List<IWebElement> LoadFriendInEventSearchBox(Person friend, IWebElement searchBox, int delayMultiplier = 1)
-        {
-            if (searchBox == null)
-            {
-                return null;
-            }
-
-            try
-            {
-                webDriver.TypeText(searchBox, OpenQA.Selenium.Keys.Control + "a");
-                webDriver.TypeText(searchBox, friend.getName());
-            }
-            catch (Exception e)
-            {
-                // Whatever the problem is, just refresh and try again.  StaleElementReferenceExceptions are handled in the WebDriver class.  --Kris
-                return null;
-            }
-
-            System.Threading.Thread.Sleep(250 * delayMultiplier);
-
-            /* This is NOT intended as a spam tool.  These delays are necessary to keep Facebook's automated spam checks from throwing a false positive and blocking the user.  --Kris */
-            int i = 3;
-            List<IWebElement> res = new List<IWebElement>();
-            do
-            {
-                System.Threading.Thread.Sleep(250 * delayMultiplier);
-
-                res = webDriver.GetElementsByTagNameAndAttribute("li", "aria-label", friend.getName());
-
-                i--;
-            } while ((res == null || res.Count == 0) && i > 0);
-
-            return res;
-        }
-
-        /* Must already be on the event page with the invite sidebar!  --Kris */
-        private void InviteToEventSidebar(ref List<Person> friends, string stateAbbr = null)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            List<Person> invited = GetInvitedPeople();
-            List<string> exclude = GetExclusionList();
-
-            /* Remember:  This is intended to run unattended so speed isn't a major concern.  Ratelimiting is needed to keep Facebook from thinking we're a spambot.  --Kris */
-            int ratelimitCount = 0;
-            if (friends.Count > 0)
-            {
-                Log("Sending invitations....");
-
-                SetProgressBar(Globals.PROGRESSBAR_CONTINUOUS);
-
-                IWebElement searchBox = webDriver.GetElementByTagNameAndAttribute("input", "aria-label", "Add friends to this event");
-                if (searchBox == null)
-                {
-                    Log("Unable to locate search box!  Invitations aborted.");
-                    return;
-                }
-
-                int i = 0;
-                int iteration = 0;
-                foreach (Person friend in friends)
-                {
-                    SetProgressBar((int) Math.Round((decimal) (((double) iteration / friends.Count) * 100), 0, MidpointRounding.AwayFromZero));
-                    iteration++;
-
-                    if (exclude != null && exclude.Contains(friend.getFacebookID()))
-                    {
-                        Log("Invitation has already been sent to " + friend.getName() + ".  Skipped.");
-                        continue;
-                    }
-
-                    if (IsInvitedBySomeoneElse(friend.getFacebookID()))
-                    {
-                        Log("This user has already been invited by another Bernie supporter.  Skipped.");
-                        continue;
-                    }
-
-                    int r = 3;
-                    List<IWebElement> res;
-                    do
-                    {
-                        res = LoadFriendInEventSearchBox(friend, searchBox);
-                        if (res == null)
-                        {
-                            webDriver.Refresh();
-                            System.Threading.Thread.Sleep(3000);
-                            searchBox = webDriver.GetElementByTagNameAndAttribute("input", "aria-label", "Add friends to this event");
-                        }
-
-                        r--;
-                    } while (res == null && r > 0);
-
-                    if (res == null || res.Count == 0)
-                    {
-                        /* Retry once; a bit more slowly, this time.  Sometimes it just doesn't load correctly or quickly enough in the browser.  --Kris */
-                        //res = LoadFriendInEventSearchBox(friend, searchBox, 2);  // This doesn't seem to ever help.  Just makes it take forever.  --Kris
-                    }
-
-                    if (res == null || res.Count == 0)
-                    {
-                        Log("Unable to add " + friend.getName() + " to invite list.");
-                    }
-                    else if (res.Count == 1)
-                    {
-                        if (webDriver.GetAttribute(res[0], "class") != null && webDriver.GetAttribute(res[0], "class").Contains("nonInvitable"))
-                        {
-                            Log("Facebook user " + friend.getName() + " has already been invited.  Skipped.");
-
-                            System.Threading.Thread.Sleep(250);
-                        }
-                        else
-                        {
-                            webDriver.ClickElement(res[0]);
-
-                            IWebElement ele;
-                            int ii = 10;
-                            do
-                            {
-                                System.Threading.Thread.Sleep(250);
-
-                                ele = webDriver.GetElementById("event_invite_feedback");
-
-                                ii--;
-                            } while (ele == null && ii > 0);
-
-                            /* To prevent stale element exceptions.  --Kris */
-                            bool stale = false;
-                            string msg = null;
-                            try
-                            {
-                                msg = webDriver.GetText(ele);
-                            }
-                            catch (StaleElementReferenceException e)
-                            {
-                                stale = true;
-                            }
-
-                            if (stale)
-                            {
-                                System.Threading.Thread.Sleep(500);
-
-                                ele = webDriver.GetElementById("event_invite_feedback");
-
-                                stale = false;
-                                try
-                                {
-                                    msg = webDriver.GetText(ele);
-                                }
-                                catch (StaleElementReferenceException e)
-                                {
-                                    Log("Unable to determine whether " + friend.getName() + " was added to invite list.");
-
-                                    stale = true;
-                                }
-                            }
-
-                            if (!stale)
-                            {
-                                try
-                                {
-                                    if (ele != null && webDriver.GetText(ele) == null && webDriver.GetAttribute(ele, "innerHTML") != null)
-                                    {
-                                        msg = webDriver.GetAttribute(ele, "innerHTML");
-                                    }
-                                }
-                                catch (StaleElementReferenceException e)
-                                {
-                                    ele = null;
-                                }
-
-                                // Facebook keeps switching-up the attribute on us, so we'll just assume it's good for now if the message can't be found (i.e. is null).  --Kris
-                                if (ele != null && (msg == null || msg.Contains(" was invited.")))
-                                {
-                                    Log("Added " + friend.getName() + " to invite list.");
-
-                                    i++;
-                                    ratelimitCount++;
-
-                                    friend.setLastGOTVInvite(DateTime.Now);
-                                    AppendLatestInvitesQueue(friend);  // This queue stores invited users who will be sent to the Birdie API to prevent spam resulting from duplicate invitations.  --Kris
-                                    UpdateInvitationsCount();
-
-                                    invited.Add(friend);
-
-                                    PersistInvited(invited);
-                                }
-                                else if (ele == null)
-                                {
-                                    Log("Warning:  Unable to confirm whether " + friend.getName() + " was added to the invite list!");
-                                }
-                                else
-                                {
-                                    Log("Facebook user " + friend.getName() + " may not have been invited (msg=" + msg + ").");
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Log("Multiple people with the same name found.  The feature to handle that hasn't been written yet.  Skipped.");
-                    }
-
-                    /* We don't want to trigger any false positives from the spam algos.  --Kris */
-                    if (ratelimitCount % 1000 == 0 && ratelimitCount > 1)
-                    {
-                        Wait(15, "for 1000-interval ratelimit");
-                        ratelimitCount++;
-                    }
-                    if (ratelimitCount % 100 == 0 && ratelimitCount > 1)
-                    {
-                        Wait(3, "for 100-interval ratelimit");
-                        ratelimitCount++;
-                    }
-                    else if (ratelimitCount % 50 == 0 && ratelimitCount > 1)
-                    {
-                        Wait(2, "for 50-interval ratelimit");
-                        ratelimitCount++;
-                    }
-                    else if (ratelimitCount % 25 == 0 && ratelimitCount > 1)
-                    {
-                        Wait(1, "for 25-interval ratelimit");
-                        ratelimitCount++;
-                    }
-                    else if (ratelimitCount % 5 == 0 && ratelimitCount > 1)
-                    {
-                        Wait(3, "for 5-interval ratelimit", "second");
-                        ratelimitCount++;
-                    }
-                }
-
-                this.invited = GetInvitedPeople();
-            }
-
-            SetProgressBar(100);
-
-            /* Allow a few seconds to update Birdie, in case it's waiting.  --Kris */
-            SetExecState(Globals.STATE_WAITING);
-
-            System.Threading.Thread.Sleep(5000);
-
-            SetExecState(lastState);
-        }
-
-        private void PersistInvited(List<Person> invited)
-        {
-            string invitedJSON = JsonConvert.SerializeObject(invited);
-
-            try
-            {
-                RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-                RegistryKey GOTVKey = appKey.CreateSubKey("GOTV");
-
-                GOTVKey.SetValue("invitedJSON", invitedJSON, RegistryValueKind.String);
-
-                GOTVKey.Flush();
-                appKey.Flush();
-                softwareKey.Flush();
-
-                GOTVKey.Close();
-                appKey.Close();
-                softwareKey.Close();
-            }
-            catch (IOException e)
-            {
-                Log("Warning:  Error storing updated invitations record : " + e.Message);
-
-                ReportException(e, "Error storing updated invitations record.");
-            }
-        }
-
-        // TODO - This is currently broken!  The user it's looking for may not be the one who did the invite.  Need to be able to query feelthebern.events for the ID of whoever sent the invite.  --Kris
-        private bool AcceptFacebookFTBRequest()
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return false;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            webDriver.GoToUrl("http://www.facebook.com");
-
-            IWebDriver w = webDriver.GetDriver();
-            webDriver.ClickElement(w.FindElement(By.CssSelector("[data-tooltip-content=\"Friend Requests\"]")));
-            
-            IWebElement button = webDriver.GetElementByXPath(".//button[contains(@onclick, '100001066887477')]");
-
-            if (button == null)
-            {
-                Log("Unable to locate feelthebern.events friend request.  It may simply have not been sent yet.");
-                return false;
-            }
-
-            Log("Facebook friend request for feelthebern.events found.");
-
-            if (webDriver.ClickElement(button))
-            {
-                Log("Facebook friend request for feelthebern.events accepted.");
-                System.Threading.Thread.Sleep(3000);
-
-                SetExecState(lastState);
-
-                return true;
-            }
-            else
-            {
-                Log("Error clicking on friend request accept button!");
-
-                SetExecState(lastState);
-
-                return false;
-            }
-        }
-
-        /* Graph search disappeared but I'm not about to be deterred.  Game on, motherfuckers.  --Kris */
-        private Dictionary<string, List<Person>> GetFacebookBernieSupporters(string bernieFacebookId = null)
-        {
-            Dictionary<string, List<Person>> res = new Dictionary<string, List<Person>>();  // People without known states are listed under "GA" (Earth); will use "US" if we know they're in this country.  --Kris
-
-            if (bernieFacebookId == null)
-            {
-                // TODO - Cycle through both Bernie Facebook IDs simultaneously; i.e. open each set in a separate window via a separate thread, then join them together when done.  --Kris
-                Log("Multi-ID search not yet implemented.  Search cancelled.");
-
-                return res;
-            }
-
-            Log("Searching for Bernie Sanders supporters and gathering results (this will take a long time)....");
-
-            SetProgressBar(Globals.PROGRESSBAR_MARQUEE);
-
-            string URL = "https://www.facebook.com/search";
-
-            URL += "/" + bernieFacebookId + "/likers";
-
-            /* Navigate to the search page.  --Kris */
-            webDriver.GoToUrl(URL);
-
-            /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
-            webDriver.ScrollToBottom("Preparing to load results....", "Loading results (set $i/$L max sets)....", "Finished loading results!", 100000);  // Each "set" is a scroll.  --Kris
-
-            /* Scrape the results from the page source.  Seems to average just under a second for processing each result set.  --Kris */
-            string[] resRaw = new string[999999];
-            resRaw = webDriver.GetPageSource(browser).Split(new string[] { "<div class=\"_glj\">" }, StringSplitOptions.RemoveEmptyEntries);
-
-            Log("Parsing search results....  This will probably take awhile....");
-
-            SetProgressBar(Globals.PROGRESSBAR_CONTINUOUS);
-
-            int increment = 10;
-            if (resRaw.Length >= 500)
-            {
-                increment = 100;
-            }
-
-            int i = 0;
-            int r = 0;
-            foreach (string entry in resRaw)
-            {
-                if (i == 0)
-                {
-                    i++;
-                    continue;
-                }
-
-                SetProgressBar((int) Math.Round((decimal) (((double) i / resRaw.Length) * 100), 0, MidpointRounding.AwayFromZero));
-
-                if (i % increment == 0)
-                {
-                    Log("Processed " + i.ToString() + " Facebook search results....");
-                    System.Threading.Thread.Sleep(100);
-                }
-
-                i++;
-                
-                // TODO - Find a more comprehensive HTML parsing library (NOT RegEx!) when I have more time.  This sloppy solution will work, for now.  --Kris
-                string livesInLine = null;
-                string nameLine = null;
-                foreach (string subEntry in entry.Split(new string[] { "</a></div></div>" }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (subEntry.IndexOf("Lives in") != -1)
-                    {
-                        livesInLine = subEntry;
-                    }
-                    else if (subEntry.IndexOf("https://www.facebook.com/") != -1 
-                        && nameLine == null)
-                    {
-                        nameLine = subEntry;
-                    }
-                }
-
-                if (nameLine == null)
-                {
-                    continue;
-                }
-
-                /* Parse the Facebook User ID.  --Kris */
-                string link = nameLine.Substring((nameLine.IndexOf("https://www.facebook.com/") + "https://www.facebook.com/".Length));
-
-                string userId = link.Substring(0, link.IndexOf(@">"));
-                if (userId == null || userId.ToLower().Equals("profile.php"))
-                {
-                    continue;
-                }
-                
-                string name = nameLine.Substring((nameLine.IndexOf(userId) + userId.Length));
-
-                if (userId.IndexOf(@"?") != -1)
-                {
-                    userId = userId.Substring(0, userId.IndexOf(@"?"));
-                }
-
-                /* Parse the person's name.  --Kris */
-                name = Regex.Replace(name.Substring(name.IndexOf("<div")), @"<[^>]+>", "").Trim();  // Fuck it, it's gotta be RegEx for this part, at least.  --Kris
-
-                /* Parse the person's state, if specified.  --Kris */
-                string livesIn = null;
-                if (livesInLine != null)
-                {
-                    livesIn = Regex.Replace(livesInLine, @"<[^>]+>", "").Trim();
-
-                    livesIn = livesIn.Substring(livesIn.LastIndexOf(" ") + 1).Trim();
-                }
-
-                /* Attempt to match the state with one of our State entries.  --Kris */
-                string stateAbbr = "GA";  // Code I made-up for Earth since ISO doesn't seem to have an one (EA is taken already).  Not all search results are U.S.-based.  --Kris
-                if (livesIn != null)
-                {
-                    foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
-                    {
-                        if (state.Value.name.ToLower().Equals(livesIn.ToLower()))
-                        {
-                            stateAbbr = state.Key;
-                            break;
-                        }
-                    }
-                }
-
-                /* Append the result set.  --Kris */
-                Person person = new Person();
-                person.setBernieSupporter(true);
-                person.setFacebookID(userId);
-                person.setName(name);
-                person.setStateAbbr(stateAbbr);
-
-                if (!(res.ContainsKey(stateAbbr)))
-                {
-                    res.Add(stateAbbr, new List<Person>());
-                }
-                res[stateAbbr].Add(person);
-
-                r++;
-            }
-
-            Log("Search processing complete!  Retrieved " + r.ToString() + " Facebook users who like Bernie Sanders.");
-
-            SetProgressBar(100);
-
-            System.Threading.Thread.Sleep(5000);
-
-            SetProgressBar(Globals.PROGRESSBAR_HIDDEN);
-
-            return res;
-        }
-
-        private List<Person> GetFacebookFriendsOfFriends(string stateAbbr = null, bool bernieSupportersOnly = true, int pass = 1)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return new List<Person>();
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_EXECUTING);
-
-            List<Person> res = new List<Person>();
-
-            string logBaseMsg = "Searching Facebook for friends of friends";
-            string logMsg = "";
-
-            /* Build the search URL string.  Graph search syntax is deprecated and too unreliable so we'll just do it this way.  --Kris */
-            string URL = "https://www.facebook.com/search";
-
-            if (bernieSupportersOnly)
-            {
-                foreach (string facebookID in Globals.bernieFacebookIDs)
-                {
-                    URL += "/" + facebookID + "/likers";
-                }
-
-                URL += "/union";
-                logMsg += " " + (logMsg == "" ? "who" : "and") + " like Bernie Sanders";
-            }
-
-            if (stateAbbr != null)
-            {
-                URL += "/" + Globals.StateConfigs[stateAbbr].facebookId + "/residents";
-                logMsg += " " + (logMsg == "" ? "who" : "and") + " live in " + Globals.StateConfigs[stateAbbr].name;
-            }
-
-            URL += "/present/me/friends/friends/intersect";
-
-            // Temporary override URL; the intersect one has stopped working.  --Kris
-            /*
-            URL = @"https://www.facebook.com/search/people/?q=friends%20of%20my%20friends%20who%20live%20in%20";
-            URL += Globals.StateConfigs[stateAbbr].name.ToLower();
-            URL += @"%20and%20like%20bernie%20sanders";
-             * */
-            // End override.  --Kris
-
-            Log(logBaseMsg + logMsg + "....");
-
-            /* Navigate to the search page.  --Kris */
-            webDriver.GoToUrl(URL);
-
-            /* Keep scrolling to the bottom until all results have been loaded.  --Kris */
-            webDriver.ScrollToBottom("Preparing to load results....", "Loading results (set $i/$L max sets)....", "Finished loading results!");  // Each "set" is a scroll.  --Kris
-
-            /* Scrape the results from the page source.  --Kris */
-            string[] resRaw = new string[32767];
-            resRaw = webDriver.GetPageSource(browser).Split(new string[] { "<div class=\"_gll\">" }, StringSplitOptions.RemoveEmptyEntries);
-
-            for (int i = 1; i < resRaw.Length; i++)
-            {
-                if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-                {
-                    Log("Thread stop received.  Workflow aborted.");
-                    return new List<Person>();
-                }
-
-                if (resRaw[i] == null || resRaw[i].Length < 40 || resRaw[i].Substring(0, 34) != "<a href=\"https://www.facebook.com/")
-                {
-                    continue;
-                }
-
-                /* Thought about using regex, then decided to stab myself in the forehead with an icepick, instead.  I'm happy with my choice.  --Kris */
-                string start = "<a href=\"https://www.facebook.com/";
-                string end = "\">";
-                // NOTE - We're not going to be using these IDs in any graph searches so we don't need to worry about retrieving the actual numeric ID; the username is sufficient.  --Kris
-                string userId = resRaw[i].Substring(resRaw[i].IndexOf(start) + start.Length, resRaw[i].IndexOf(end) - (resRaw[i].IndexOf(start) + start.Length));
-
-                start = "profile.php?id=";
-                end = @"&";
-
-                if (userId.IndexOf(start) == 0)
-                {
-                    userId = userId.Substring(start.Length);
-                    if (userId.IndexOf(end) != -1)
-                    {
-                        userId = userId.Substring(0, userId.IndexOf(end));
-                    }
-                }
-
-                if (userId.IndexOf("?") != -1)
-                {
-                    userId = userId.Substring(0, userId.IndexOf("?"));  // Strips any URL parameters that Facebook might have tagged-on.  --Kris
-                }
-
-                start = "<div class=\"_5d-5\">";
-                end = "</div>";  // It's the first one so that makes it easy.  --Kris
-
-                string name = resRaw[i].Substring(resRaw[i].IndexOf(start) + start.Length, resRaw[i].IndexOf(end) - (resRaw[i].IndexOf(start) + start.Length));
-
-                Person per = new Person();
-
-                if (bernieSupportersOnly == true)
-                {
-                    per.setBernieSupporter(true);
-                }
-                else
-                {
-                    // TODO - Figure out if this user likes Bernie.  Don't need this for v1.0 since the priority for now is GOTV.  Will revisit when there's more time.  --Kris
-                }
-
-                if (stateAbbr != null)
-                {
-                    per.setStateAbbr(stateAbbr);
-                }
-                else
-                {
-                    // TODO - Will be needed if we do any inter-state searches.  Low priority for now since we can just search state-by-state.  --Kris
-                }
-
-                per.setFacebookID(userId);
-                per.setName(name);
-
-                res.Add(per);
-            }
-
-            if (res.Count > 0)
-            {
-                Log("Retrieved " + res.Count.ToString() + " results for friends of friends" + logMsg + ".");
-            }
-            else
-            {
-                Log("No results found.");
-            }
-
-            if (res.Count < Globals.StateConfigs[stateAbbr].facebookFriendSearchTarget
-                && pass < Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses)
-            {
-                Log("Results target not met.  Re-performing search to supplement results (pass " + (pass + 1).ToString() + @" / " + Globals.StateConfigs[stateAbbr].facebookFriendSearchPasses + ")....");
-
-                res.AddRange(GetFacebookFriendsOfFriends(stateAbbr, bernieSupportersOnly, (pass + 1)));
-                //res = res.Distinct<Person>().ToList<Person>();
-
-                List<Person> resClean = new List<Person>();
-                foreach (Person person in res)
-                {
-                    bool dup = false;
-                    foreach (Person person2 in resClean)
-                    {
-                        if (person2.facebookID.Equals(person.facebookID))
-                        {
-                            dup = true;
-                            break;
-                        }
-                    }
-
-                    if (!dup)
-                    {
-                        resClean.Add(person);
-                    }
-                }
-                res = resClean;
-            }
-
-            SetExecState(lastState);
-
-            return res;
-        }
-
-        /* Load the Facebook event page from feelthebern.events and return whether or not the user has access to the event.  --Kris */
-        private bool CheckFTBEventAccess(string stateAbbr, bool navigate = true)
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return false;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_VALIDATING);
-
-            if (stateAbbr == null || stateAbbr.Length == 0 || !Globals.StateConfigs.ContainsKey(stateAbbr))
-            {
-                Log("Warning:  Unrecognized stateAbbr '" + stateAbbr + "' sent to CheckFTBEventAccess()!");
-                return false;
-            }
-
-            if (Globals.StateConfigs[stateAbbr].FTBEventId == null || Globals.StateConfigs[stateAbbr].FTBEventId.Length == 0)
-            {
-                Log("Warning:  No Facebook event ID found for " + stateAbbr + "!");
-                return false;
-            }
-
-            if (navigate == true)
-            {
-                webDriver.GoToUrl("https://www.facebook.com/events/" + Globals.StateConfigs[stateAbbr].FTBEventId);
-            }
-
-            System.Threading.Thread.Sleep(3000);  // Just in case the driver doesn't wait long enough on its own.  --Kris
-
-            SetExecState(lastState);
-
-            return (webDriver.GetPageSource(browser).IndexOf("Sorry, this page isn't available") == -1);
-        }
-
-        /* Load feelthebern.events in a separate browser session and attempt to get invited to the state events.  Note that it can take over an hour for the request to be processed.  --Kris */
-        private void RequestFTBInvitation()
-        {
-            if (Globals.executionState == Globals.STATE_STOPPING || Main.stop)
-            {
-                Log("Thread stop received.  Workflow aborted.");
-                return;
-            }
-
-            if (Globals.requestedFTBInvite == true)
-            {
-                Log("FTB invitation already requested.  Skipped.");
-                return;
-            }
-
-            int lastState = Globals.executionState;
-            SetExecState(Globals.STATE_VALIDATING);
-
-            /* Retrieve the Facebook profile URL for the logged-in user from the registry.  It's automatically stored on login.  --Kris */
-            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
-            RegistryKey appKey = softwareKey.CreateSubKey("FaceBERN!");
-            RegistryKey facebookKey = appKey.CreateSubKey("Facebook");
-
-            string profileURL = facebookKey.GetValue("profileURL", null, RegistryValueOptions.None).ToString();
-
-            /* Initialize the driver and navigate to feelthebern.events.  --Kris */
-            if (profileURL != null)
-            {
-                Log("Requesting invitation from feelthebern.events....");
-
-                SetExecState(Globals.STATE_EXECUTING);
-
-                WebDriver webDriver2 = new WebDriver(Main, browser);
-
-                webDriver2.FixtureSetup();
-                webDriver2.TestSetUp("http://www.feelthebern.events");
-
-                webDriver2.TypeInXPath(@"/html/body/div[2]/input", profileURL);
-                webDriver2.ClickOnXPath(@"/html/body/div[2]/button");
-
-                System.Threading.Thread.Sleep(5000);
-
-                Log("Request sent.");
-
-                webDriver2.FixtureTearDown();
-
-                appKey.SetValue("requestedFTBInvite", "1", RegistryValueKind.String);
-            }
-            else
-            {
-                SetExecState(Globals.STATE_ERROR);
-
-                Log("Unable to request feelthebern.events invitation due to unknown profile URL!");
-            }
-
-            facebookKey.Close();
-            appKey.Close();
-            softwareKey.Close();
 
             SetExecState(lastState);
         }
@@ -4041,7 +1338,7 @@ namespace FaceBERN_
             WorkflowLog.Init(logName);
         }
 
-        private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true, bool breakOnFailure = false)
+        internal void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true, bool suppressDups = true, bool breakOnFailure = false)
         {
             try
             {

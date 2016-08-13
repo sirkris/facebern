@@ -196,6 +196,9 @@
       <DependentUpon>BirdieAdminRegistration.cs</DependentUpon>
     </Compile>
     <Compile Include="Campaign.cs" />
+    <Compile Include="Campaigns\Admin\ShareOnFacebook.cs" />
+    <Compile Include="Campaigns\Generic.cs" />
+    <Compile Include="Campaigns\RunBernieRun.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="DebugTextForm.cs">
       <SubType>Form</SubType>
@@ -282,6 +285,8 @@
     </Compile>
     <Compile Include="WebDriver.cs" />
     <Compile Include="Workflow.cs" />
+    <Compile Include="WorkflowFacebook.cs" />
+    <Compile Include="WorkflowTwitter.cs" />
     <EmbeddedResource Include="01001011011100100110100101110011001000000100001101110010011000010110100101100111.resx">
       <DependentUpon>01001011011100100110100101110011001000000100001101110010011000010110100101100111.cs</DependentUpon>
     </EmbeddedResource>
@@ -398,6 +403,7 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -16,12 +16,14 @@ namespace FaceBERN_
         private Form1 Main;
         private List<TweetsQueue> queue;
         private Workflow workflow;
+        private WorkflowTwitter workflowTwitter;
 
         public TweetsQueueManager(Form1 Main)
         {
             InitializeComponent();
             this.Main = Main;
             workflow = new Workflow(Main);
+            workflowTwitter = new WorkflowTwitter(Main);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -38,8 +40,8 @@ namespace FaceBERN_
         {
             try
             {
-                workflow.UpdateLocalTweetsQueue(true);
-                queue = workflow.GetTweetsQueue();
+                workflowTwitter.UpdateLocalTweetsQueue(true);
+                queue = workflowTwitter.GetTweetsQueue();
 
                 if (queue == null || queue.Count == 0)
                 {
@@ -120,7 +122,7 @@ namespace FaceBERN_
                 DialogResult dr = MessageBox.Show("Are you sure you want to remove tweet \"" + tweet + "\" from the local queue?", "Confirm Queue Entry Deletion", MessageBoxButtons.YesNo);
                 if (dr == DialogResult.Yes)
                 {
-                    workflow.RemoveFromLocalTweetsQueue(tweet);
+                    workflowTwitter.RemoveFromLocalTweetsQueue(tweet);
 
                     LoadQueue();
                 }

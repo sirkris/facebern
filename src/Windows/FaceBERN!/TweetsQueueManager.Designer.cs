@@ -40,7 +40,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(450, 625);
+            this.button1.Location = new System.Drawing.Point(460, 625);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(100, 25);
             this.button1.TabIndex = 3;
@@ -59,7 +59,7 @@
             this.colUndo});
             this.tweetsLogListView.Location = new System.Drawing.Point(12, 12);
             this.tweetsLogListView.Name = "tweetsLogListView";
-            this.tweetsLogListView.Size = new System.Drawing.Size(960, 607);
+            this.tweetsLogListView.Size = new System.Drawing.Size(980, 607);
             this.tweetsLogListView.TabIndex = 2;
             this.tweetsLogListView.UseCompatibleStateImageBehavior = false;
             this.tweetsLogListView.View = System.Windows.Forms.View.Details;
@@ -93,7 +93,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(984, 662);
+            this.ClientSize = new System.Drawing.Size(1004, 662);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.tweetsLogListView);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
