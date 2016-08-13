@@ -48,7 +48,7 @@ namespace FaceBERN_
         /* How long to wait between each iteration of the Twitter workflow loop.  --Kris */
         public static int __WORKFLOW_TWITTER_WAIT_INTERVAL__ = 5;  // Minutes
 
-        /* How long to wait between each iteration fo the main InterCom loop.  --Kris */
+        /* How long to wait between each iteration of the main InterCom loop.  --Kris */
         public static int __INTERCOM_WAIT_INTERVAL__ = 4;  // Minutes
 
         /* How old the Twitter user timeline cache can get before it needs to be refreshed.  --Kris */
