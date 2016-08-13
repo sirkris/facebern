@@ -40,7 +40,7 @@ namespace FaceBERN_
         public static int __FTB_REQUEST_ACCESS_WAIT_INTERVAL__ = 60;  // Minutes
 
         /* How long to wait between each iteration of the main workflow loop.  --Kris */
-        public static int __WORKFLOW_WAIT_INTERVAL__ = 5;  // Minutes
+        public static int __WORKFLOW_WAIT_INTERVAL__ = 60;  // Minutes
 
         /* How long to wait between each iteration of the Facebook workflow loop.  --Kris */
         public static int __WORKFLOW_FACEBOOK_WAIT_INTERVAL__ = 60;  // Minutes

@@ -1377,6 +1377,11 @@ namespace FaceBERN_
                     Log("Reporting exception....");
                 }
 
+                if (exceptions == null)
+                {
+                    exceptions = new List<ExceptionReport>();
+                }
+
                 exceptions.Add(new ExceptionReport(Main, ex, logMsg));
             }
             catch (Exception e)

@@ -977,7 +977,7 @@ namespace FaceBERN_
                     }
 
                     /* Wait between loops.  May lower it later if we start doing more time-sensitive crap like notifications/etc.  --Kris */
-                    Log("Workflow complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
+                    Log("Controller workflow iteration complete!  Waiting " + Globals.__WORKFLOW_WAIT_INTERVAL__.ToString() + " minutes for next run....");
                     
                     SetExecState(Globals.STATE_WAITING);
                     System.Threading.Thread.Sleep(Globals.__WORKFLOW_WAIT_INTERVAL__ * 60 * 1000);
