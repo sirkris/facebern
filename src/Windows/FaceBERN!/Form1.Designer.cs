@@ -30,7 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            CButtonLib.cBlendItems cBlendItems1 = new CButtonLib.cBlendItems();
+            CButtonLib.cBlendItems cBlendItems2 = new CButtonLib.cBlendItems();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.labelVersion = new System.Windows.Forms.Label();
@@ -447,15 +447,15 @@
             // 
             this.buttonStart.BackColor = System.Drawing.Color.Transparent;
             this.buttonStart.BorderColor = System.Drawing.Color.DarkBlue;
-            cBlendItems1.iColor = new System.Drawing.Color[] {
+            cBlendItems2.iColor = new System.Drawing.Color[] {
         System.Drawing.Color.FromArgb(((int)(((byte)(150)))), ((int)(((byte)(255)))), ((int)(((byte)(150))))),
         System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(160)))), ((int)(((byte)(0))))),
         System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))))};
-            cBlendItems1.iPoint = new float[] {
+            cBlendItems2.iPoint = new float[] {
         0F,
         0.5F,
         1F};
-            this.buttonStart.ColorFillBlend = cBlendItems1;
+            this.buttonStart.ColorFillBlend = cBlendItems2;
             this.buttonStart.Corners.All = 8;
             this.buttonStart.Corners.LowerLeft = 8;
             this.buttonStart.Corners.LowerRight = 8;
@@ -553,6 +553,7 @@
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Birdie Client for Windows";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);

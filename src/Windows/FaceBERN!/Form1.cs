@@ -1594,5 +1594,10 @@ namespace FaceBERN_
         {
             Clipboard.SetText(outBox.Text);
         }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Exit();
+        }
     }
 }

@@ -753,6 +753,8 @@ namespace FaceBERN_
 
             Thread thread = new Thread(() => ExecuteShutdown(workflowThread));
 
+            thread.IsBackground = true;
+
             Main.LogW("Attempting to start Shutdown thread....", false);
 
             thread.Start();
@@ -813,6 +815,8 @@ namespace FaceBERN_
 
             Thread thread = new Thread(() => ExecuteTwitterAuth(browser));
 
+            thread.IsBackground = true;
+
             Main.LogW("Attempting to start TwitterAuth thread....", false);
 
             thread.Start();
@@ -835,6 +839,8 @@ namespace FaceBERN_
 
             Thread thread = new Thread(() => ExecuteFacebook(browser));
 
+            thread.IsBackground = true;
+
             Main.LogW("Attempting to start Facebook thread....", false);
 
             thread.Start();
@@ -856,6 +862,8 @@ namespace FaceBERN_
             SetExecState(Globals.STATE_TWITTERPIN);
 
             Thread thread = new Thread(() => ExecuteTwitter(browser));
+
+            thread.IsBackground = true;
 
             Main.LogW("Attempting to start Twitter thread....", false);
 
