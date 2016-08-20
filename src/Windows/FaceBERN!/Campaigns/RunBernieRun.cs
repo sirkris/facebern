@@ -8,8 +8,8 @@ namespace FaceBERN_.Campaigns
 {
     public class RunBernieRun : Generic
     {
-        public RunBernieRun(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, bool refresh = true)
-            : base(workflowFacebook, workflowTwitter, refresh)
+        public RunBernieRun(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, Workflow workflow, bool refresh = true)
+            : base(workflowFacebook, workflowTwitter, workflow, refresh)
         { }
         
         public override bool ExecuteFacebook()

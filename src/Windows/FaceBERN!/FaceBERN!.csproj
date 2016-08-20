@@ -196,6 +196,7 @@
       <DependentUpon>BirdieAdminRegistration.cs</DependentUpon>
     </Compile>
     <Compile Include="Campaign.cs" />
+    <Compile Include="Campaigns\Admin\OperationLifePreserver.cs" />
     <Compile Include="Campaigns\Admin\ShareOnFacebook.cs" />
     <Compile Include="Campaigns\Generic.cs" />
     <Compile Include="Campaigns\RunBernieRun.cs" />
