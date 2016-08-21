@@ -617,7 +617,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1)
+        public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1, bool rethrowExceptions = false)
         {
             try
             {
@@ -637,6 +637,11 @@ namespace FaceBERN_
                         }
                         catch (NoSuchElementException e)
                         {
+                            if (rethrowExceptions)
+                            {
+                                throw e;
+                            }
+                            
                             return null;
                         }
                         finally
@@ -659,7 +664,14 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                return StaleReturn(GetParams(cssSelector, timeout));
+                if (rethrowExceptions == true)
+                {
+                    throw e;
+                }
+                else
+                {
+                    return StaleReturn(GetParams(cssSelector, timeout));
+                }
             }
         }
 
@@ -769,7 +781,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false)
+        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false, bool rethrowExceptions = false)
         {
             try
             {
@@ -823,7 +835,14 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                return StaleReturn(GetParams(element, viewportfix, autoscroll));
+                if (rethrowExceptions == true)
+                {
+                    throw e;
+                }
+                else
+                {
+                    return StaleReturn(GetParams(element, viewportfix, autoscroll));
+                }
             }
         }
 
@@ -860,9 +879,15 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void ScrollToBottom(string logFirstMsg = null, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000)
+        public void ScrollToBottom(int scrollLimit = 0, int delayMs = 100, int timeoutSeconds = 3)
         {
-            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+            ScrollToBottom(null, null, null, scrollLimit, delayMs, timeoutSeconds);
+        }
+
+        [Test]
+        public void ScrollToBottom(string logFirstMsg, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000, int delayMs = 3000, int timeoutSeconds = 15)
+        {
+            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeoutSeconds));
 
             IJavaScriptExecutor jse = (IJavaScriptExecutor)_driver;
             //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
@@ -889,6 +914,12 @@ namespace FaceBERN_
                     // Do the scroll.  --Kris
                     jse.ExecuteScript(scrollScript);
 
+                    i--;
+                    if (i <= 0)
+                    {
+                        break;
+                    }
+
                     // Check to see if the page expands.  If it doesn't after 6 seconds, assume we're done.  --Kris
                     int ii = 12;
                     do
@@ -899,7 +930,7 @@ namespace FaceBERN_
 
                         ii--;
                     } while (done == true && ii > 0);
-                    i--;
+                    
                     // Uncomment below for DEBUG.  --Kris
                     /*
                     if (i == (scrollLimit - 5))
@@ -920,7 +951,7 @@ namespace FaceBERN_
                 Log(logLastMsg);
             }
 
-            System.Threading.Thread.Sleep(3000);
+            System.Threading.Thread.Sleep(delayMs);
         }
 
         public void ScrollToBottom(ref IWebDriver driver, int scrollLimit)
