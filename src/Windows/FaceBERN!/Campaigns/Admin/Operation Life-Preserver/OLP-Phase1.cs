@@ -8,14 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceBERN_.Campaigns.Admin
+namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
 {
-    public class OperationLifePreserver : Generic
+    public class OLP_Phase1 : OperationLifePreserver
     {
-        public OperationLifePreserver(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, Workflow workflow, bool refresh = true)
+        public OLP_Phase1(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, Workflow workflow, bool refresh = true)
             : base(workflowFacebook, workflowTwitter, workflow, refresh)
         { }
-        
+
         public override bool ExecuteFacebook()
         {
             return true;
@@ -28,7 +28,8 @@ namespace FaceBERN_.Campaigns.Admin
 
         public override bool ExecuteWorkflow()
         {
-            if (Globals.CampaignConfigs[Globals.CAMPAIGN_OPERATION_LIFE_PRESERVER] == false)
+            if (Globals.CampaignConfigs[Globals.CAMPAIGN_OPERATION_LIFE_PRESERVER] == false 
+                || Globals.CampaignConfigs[Globals.CAMPAIGN_OLP_PHASE1] == false)
             {
                 return false;
             }
@@ -52,10 +53,10 @@ namespace FaceBERN_.Campaigns.Admin
                     string src;
                     string[] results = new string[99999];
                     int dayNum = 0;
-                    foreach (DateTime day in IterateDays(new DateTime(2016, 07, 30), new DateTime(2015, 3, 1)))
+                    foreach (DateTime day in IterateDays(new DateTime(2016, 01, 30), new DateTime(2015, 3, 1)))
                     {
                         dayNum++;
-                        int delayMinutes = 5 - (dayNum % 5);
+                        int delayMinutes = (dayNum % 30 == 0 ? 15 : (dayNum % 3) + 1);
 
                         workflow.Log("Operation Life-Preserver:  Acquiring S4P posts for " + day.ToString("MM/dd/yyyy") + "....");
 
@@ -340,27 +341,9 @@ namespace FaceBERN_.Campaigns.Admin
                     workflow.Log("Operation Life-Preserver:  Phase 1 search complete!");
 
                     break;
-                case 2:
-                    // TODO - Will write this after phase 1 is complete (this is one-time stuff, here).  --Kris
-                    break;
             }
 
             return true;
-        }
-
-        /* To iterate a date range backwards, simply pass end as start and start as end.  --Kris */
-        public IEnumerable<DateTime> IterateDays(DateTime start, DateTime end)
-        {
-            if (start == end)
-            {
-                yield return start;
-            }
-
-            int increment = (start < end ? 1 : -1);
-            for (DateTime t = start.Date; t.Date != end.Date; t = t.AddDays(increment))
-            {
-                yield return t;
-            }
         }
     }
 }

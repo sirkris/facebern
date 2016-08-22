@@ -994,63 +994,75 @@ namespace FaceBERN_
         // Modified from:  http://stackoverflow.com/questions/13244225/selenium-how-to-make-the-web-driver-to-wait-for-page-to-refresh-before-executin
         public void WaitForPageLoad(int maxWaitTimeInSeconds = 60)
         {
-            System.Threading.Thread.Sleep(3000);
+            DateTime start = DateTime.Now;
 
-            string state = string.Empty;
-            switch (browser)
+            try
             {
-                default:
-                    try
-                    {
-                        WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
+                System.Threading.Thread.Sleep(3000);
 
-                        //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
-                        wait.Until(d =>
+                string state = string.Empty;
+                switch (browser)
+                {
+                    default:
+                        try
                         {
-                            try
-                            {
-                                state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
-                            }
-                            catch (InvalidOperationException)
-                            {
-                                //Ignore
-                            }
-                            catch (NoSuchWindowException)
-                            {
-                                //when popup is closed, switch to last windows
-                                _driver.SwitchTo().Window(_driver.WindowHandles.Last());
-                            }
-                            //In IE7 there are chances we may get state as loaded instead of complete
-                            return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+                            WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
 
-                        });
-                    }
-                    catch (TimeoutException)
-                    {
-                        //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
-                        if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
-                            throw;
-                    }
-                    catch (NullReferenceException)
-                    {
-                        //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
-                        if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
-                            throw;
-                    }
-                    catch (WebDriverException)
-                    {
-                        if (_driver.WindowHandles.Count == 1)
-                        {
-                            _driver.SwitchTo().Window(_driver.WindowHandles[0]);
+                            //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
+                            wait.Until(d =>
+                            {
+                                try
+                                {
+                                    state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                                }
+                                catch (InvalidOperationException)
+                                {
+                                    //Ignore
+                                }
+                                catch (NoSuchWindowException)
+                                {
+                                    //when popup is closed, switch to last windows
+                                    _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+                                }
+                                //In IE7 there are chances we may get state as loaded instead of complete
+                                return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+
+                            });
                         }
-                        state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
-                        if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
-                            throw;
-                    }
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    // I think this is already built-in to NHtmlUnit, somehow.  I could be wrong, but given how slow the fucker is, it's kinda moot, anyway.  --Kris
-                    break;
+                        catch (TimeoutException)
+                        {
+                            //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                            if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                                throw;
+                        }
+                        catch (NullReferenceException)
+                        {
+                            //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                            if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                                throw;
+                        }
+                        catch (WebDriverException)
+                        {
+                            if (_driver.WindowHandles.Count == 1)
+                            {
+                                _driver.SwitchTo().Window(_driver.WindowHandles[0]);
+                            }
+                            state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                            if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
+                                throw;
+                        }
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        // I think this is already built-in to NHtmlUnit, somehow.  I could be wrong, but given how slow the fucker is, it's kinda moot, anyway.  --Kris
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                ExceptionReport exr = new ExceptionReport(Main, e, "Exception in WebDriver.WaitForPageLoad.  Defaulting to " + maxWaitTimeInSeconds.ToString() + "-second wait....");
+
+                while (DateTime.Now.Subtract(start).TotalSeconds < maxWaitTimeInSeconds)
+                { }
             }
 
             ModWindow();
