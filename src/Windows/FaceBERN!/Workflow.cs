@@ -603,9 +603,9 @@ namespace FaceBERN_
                     }
 
                     Campaign addCampaign = new Campaign((int) o["campaignId"], (string) o["campaignTitle"], (string) o["createdByAdminUsername"], (DateTime) o["createdAt"], (DateTime) o["start"],
-                                                (bool) ((string) o["enabled"]).Equals("1"), (bool) ((string) o["requiresFacebook"]).Equals("1"), (bool) ((string) o["requiresTwitter"]).Equals("1"), 
-                                                userSelected, ((string) o["approvedByDefault"]).Equals("1"), (string) o["campaignDescription"], (string) o["campaignURL"], (int?) o["parentCampaignId"], 
-                                                (DateTime?) o["end"]);
+                                                (bool) ((string) o["enabled"]).Equals("1"), (bool) ((string) o["requiresFacebook"]).Equals("1"), (bool) ((string) o["requiresTwitter"]).Equals("1"),
+                                                (bool) ((string) o["requiresReddit"]).Equals("1"), userSelected, ((string) o["approvedByDefault"]).Equals("1"), (string) o["campaignDescription"], 
+                                                (string) o["campaignURL"], (int?) o["parentCampaignId"], (DateTime?) o["end"]);
 
                     Globals.campaigns.Add(addCampaign);
 

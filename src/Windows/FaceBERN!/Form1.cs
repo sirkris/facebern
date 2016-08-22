@@ -211,6 +211,7 @@ namespace FaceBERN_
             Globals.Config.Add("CheckRememberPasswordByDefault", "1");
             Globals.Config.Add("EnableFacebanking", "1");
             Globals.Config.Add("EnableTwitter", "1");
+            Globals.Config.Add("EnableReddit", "1");
             Globals.Config.Add("EnableAdmin", "0");
             Globals.Config.Add("TweetIntervalMinutes", "30");
             Globals.Config.Add("HideFacebookBrowser", "1");
