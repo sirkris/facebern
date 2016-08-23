@@ -25,7 +25,7 @@ namespace FaceBERN_
         private string logName = "Workflow";
         public Log WorkflowLog;
         internal Form1 Main;
-        protected Reddit reddit;
+        internal Reddit reddit;
         internal int browser = 0;
         protected bool ftbFriended = false;
 
@@ -976,7 +976,8 @@ namespace FaceBERN_
                     //ExecuteCampaigns();
 
                     /* Iterate through the campaigns and execute.  Each campaign will contain its own sanity checks (including checking if it's enabled).  --Kris */
-                    IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns"));
+                    IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns")
+                        && !(t.Name.Contains(@"<")));
                     foreach (Type t in types)
                     {
                         if (t.Name.Equals("Generic"))
