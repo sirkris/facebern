@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace FaceBERN_
 {
+    [Serializable]
     public class SubredditComment
     {
         public string id36;

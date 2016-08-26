@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace FaceBERN_
 {
+    [Serializable]
     public class SubredditUser
     {
         public string subreddit;
@@ -23,6 +24,9 @@ namespace FaceBERN_
         public int totalCommentScore = 0;
         public int? totalRedditPostKarma = null;
         public int? totalRedditCommentKarma = null;
+        public string flair = null;
+        public string stateAbbr = null;
+        public string rankFlair = null;
         public DateTime? firstPost = null;
         public DateTime? firstComment = null;
         public DateTime? lastPost = null;
@@ -32,7 +36,8 @@ namespace FaceBERN_
 
         public SubredditUser(string subreddit, string username, bool? isModerator = null, int selfPosts = 0, int linkPosts = 0, int comments = 0, int totalSelfPostScore = 0, int totalLinkPostScore = 0, 
                             int totalCommentScore = 0, DateTime? firstPost = null, DateTime? firstComment = null, DateTime? lastPost = null, DateTime? lastComment = null, 
-                            int? averageSelfPostScore = 0, int? averageLinkPostScore = 0, int? averageCommentScore = 0, int? totalRedditPostKarma = null, int? totalRedditCommentKarma = null)
+                            int? averageSelfPostScore = 0, int? averageLinkPostScore = 0, int? averageCommentScore = 0, int? totalRedditPostKarma = null, int? totalRedditCommentKarma = null, 
+                            string flair = null, string stateAbbr = null, string rankFlair = null)
         {
             this.subreddit = subreddit;
             this.username = username;
@@ -46,6 +51,9 @@ namespace FaceBERN_
             this.totalSelfPostScore = totalSelfPostScore;
             this.totalLinkPostScore = totalLinkPostScore;
             this.totalCommentScore = totalCommentScore;
+            this.flair = flair;
+            this.stateAbbr = stateAbbr;
+            this.rankFlair = rankFlair;
             this.firstPost = firstPost;
             this.firstComment = firstComment;
             this.lastPost = lastPost;

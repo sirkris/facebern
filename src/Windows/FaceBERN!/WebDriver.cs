@@ -537,7 +537,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByLinkText(string linktext, bool partial = false)
+        public IWebElement GetElementByLinkText(string linktext, bool partial = false)
         {
             try
             {
@@ -553,7 +553,43 @@ namespace FaceBERN_
                             return _driver.FindElement(By.LinkText(linktext));
                         }
                     case Globals.FIREFOX_HEADLESS:
-                        return page.GetAnchorByText(linktext);
+                        //return page.GetAnchorByText(linktext);
+                        return null;
+                }
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(linktext, partial));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(linktext, partial));
+            }
+        }
+
+        [Test]
+        public List<IWebElement> GetElementsByLinkText(string linktext, bool partial = false)
+        {
+            try
+            {
+                switch (browser)
+                {
+                    default:
+                        if (partial == true)
+                        {
+                            return _driver.FindElements(By.PartialLinkText(linktext)).ToList();
+                        }
+                        else
+                        {
+                            return _driver.FindElements(By.LinkText(linktext)).ToList();
+                        }
+                    case Globals.FIREFOX_HEADLESS:
+                        //return page.GetAnchorByText(linktext);
+                        return null;
                 }
             }
             catch (NoSuchElementException e)
@@ -703,7 +739,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0)
+        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0, bool isPartial = false)
         {
             try
             {
@@ -716,7 +752,8 @@ namespace FaceBERN_
                 int i = 0;
                 foreach (IWebElement ele in eles)
                 {
-                    if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                    if (ele.GetAttribute(attributeName) != null
+                        && (ele.GetAttribute(attributeName).Equals(attributeValue)) || (isPartial && ele.GetAttribute(attributeName).Contains(attributeValue)))
                     {
                         if (i == offset)
                         {
@@ -742,7 +779,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0)
+        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0, bool isPartial = false)
         {
             try
             {
@@ -756,32 +793,36 @@ namespace FaceBERN_
                 List<IWebElement> res = new List<IWebElement>();
                 foreach (IWebElement ele in eles)
                 {
-                    if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                    i = i;
+                    if (ele.GetAttribute(attributeName) != null)
                     {
-                        res.Add(ele);
-
-                        i++;
-                        if (i == limit)
+                        if (ele.GetAttribute(attributeName).Equals(attributeValue) || (isPartial && ele.GetAttribute(attributeName).Contains(attributeValue)))
                         {
-                            break;
+                            res.Add(ele);
+
+                            i++;
+                            if (i == limit)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
-
+                
                 return res;
             }
             catch (StaleElementReferenceException e)
             {
                 return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
             }
-            catch (Exception e)
+            /*catch (Exception e)
             {
                 return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
-            }
+            }*/
         }
 
         [Test]
-        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false, bool rethrowExceptions = false)
+        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false, bool rethrowExceptions = false, bool waitForPageLoad = true)
         {
             try
             {
@@ -819,7 +860,11 @@ namespace FaceBERN_
                             element.Click();
                         }
 
-                        WaitForPageLoad();
+                        if (waitForPageLoad)
+                        {
+                            WaitForPageLoad();
+                        }
+
                         break;
                     case Globals.FIREFOX_HEADLESS:
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
