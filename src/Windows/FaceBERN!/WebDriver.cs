@@ -932,71 +932,108 @@ namespace FaceBERN_
         [Test]
         public void ScrollToBottom(string logFirstMsg, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000, int delayMs = 3000, int timeoutSeconds = 15)
         {
-            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeoutSeconds));
-
-            IJavaScriptExecutor jse = (IJavaScriptExecutor)_driver;
-            //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
-            const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
-            const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
-
-            if (logFirstMsg != null)
+            try
             {
-                Log(logFirstMsg);
-            }
+                _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeoutSeconds));
 
-            if (scrollLimit > 0)
-            {
-                bool done = false;
-                int i = scrollLimit;
-                do
+                IJavaScriptExecutor jse = (IJavaScriptExecutor)_driver;
+                //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
+                const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
+                const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
+
+                if (logFirstMsg != null)
                 {
-                    // Logging.  --Kris
-                    if (logMsg != null)
-                    {
-                        Log(logMsg.Replace(@"$i", (scrollLimit - (i - 1)).ToString()).Replace(@"$L", scrollLimit.ToString()));  // $i increments 1 to scrollLimit.  --Kris
-                    }
-                    
-                    // Do the scroll.  --Kris
-                    jse.ExecuteScript(scrollScript);
+                    Log(logFirstMsg);
+                }
 
-                    i--;
-                    if (i <= 0)
-                    {
-                        break;
-                    }
-
-                    // Check to see if the page expands.  If it doesn't after 6 seconds, assume we're done.  --Kris
-                    int ii = 12;
+                if (scrollLimit > 0)
+                {
+                    bool done = false;
+                    int i = scrollLimit;
                     do
                     {
-                        System.Threading.Thread.Sleep(500);
-                        
-                        done = (bool) jse.ExecuteScript(checkScript);
+                        // Logging.  --Kris
+                        if (logMsg != null)
+                        {
+                            Log(logMsg.Replace(@"$i", (scrollLimit - (i - 1)).ToString()).Replace(@"$L", scrollLimit.ToString()));  // $i increments 1 to scrollLimit.  --Kris
+                        }
 
-                        ii--;
-                    } while (done == true && ii > 0);
-                    
-                    // Uncomment below for DEBUG.  --Kris
-                    /*
-                    if (i == (scrollLimit - 5))
-                    {
-                        i = i;  // In case you need a convenient breakpoint.  --Kris
-                        break;
-                    }
-                    */
-                } while (done == false && i > 0);
+                        // Do the scroll.  --Kris
+                        jse.ExecuteScript(scrollScript);
+
+                        i--;
+                        if (i <= 0)
+                        {
+                            break;
+                        }
+
+                        // Check to see if the page expands.  If it doesn't after 6 seconds, assume we're done.  --Kris
+                        int ii = 12;
+                        do
+                        {
+                            System.Threading.Thread.Sleep(500);
+
+                            done = (bool)jse.ExecuteScript(checkScript);
+
+                            ii--;
+                        } while (done == true && ii > 0);
+
+                        // Uncomment below for DEBUG.  --Kris
+                        /*
+                        if (i == (scrollLimit - 5))
+                        {
+                            i = i;  // In case you need a convenient breakpoint.  --Kris
+                            break;
+                        }
+                        */
+                    } while (done == false && i > 0);
+                }
+                else
+                {
+                    jse.ExecuteScript(scrollScript);
+                }
+
+                if (logLastMsg != null)
+                {
+                    Log(logLastMsg);
+                }
+
+                System.Threading.Thread.Sleep(delayMs);
             }
-            else
+            catch (Exception e)
             {
-                jse.ExecuteScript(scrollScript);
-            }
+                e.Data.Add("logFirstMsg", logFirstMsg);
+                e.Data.Add("logMsg", logMsg);
+                e.Data.Add("logLastMsg", logLastMsg);
 
-            if (logLastMsg != null)
+                LogAndReportException(e, "Unhandled exception in WebDriver.ScrollToBottom.");
+            }
+        }
+
+        internal void ReportException(Exception ex, string logMsg = null, bool silent = false)
+        {
+            try
             {
-                Log(logLastMsg);
-            }
+                if (!(silent))
+                {
+                    Log("Reporting exception....");
+                }
 
-            System.Threading.Thread.Sleep(delayMs);
+                ExceptionReport exr = new ExceptionReport(Main, ex, logMsg);
+            }
+            catch (Exception e)
+            {
+                if (!(silent))
+                {
+                    Log("Warning:  Error reporting exception : " + e.ToString());
+                }
+            }
+        }
+
+        internal void LogAndReportException(Exception e, string text, bool show = true)
+        {
+            Log(text, show);
+            ReportException(e, text);
         }
 
         public void ScrollToBottom(ref IWebDriver driver, int scrollLimit)
