@@ -462,8 +462,10 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                     {
                         p++;
 
-                        workflow.Log(logPrefix + "Beginning extraction of comments and users from post:  " + post.permalink);
-                        workflow.Log(logPrefix + "Post parsing is " + (((p - 1) / posts.Count) * 100).ToString() + @"% complete for " + i.ToString() + "/" + year.ToString() + ".");
+                        decimal percent = (decimal) (((p - 1) / posts.Count) * 100);
+
+                        workflow.Log(logPrefix + "Beginning extraction of comments and users from post (" + p.ToString() + " / " + posts.Count.ToString() + "):  " + post.permalink);
+                        workflow.Log(logPrefix + "Post parsing is " + percent.ToString() + @"% complete for " + i.ToString() + "/" + year.ToString() + ".");
 
                         /* Doesn't work; Reddit API is stripping-out too many comments from morecomments.  --Kris */
                         /*
