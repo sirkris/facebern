@@ -366,6 +366,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                         if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
                         {
                             workflow.Log("Set post '" + postId + "' to processed successfully!");
+                            break;
                         }
                         else
                         {
