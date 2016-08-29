@@ -40,7 +40,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                 return false;
             }
 
-            return ExecuteThreads(1);  // TODO - Change back to default of 3 after initial testing.  --Kris
+            return ExecuteThreads();
         }
 
         private bool ExecuteThreads(int threadCount = 3, int year = 2016)
@@ -83,6 +83,8 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                     {
                         break;
                     }
+
+                    System.Threading.Thread.Sleep(3000);
                 }
 
                 workflow.Log("Operation Life-Preserver Phase 2 completed successfully!");
@@ -103,14 +105,22 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                 return false;
             }
 
+            /* Auto-abort workflow after campaign is complete.  --Kris */
+            workflow.Main.StartButtonClick();
+
             return true;
         }
 
         private bool ExecuteAPIThread(List<SubredditComment> comments, List<SubredditUser> users)
         {
+            return ExecuteAPIThread(null, comments, users);
+        }
+
+        private bool ExecuteAPIThread(RedditPost post, List<SubredditComment> comments, List<SubredditUser> users)
+        {
             try
             {
-                    Thread thread = new Thread(() => ExecuteAPIWorkflow(comments, users));
+                    Thread thread = new Thread(() => ExecuteAPIWorkflow(post, comments, users));
 
                     thread.IsBackground = false;
 
@@ -140,9 +150,246 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
             return true;
         }
 
-        private void ExecuteAPIWorkflow(List<SubredditComment> comments, List<SubredditUser> users)
+        private void ExecuteAPIWorkflow(RedditPost post, List<SubredditComment> comments, List<SubredditUser> users, int retry = 30)
         {
-            // TODO - Report to the Birdie API.  --Kris
+            workflow.Log("OLP-Phase 2:  Reporting " + comments.Count.ToString() + " comments and " + users.Count.ToString() + " unique users to Birdie API....");
+
+            string json = null;
+            bool success = true;
+            try
+            {
+                json = JsonConvert.SerializeObject(comments);
+            }
+            catch (ThreadAbortException)
+            { }
+            catch (Exception e)
+            {
+                try
+                {
+                    e.Data.Add("comments", comments);
+                }
+                catch (Exception ex)
+                {
+                    e.Data.Add("comments", "Error:  " + ex.ToString());
+                }
+                try
+                {
+                    e.Data.Add("users", users);
+                }
+                catch (Exception ex)
+                {
+                    e.Data.Add("users", "Error:  " + ex.ToString());
+                }
+                e.Data.Add("retry", retry);
+
+                workflow.LogAndReportException(e, "Exception parsing comments JSON in OLP-Phase2.ExecuteAPIWorkflow.  Skipped reporting for comments.");
+
+                success = false;
+            }
+
+            if (json != null)
+            {
+                bool err = false;
+                do
+                {
+                    retry--;
+                    IRestResponse res = null;
+                    try
+                    {
+                        res = workflow.BirdieQuery("/admin/subComments", "POST", null, json);
+
+                        if (res.StatusCode == System.Net.HttpStatusCode.Created)
+                        {
+                            workflow.Log("Reported " + comments.Count.ToString() + " comments to Birdie API successfully!");
+                        }
+                        else
+                        {
+                            Exception e = new Exception("Unexpected status code returned from Birdie API.  May or may not have reported " + comments.Count.ToString() + " comments successfully!");
+                            e.Data.Add("json", json);
+                            if (res != null)
+                            {
+                                e.Data.Add("res.StatusCode", res.StatusCode);
+                                e.Data.Add("res.StatusDescription", res.StatusDescription);
+                                e.Data.Add("res.Content", res.Content);
+                            }
+
+                            try
+                            {
+                                throw e;
+                            }
+                            catch (Exception ex)
+                            {
+                                workflow.LogAndReportException(ex, "Unexpected status code returned from Birdie API.  May or may not have reported " + comments.Count.ToString() + " comments successfully.");
+                            }
+
+                            success = false;
+                        }
+
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (retry <= 0)
+                        {
+                            e.Data.Add("json", json);
+                            if (res != null)
+                            {
+                                e.Data.Add("res.StatusCode", res.StatusCode);
+                                e.Data.Add("res.StatusDescription", res.StatusDescription);
+                                e.Data.Add("res.Content", res.Content);
+                            }
+
+                            workflow.LogAndReportException(e, "Unable to report comments to Birdie API.");
+
+                            success = false;
+                            break;
+                        }
+
+                        workflow.Log("Error reporting comments to Birdie API (retry=" + retry.ToString() + ").  Retrying....");
+
+                        System.Threading.Thread.Sleep(3000);
+                    }
+                } while (err == true && retry > 0);
+            }
+
+            json = null;
+            try
+            {
+                json = JsonConvert.SerializeObject(users);
+            }
+            catch (ThreadAbortException)
+            { }
+            catch (Exception e)
+            {
+                try
+                {
+                    e.Data.Add("comments", comments);
+                }
+                catch (Exception ex)
+                {
+                    e.Data.Add("comments", "Error:  " + ex.ToString());
+                }
+                try
+                {
+                    e.Data.Add("users", users);
+                }
+                catch (Exception ex)
+                {
+                    e.Data.Add("users", "Error:  " + ex.ToString());
+                }
+                e.Data.Add("retry", retry);
+
+                workflow.LogAndReportException(e, "Exception parsing users JSON in OLP-Phase2.ExecuteAPIWorkflow.  Skipped reporting for users.");
+
+                success = false;
+            }
+
+            if (json != null)
+            {
+                bool err = false;
+                do
+                {
+                    retry--;
+                    IRestResponse res = null;
+                    try
+                    {
+                        res = workflow.BirdieQuery("/admin/subUsers", "POST", null, json);
+
+                        if (res.StatusCode == System.Net.HttpStatusCode.Created)
+                        {
+                            workflow.Log("Reported " + users.Count.ToString() + " users to Birdie API successfully!");
+                        }
+                        else
+                        {
+                            Exception e = new Exception("Unexpected status code returned from Birdie API.  May or may not have reported " + users.Count.ToString() + " users successfully!");
+                            e.Data.Add("json", json);
+                            if (res != null)
+                            {
+                                e.Data.Add("res.StatusCode", res.StatusCode);
+                                e.Data.Add("res.StatusDescription", res.StatusDescription);
+                                e.Data.Add("res.Content", res.Content);
+                            }
+
+                            try
+                            {
+                                throw e;
+                            }
+                            catch (Exception ex)
+                            {
+                                workflow.LogAndReportException(ex, "Unexpected status code returned from Birdie API.  May or may not have reported " + users.Count.ToString() + " users successfully.");
+                            }
+
+                            success = false;
+                        }
+
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (retry <= 0)
+                        {
+                            e.Data.Add("json", json);
+                            if (res != null)
+                            {
+                                e.Data.Add("res.StatusCode", res.StatusCode);
+                                e.Data.Add("res.StatusDescription", res.StatusDescription);
+                                e.Data.Add("res.Content", res.Content);
+                            }
+
+                            workflow.LogAndReportException(e, "Unable to report users to Birdie API.");
+
+                            success = false;
+                            break;
+                        }
+
+                        workflow.Log("Error reporting comments to Birdie API (retry=" + retry.ToString() + ").  Retrying....");
+
+                        System.Threading.Thread.Sleep(3000);
+                    }
+                } while (err == true && retry > 0);
+            }
+
+            if (success == true)
+            {
+                string body = JsonConvert.SerializeObject(new Dictionary<string, string> { { "processed", "1" } });
+
+                string postId = null;
+                int uRetry = 3;
+                try
+                {
+                    do
+                    {
+                        IRestResponse res = workflow.BirdieQuery("/admin/subPosts/" + post.subreddit + "/" + post.author + "/" + postId, "PUT", null, body);
+
+                        if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+                        {
+                            workflow.Log("Set post '" + postId + "' to processed successfully!");
+                        }
+                        else
+                        {
+                            uRetry--;
+                            if (uRetry <= 0)
+                            {
+                                Exception e = new Exception("Birdie API returned unexpected status.  Post processed may or may not have been updated successfully.");
+
+                                e.Data.Add("body", body);
+                                if (res != null)
+                                {
+                                    e.Data.Add("res.StatusCode", res.StatusCode);
+                                    e.Data.Add("res.StatusDescription", res.StatusDescription);
+                                    e.Data.Add("res.Content", res.Content);
+                                }
+
+                                throw e;
+                            }
+                        }
+                    } while (uRetry > 0);
+                }
+                catch (Exception e)
+                {
+                    workflow.LogAndReportException(e, "Unable to update post processed on Birdie API.");
+                }
+            }
         }
 
         private void ExecuteThreadWorkflow(int threadNum, int threadCount, int year)
@@ -159,6 +406,26 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                 for (int i = threadNum; i <= 12; i += threadCount)
                 {
                     //i = 3;  // Uncomment for DEBUG.  --Kris
+
+                    /* Split the workload.  It's just me so no need for anything too fancy.  --Kris */
+                    Dictionary<string, List<int>> delegatedMonths = new Dictionary<string, List<int>>();
+                    delegatedMonths["facebern_EbGjF3rVq1ewD6wqjWpw"] = new List<int>  // Windows 10 test VM.  --Kris
+                    {
+                        1, 2, 3
+                    };
+                    delegatedMonths["facebern_gwhxmggHQPF9vzBKmdEI"] = new List<int>  // Primary dev environment.  --Kris
+                    {
+                        4, 5, 6, 7
+                    };
+
+                    if (!(delegatedMonths.ContainsKey(Globals.appId))
+                        || !(delegatedMonths[Globals.appId].Contains(i)))
+                    {
+                        continue;
+                    }
+
+                    workflow.Log(logPrefix + "Gathering S4P posts for " + i.ToString() + "/" + year.ToString() + "....");
+
                     IRestResponse res = workflow.BirdieQuery(@"/admin/subPosts?subreddit=SandersForPresident&processed=0&month=" + i.ToString() + @"&year=" + year.ToString());
 
                     if (res == null || res.StatusCode != System.Net.HttpStatusCode.OK)
@@ -187,10 +454,16 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                     webDriver.FixtureSetup();
                     
                     List<RedditPost> posts = BirdieToRedditPosts(JsonConvert.DeserializeObject(res.Content));
+
+                    workflow.Log(logPrefix + "Retrieved " + posts.Count.ToString() + " posts for " + i.ToString() + "/" + year.ToString() + ".");
+
                     int p = 0;
                     foreach (RedditPost post in posts)
                     {
                         p++;
+
+                        workflow.Log(logPrefix + "Beginning extraction of comments and users from post:  " + post.permalink);
+                        workflow.Log(logPrefix + "Post parsing is " + (((p - 1) / posts.Count) * 100).ToString() + @"% complete for " + i.ToString() + "/" + year.ToString() + ".");
 
                         /* Doesn't work; Reddit API is stripping-out too many comments from morecomments.  --Kris */
                         /*
@@ -207,25 +480,42 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                         List<SubredditUser> users = ParseRedditPostCommentsAndUsers(rRes, post, out comments);
                         */
                         //post.permalink = "https://www.reddit.com/r/SandersForPresident/comments/34epu3/reddit_i_am_running_for_president_of_the_united/";
+                        // 4bl35p
+                        // 420lgb
+
                         /* Uncomment below for DEBUG.  --Kris */
                         /*
                         if (!(post.permalink.Contains("4bl35p")))
                         {
-                            continue;
+                            continue;  // If the browser window keeps opening and closing, it means you need to change the i var above to match the month (1-12) for this post ID.  --Kris
                         }
                         */
                         
                         /* Scrape Reddit using the webdriver.  --Kris */
                         webDriver.TestSetUp("https://www.reddit.com" + post.permalink + @"?limit=500");
 
-                        webDriver.ScrollToBottom(10000);
+                        webDriver.ScrollToBottom(3000);
+
+                        workflow.Log(logPrefix + "Expanding comments....");
 
                         //List<IWebElement> eles = webDriver.GetElementsByTagNameAndAttribute("a", "onclick", "return morechildren(this,", 0, true);
                         List<IWebElement> eles = null;
-                        int limit = 1000;
+                        int limit = 50000;
                         do
                         {
-                            eles = webDriver.GetElementsByLinkText("load more comments", true);
+                            int retries = 3;
+                            do
+                            {
+                                eles = webDriver.GetElementsByLinkText("load more comments", true);
+
+                                if (eles == null || eles.Count == 0)
+                                {
+                                    System.Threading.Thread.Sleep(1000);
+                                }
+
+                                retries--;
+                            } while ((eles == null || eles.Count == 0) && retries > 0);
+
                             if (eles != null && eles.Count > 0)
                             {
                                 foreach (IWebElement ele in eles)
@@ -248,10 +538,13 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                             limit--;
                         } while (eles != null && eles.Count > 0 && limit > 0);
 
+                        workflow.Log(logPrefix + "Finished expanding comments.");
+
                         /* Once all the comments are loaded, parse them from the HTML.  --Kris */
                         string src = webDriver.GetPageSource();
                         
                         string[] entries = src.Split(new string[] { "class=\"midcol unvoted\"" }, StringSplitOptions.RemoveEmptyEntries);
+                        workflow.Log(logPrefix + "Parsing " + (entries.Length - 2).ToString() + " comment entries....");
                         for (int ii = 2; ii < entries.Length; ii++)
                         {
                             string entry = null;
@@ -270,6 +563,13 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                                 string user = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
                                 user = user.Substring(0, user.IndexOf("\""));
 
+                                if (user == null 
+                                    || user.Trim().Equals("expand") 
+                                    || user.Trim().Equals(""))
+                                {
+                                    continue;
+                                }
+
                                 bool distinguished = tagline.Contains("moderator");
                                 bool isModerator = distinguished;
 
@@ -279,11 +579,27 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                                 string created = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
                                 created = created.Substring(0, created.IndexOf("\""));
 
+                                if (created == null
+                                    || created.Trim().Equals(""))
+                                {
+                                    continue;
+                                }
+
                                 tag = "<span class=\"score likes\">";
+                                if (tagline.Contains(tag) == false)
+                                {
+                                    tag = "<span class=\"score dislikes\">";
+                                    if (tagline.Contains(tag) == false)
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 string scoreStr = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
                                 try
                                 {
-                                    scoreStr = scoreStr.Substring(0, scoreStr.IndexOf(" points"));
+                                    scoreStr = (scoreStr.Contains(" points") ? scoreStr.Substring(0, scoreStr.IndexOf(" points")) : scoreStr);
+                                    scoreStr = (scoreStr.Contains(" point") ? scoreStr.Substring(0, scoreStr.IndexOf(" point")) : scoreStr);
                                 }
                                 catch (Exception)
                                 {
@@ -340,6 +656,12 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                                 {
                                     id36 = tagline.Substring(tagline.IndexOf(post.permalink) + post.permalink.Length);
                                     id36 = id36.Substring(0, id36.IndexOf("\""));
+                                }
+
+                                if (id36 == null
+                                    || id36.Trim().Equals(""))
+                                {
+                                    continue;
                                 }
 
                                 tag = "<span class=\"flair";
@@ -491,8 +813,8 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                                 if (userFound == false)
                                 {
                                     users.Add(new SubredditUser("SandersForPresident", user, isModerator, selfPosts, linkPosts, 1, selfPostScore, linkPostScore, score,
-                                                                (post.GetAuthor().Equals(user) ? (DateTime?)DateTime.Parse(created) : null), DateTime.Parse(created),
-                                                                (post.GetAuthor().Equals(user) ? (DateTime?)DateTime.Parse(created) : null), DateTime.Parse(created),
+                                                                (post.GetAuthor().Equals(user) ? (DateTime?) DateTime.Parse(created) : null), DateTime.Parse(created),
+                                                                (post.GetAuthor().Equals(user) ? (DateTime?) DateTime.Parse(created) : null), DateTime.Parse(created),
                                                                 null, null, null, null, null, flair, stateAbbr, rankFlair));
                                 }
                             }
@@ -512,12 +834,12 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                             }
                         }
 
-                        // TODO - Add subreddit comments and users endpoints to Birdie API.  --Kris
-                        
-                        if (users.Count >= 1000
-                            || comments.Count >= 1000)
+                        workflow.Log(logPrefix + "Comments parsing complete!");
+
+                        if (users.Count > 0
+                            || comments.Count > 0)
                         {
-                            if (ExecuteAPIThread(comments, users))
+                            if (ExecuteAPIThread(post, comments, users))
                             {
                                 comments = new List<SubredditComment>();
                                 users = new List<SubredditUser>();
@@ -531,7 +853,16 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                         || comments.Count > 0)
                     {
                         ExecuteAPIThread(comments, users);
+
+                        comments = new List<SubredditComment>();
+                        users = new List<SubredditUser>();
                     }
+
+                    workflow.Log(logPrefix + "Processing complete for " + i.ToString() + "/" + year.ToString() + "!");
+
+                    System.Threading.Thread.Sleep(100);
+
+                    System.Threading.Thread.Sleep(5000);
                 }
             }
             catch (ThreadAbortException)

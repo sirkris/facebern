@@ -619,7 +619,7 @@ namespace FaceBERN_
             }
         }
 
-        private void StartButtonClick()
+        internal void StartButtonClick()
         {
             if (buttonStart.Enabled == false
                 || Globals.executionState == Globals.STATE_BROKEN
