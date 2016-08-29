@@ -353,7 +353,9 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
             {
                 string body = JsonConvert.SerializeObject(new Dictionary<string, string> { { "processed", "1" } });
 
-                string postId = null;
+                string tag = "/r/SandersForPresident/comments/";
+                string postId = post.GetPermalink().Substring(tag.Length);
+                postId = postId.Substring(0, postId.IndexOf("/"));
                 int uRetry = 3;
                 try
                 {
