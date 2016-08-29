@@ -349,7 +349,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                 } while (err == true && retry > 0);
             }
 
-            if (success == true)
+            if (success == true && post != null)
             {
                 string body = JsonConvert.SerializeObject(new Dictionary<string, string> { { "processed", "1" } });
 
