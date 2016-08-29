@@ -537,7 +537,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByLinkText(string linktext, bool partial = false)
+        public IWebElement GetElementByLinkText(string linktext, bool partial = false)
         {
             try
             {
@@ -553,7 +553,43 @@ namespace FaceBERN_
                             return _driver.FindElement(By.LinkText(linktext));
                         }
                     case Globals.FIREFOX_HEADLESS:
-                        return page.GetAnchorByText(linktext);
+                        //return page.GetAnchorByText(linktext);
+                        return null;
+                }
+            }
+            catch (NoSuchElementException e)
+            {
+                return null;
+            }
+            catch (StaleElementReferenceException e)
+            {
+                return StaleReturn(GetParams(linktext, partial));
+            }
+            catch (Exception e)
+            {
+                return StaleReturn(GetParams(linktext, partial));
+            }
+        }
+
+        [Test]
+        public List<IWebElement> GetElementsByLinkText(string linktext, bool partial = false)
+        {
+            try
+            {
+                switch (browser)
+                {
+                    default:
+                        if (partial == true)
+                        {
+                            return _driver.FindElements(By.PartialLinkText(linktext)).ToList();
+                        }
+                        else
+                        {
+                            return _driver.FindElements(By.LinkText(linktext)).ToList();
+                        }
+                    case Globals.FIREFOX_HEADLESS:
+                        //return page.GetAnchorByText(linktext);
+                        return null;
                 }
             }
             catch (NoSuchElementException e)
@@ -617,7 +653,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1)
+        public dynamic GetElementByCSSSelector(string cssSelector, int timeout = -1, bool rethrowExceptions = false)
         {
             try
             {
@@ -637,6 +673,11 @@ namespace FaceBERN_
                         }
                         catch (NoSuchElementException e)
                         {
+                            if (rethrowExceptions)
+                            {
+                                throw e;
+                            }
+                            
                             return null;
                         }
                         finally
@@ -659,7 +700,14 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                return StaleReturn(GetParams(cssSelector, timeout));
+                if (rethrowExceptions == true)
+                {
+                    throw e;
+                }
+                else
+                {
+                    return StaleReturn(GetParams(cssSelector, timeout));
+                }
             }
         }
 
@@ -691,7 +739,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0)
+        public IWebElement GetElementByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int offset = 0, bool isPartial = false)
         {
             try
             {
@@ -704,7 +752,8 @@ namespace FaceBERN_
                 int i = 0;
                 foreach (IWebElement ele in eles)
                 {
-                    if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                    if (ele.GetAttribute(attributeName) != null
+                        && (ele.GetAttribute(attributeName).Equals(attributeValue)) || (isPartial && ele.GetAttribute(attributeName).Contains(attributeValue)))
                     {
                         if (i == offset)
                         {
@@ -730,7 +779,7 @@ namespace FaceBERN_
         }
 
         [Test]
-        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0)
+        public List<IWebElement> GetElementsByTagNameAndAttribute(string tagName, string attributeName, string attributeValue, int limit = 0, bool isPartial = false)
         {
             try
             {
@@ -744,32 +793,36 @@ namespace FaceBERN_
                 List<IWebElement> res = new List<IWebElement>();
                 foreach (IWebElement ele in eles)
                 {
-                    if (ele.GetAttribute(attributeName) != null && ele.GetAttribute(attributeName).Equals(attributeValue))
+                    i = i;
+                    if (ele.GetAttribute(attributeName) != null)
                     {
-                        res.Add(ele);
-
-                        i++;
-                        if (i == limit)
+                        if (ele.GetAttribute(attributeName).Equals(attributeValue) || (isPartial && ele.GetAttribute(attributeName).Contains(attributeValue)))
                         {
-                            break;
+                            res.Add(ele);
+
+                            i++;
+                            if (i == limit)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
-
+                
                 return res;
             }
             catch (StaleElementReferenceException e)
             {
                 return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
             }
-            catch (Exception e)
+            /*catch (Exception e)
             {
                 return StaleReturn(GetParams(tagName, attributeName, attributeValue, limit));
-            }
+            }*/
         }
 
         [Test]
-        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false)
+        public dynamic ClickElement(dynamic element, bool viewportfix = false, bool autoscroll = false, bool rethrowExceptions = false, bool waitForPageLoad = true)
         {
             try
             {
@@ -807,7 +860,11 @@ namespace FaceBERN_
                             element.Click();
                         }
 
-                        WaitForPageLoad();
+                        if (waitForPageLoad)
+                        {
+                            WaitForPageLoad();
+                        }
+
                         break;
                     case Globals.FIREFOX_HEADLESS:
                         System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
@@ -823,7 +880,14 @@ namespace FaceBERN_
             }
             catch (Exception e)
             {
-                return StaleReturn(GetParams(element, viewportfix, autoscroll));
+                if (rethrowExceptions == true)
+                {
+                    throw e;
+                }
+                else
+                {
+                    return StaleReturn(GetParams(element, viewportfix, autoscroll));
+                }
             }
         }
 
@@ -860,9 +924,15 @@ namespace FaceBERN_
         }
 
         [Test]
-        public void ScrollToBottom(string logFirstMsg = null, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000)
+        public void ScrollToBottom(int scrollLimit = 0, int delayMs = 100, int timeoutSeconds = 3)
         {
-            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+            ScrollToBottom(null, null, null, scrollLimit, delayMs, timeoutSeconds);
+        }
+
+        [Test]
+        public void ScrollToBottom(string logFirstMsg, string logMsg = null, string logLastMsg = null, int scrollLimit = 2000, int delayMs = 3000, int timeoutSeconds = 15)
+        {
+            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(timeoutSeconds));
 
             IJavaScriptExecutor jse = (IJavaScriptExecutor)_driver;
             //const string script = "var i=100;var timeId=setInterval(function(){i--;window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0?window.scrollTo(0,document.body.scrollHeight):(clearInterval(timeId),window.scrollTo(0,0));return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight&&i>0);},3000);";
@@ -889,6 +959,12 @@ namespace FaceBERN_
                     // Do the scroll.  --Kris
                     jse.ExecuteScript(scrollScript);
 
+                    i--;
+                    if (i <= 0)
+                    {
+                        break;
+                    }
+
                     // Check to see if the page expands.  If it doesn't after 6 seconds, assume we're done.  --Kris
                     int ii = 12;
                     do
@@ -899,7 +975,7 @@ namespace FaceBERN_
 
                         ii--;
                     } while (done == true && ii > 0);
-                    i--;
+                    
                     // Uncomment below for DEBUG.  --Kris
                     /*
                     if (i == (scrollLimit - 5))
@@ -920,7 +996,7 @@ namespace FaceBERN_
                 Log(logLastMsg);
             }
 
-            System.Threading.Thread.Sleep(3000);
+            System.Threading.Thread.Sleep(delayMs);
         }
 
         public void ScrollToBottom(ref IWebDriver driver, int scrollLimit)
@@ -963,63 +1039,75 @@ namespace FaceBERN_
         // Modified from:  http://stackoverflow.com/questions/13244225/selenium-how-to-make-the-web-driver-to-wait-for-page-to-refresh-before-executin
         public void WaitForPageLoad(int maxWaitTimeInSeconds = 60)
         {
-            System.Threading.Thread.Sleep(3000);
+            DateTime start = DateTime.Now;
 
-            string state = string.Empty;
-            switch (browser)
+            try
             {
-                default:
-                    try
-                    {
-                        WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
+                System.Threading.Thread.Sleep(3000);
 
-                        //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
-                        wait.Until(d =>
+                string state = string.Empty;
+                switch (browser)
+                {
+                    default:
+                        try
                         {
-                            try
-                            {
-                                state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
-                            }
-                            catch (InvalidOperationException)
-                            {
-                                //Ignore
-                            }
-                            catch (NoSuchWindowException)
-                            {
-                                //when popup is closed, switch to last windows
-                                _driver.SwitchTo().Window(_driver.WindowHandles.Last());
-                            }
-                            //In IE7 there are chances we may get state as loaded instead of complete
-                            return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+                            WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(maxWaitTimeInSeconds));
 
-                        });
-                    }
-                    catch (TimeoutException)
-                    {
-                        //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
-                        if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
-                            throw;
-                    }
-                    catch (NullReferenceException)
-                    {
-                        //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
-                        if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
-                            throw;
-                    }
-                    catch (WebDriverException)
-                    {
-                        if (_driver.WindowHandles.Count == 1)
-                        {
-                            _driver.SwitchTo().Window(_driver.WindowHandles[0]);
+                            //Checks every 500 ms whether predicate returns true if returns exit otherwise keep trying till it returns ture
+                            wait.Until(d =>
+                            {
+                                try
+                                {
+                                    state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                                }
+                                catch (InvalidOperationException)
+                                {
+                                    //Ignore
+                                }
+                                catch (NoSuchWindowException)
+                                {
+                                    //when popup is closed, switch to last windows
+                                    _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+                                }
+                                //In IE7 there are chances we may get state as loaded instead of complete
+                                return (state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase));
+
+                            });
                         }
-                        state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
-                        if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
-                            throw;
-                    }
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    // I think this is already built-in to NHtmlUnit, somehow.  I could be wrong, but given how slow the fucker is, it's kinda moot, anyway.  --Kris
-                    break;
+                        catch (TimeoutException)
+                        {
+                            //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                            if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                                throw;
+                        }
+                        catch (NullReferenceException)
+                        {
+                            //sometimes Page remains in Interactive mode and never becomes Complete, then we can still try to access the controls
+                            if (!state.Equals("interactive", StringComparison.InvariantCultureIgnoreCase))
+                                throw;
+                        }
+                        catch (WebDriverException)
+                        {
+                            if (_driver.WindowHandles.Count == 1)
+                            {
+                                _driver.SwitchTo().Window(_driver.WindowHandles[0]);
+                            }
+                            state = ((IJavaScriptExecutor)_driver).ExecuteScript(@"return document.readyState").ToString();
+                            if (!(state.Equals("complete", StringComparison.InvariantCultureIgnoreCase) || state.Equals("loaded", StringComparison.InvariantCultureIgnoreCase)))
+                                throw;
+                        }
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        // I think this is already built-in to NHtmlUnit, somehow.  I could be wrong, but given how slow the fucker is, it's kinda moot, anyway.  --Kris
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                ExceptionReport exr = new ExceptionReport(Main, e, "Exception in WebDriver.WaitForPageLoad.  Defaulting to " + maxWaitTimeInSeconds.ToString() + "-second wait....");
+
+                while (DateTime.Now.Subtract(start).TotalSeconds < maxWaitTimeInSeconds)
+                { }
             }
 
             ModWindow();

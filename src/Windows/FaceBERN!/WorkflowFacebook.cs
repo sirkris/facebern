@@ -55,7 +55,8 @@ namespace FaceBERN_
                     IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns"));
                     foreach (Type t in types)
                     {
-                        if (t.Name.Equals("Generic"))
+                        if (t.Name.StartsWith("Generic")
+                            || t.Name.StartsWith(@"<"))
                         {
                             continue;
                         }
@@ -64,7 +65,7 @@ namespace FaceBERN_
 
                         try
                         {
-                            dynamic instance = Activator.CreateInstance(t, this, null, true);
+                            dynamic instance = Activator.CreateInstance(t, this, null, null, true);
                             instance.ExecuteFacebook();
                         }
                         catch (Exception e)

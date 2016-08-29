@@ -10,8 +10,9 @@ namespace FaceBERN_.Campaigns
     {
         internal WorkflowFacebook workflowFacebook = null;
         internal WorkflowTwitter workflowTwitter = null;
+        internal Workflow workflow = null;
 
-        public Generic(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, bool refresh = true)
+        public Generic(WorkflowFacebook workflowFacebook, WorkflowTwitter workflowTwitter, Workflow workflow, bool refresh = true)
         {
             if (refresh)
             {
@@ -20,14 +21,23 @@ namespace FaceBERN_.Campaigns
 
             this.workflowFacebook = workflowFacebook;
             this.workflowTwitter = workflowTwitter;
+            this.workflow = workflow;
         }
         
+        /* Execution to be performed by the Facebook workflow thread.  --Kris */
         public virtual bool ExecuteFacebook()
         {
             return true;
         }
 
+        /* Execution to be performed by the Twitter workflow thread.  --Kris */
         public virtual bool ExecuteTwitter()
+        {
+            return true;
+        }
+
+        /* Execution to be performed by the primary workflow thread.  --Kris */
+        public virtual bool ExecuteWorkflow()
         {
             return true;
         }

@@ -69,7 +69,8 @@ namespace FaceBERN_
                     IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns"));
                     foreach (Type t in types)
                     {
-                        if (t.Name.Equals("Generic"))
+                        if (t.Name.StartsWith("Generic")
+                            || t.Name.StartsWith(@"<"))
                         {
                             continue;
                         }
@@ -78,7 +79,7 @@ namespace FaceBERN_
 
                         try
                         {
-                            dynamic instance = Activator.CreateInstance(t, null, this, true);
+                            dynamic instance = Activator.CreateInstance(t, null, this, null, true);
                             instance.ExecuteTwitter();
                         }
                         catch (Exception e)
@@ -898,123 +899,6 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 ReportException(e, "Exception in ConsumeTweetsQueue.");
-            }
-        }
-
-        /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
-        private List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, int? campaignId = null, string t = "day", bool? self = null)
-        {
-            try
-            {
-                if (self == null)
-                {
-                    List<RedditPost> res = new List<RedditPost>();
-                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, false));
-                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, true));
-
-                    return res;
-                }
-                else
-                {
-                    return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), false, "new", null, t, sub), sub, campaignId);
-                }
-            }
-            catch (Exception e)
-            {
-                ReportException(e, "Exception in SearchSubredditForFlairPosts.");
-                return null;
-            }
-        }
-
-        private List<RedditPost> ParseRedditPosts(dynamic redditObj, string sub = null, int? campaignId = null)
-        {
-            try
-            {
-                List<RedditPost> res = new List<RedditPost>();
-
-                try
-                {
-                    if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
-                    {
-                        return res;  // No results.  --Kris
-                    }
-                }
-                catch (Exception e)
-                {
-                    ReportExceptionSilently(e, "Exception handling data children from redditObj in ParseRedditPosts.");
-                    return res;
-                }
-
-                try
-                {
-                    int i = 0;
-                    foreach (dynamic o in redditObj["data"]["children"])
-                    {
-                        i++;
-
-                        try
-                        {
-                            if (o != null
-                                && o["data"] != null
-                                && o["data"]["title"] != null
-                                && o["data"]["subreddit"] != null
-                                && o["data"]["url"] != null
-                                && o["data"]["permalink"] != null
-                                && o["data"]["score"] != null
-                                && o["data"]["created"] != null)
-                            {
-                                /* Sometimes, the Reddit search API returns some results from the wrong sub(s).  This will filter those out.  --Kris */
-                                if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
-                                {
-                                    continue;
-                                }
-
-                                try
-                                {
-                                    res.Add(new RedditPost((bool)o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(),
-                                        o["data"]["permalink"].ToString(), (int)o["data"]["score"], TimestampToDateTime((double)o["data"]["created"]), o["data"]["author"].ToString(),
-                                        (string)o["data"]["selftext"], campaignId));
-                                }
-                                catch (Exception e)
-                                {
-                                    Log("Warning:  Error parsing Reddit post : " + e.ToString());
-
-                                    ReportException(e, "Error parsing Reddit post.");
-                                }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            try
-                            {
-                                LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where o = " + JsonConvert.SerializeObject(o) + ".");
-                            }
-                            catch (Exception)
-                            {
-                                try
-                                {
-                                    LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where i = " + i.ToString() + "; unable to serialize object o.");
-                                }
-                                catch (Exception)
-                                {
-                                    // Just forget it.  No point logging it without any useful information.  --Kris
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    ReportExceptionSilently(e, "Exception iterating through data children for redditObj in ParseRedditPosts.");
-                }
-
-                return res;
-            }
-            catch (Exception e)
-            {
-                LogAndReportException(e, "Exception in ParseRedditPosts.");
-
-                return null;
             }
         }
 

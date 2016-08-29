@@ -16,6 +16,7 @@ namespace FaceBERN_
         public bool enabled;
         public bool requiresFacebook;
         public bool requiresTwitter;
+        public bool requiresReddit;
         public int? requiresAccessLevel = null;
         public string adminGroups = null;
 
@@ -27,8 +28,8 @@ namespace FaceBERN_
         public int? parentCampaignId = null;
         public DateTime? end = null;
 
-        public Campaign(int campaignId, string campaignTitle, string createdByAdminUsername, DateTime createdAt, DateTime start, bool enabled, bool requiresFacebook, bool requiresTwitter, bool userSelected, 
-                        bool approvedByDefault, string campaignDescription = null, string campaignURL = null, int? parentCampaignId = null, DateTime? end = null)
+        public Campaign(int campaignId, string campaignTitle, string createdByAdminUsername, DateTime createdAt, DateTime start, bool enabled, bool requiresFacebook, bool requiresTwitter, 
+                        bool requiresReddit, bool userSelected, bool approvedByDefault, string campaignDescription = null, string campaignURL = null, int? parentCampaignId = null, DateTime? end = null)
         {
             this.campaignId = campaignId;
             this.campaignTitle = campaignTitle;
@@ -38,6 +39,7 @@ namespace FaceBERN_
             this.enabled = enabled;
             this.requiresFacebook = requiresFacebook;
             this.requiresTwitter = requiresTwitter;
+            this.requiresReddit = requiresReddit;
 
             this.userSelected = userSelected;
             this.approvedByDefault = approvedByDefault;

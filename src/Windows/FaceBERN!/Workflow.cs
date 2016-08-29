@@ -24,9 +24,9 @@ namespace FaceBERN_
     {
         private string logName = "Workflow";
         public Log WorkflowLog;
-        private Form1 Main;
-        protected Reddit reddit;
-        protected int browser = 0;
+        internal Form1 Main;
+        internal Reddit reddit;
+        internal int browser = 0;
         protected bool ftbFriended = false;
 
         public long invitesSent = 0;  // Tracked for current session only.  --Kris
@@ -603,9 +603,9 @@ namespace FaceBERN_
                     }
 
                     Campaign addCampaign = new Campaign((int) o["campaignId"], (string) o["campaignTitle"], (string) o["createdByAdminUsername"], (DateTime) o["createdAt"], (DateTime) o["start"],
-                                                (bool) ((string) o["enabled"]).Equals("1"), (bool) ((string) o["requiresFacebook"]).Equals("1"), (bool) ((string) o["requiresTwitter"]).Equals("1"), 
-                                                userSelected, ((string) o["approvedByDefault"]).Equals("1"), (string) o["campaignDescription"], (string) o["campaignURL"], (int?) o["parentCampaignId"], 
-                                                (DateTime?) o["end"]);
+                                                (bool) ((string) o["enabled"]).Equals("1"), (bool) ((string) o["requiresFacebook"]).Equals("1"), (bool) ((string) o["requiresTwitter"]).Equals("1"),
+                                                (bool) ((string) o["requiresReddit"]).Equals("1"), userSelected, ((string) o["approvedByDefault"]).Equals("1"), (string) o["campaignDescription"], 
+                                                (string) o["campaignURL"], (int?) o["parentCampaignId"], (DateTime?) o["end"]);
 
                     Globals.campaigns.Add(addCampaign);
 
@@ -975,6 +975,29 @@ namespace FaceBERN_
                     /* Execute any selected campaigns.  --Kris */
                     //ExecuteCampaigns();
 
+                    /* Iterate through the campaigns and execute.  Each campaign will contain its own sanity checks (including checking if it's enabled).  --Kris */
+                    IEnumerable<Type> types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t != null && t.Namespace != null && t.Namespace.StartsWith("FaceBERN_.Campaigns")
+                        && !(t.Name.Contains(@"<")));
+                    foreach (Type t in types)
+                    {
+                        if (t.Name.Equals("Generic"))
+                        {
+                            continue;
+                        }
+
+                        Log("Executing primary workflow for campaign:  " + t.Name);
+
+                        try
+                        {
+                            dynamic instance = Activator.CreateInstance(t, null, null, this, true);
+                            instance.ExecuteWorkflow();
+                        }
+                        catch (Exception e)
+                        {
+                            ReportException(e, "Unable to execute campaign!  Skipped.");
+                        }
+                    }
+
                     /* Check for updates every 6 hours if auto-update is enabled.  --Kris */
                     if (Globals.Config["AutoUpdate"].Equals("1")
                         && DateTime.Now.Subtract(lastUpdate).TotalHours >= 6)
@@ -1063,7 +1086,165 @@ namespace FaceBERN_
             }
         }
 
-        private void ReportException(Exception ex, string logMsg = null, bool silent = false)
+        /* Search a given sub for today's (default) top posts with a given flair.  Should only queue stuff from Reddit same-day to prevent delayed tweet spam.  --Kris */
+        internal List<RedditPost> SearchSubredditForFlairPosts(string flair, string sub, int? campaignId = null, string t = "day", bool? self = null)
+        {
+            try
+            {
+                if (self == null)
+                {
+                    List<RedditPost> res = new List<RedditPost>();
+                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, false));
+                    res.AddRange(SearchSubredditForFlairPosts(flair, sub, campaignId, t, true));
+
+                    return res;
+                }
+                else
+                {
+                    return ParseRedditPosts(reddit.Search.search(null, null, "flair:\"" + flair + "\" self:" + (self.Value ? "yes" : "no"), true, "new", null, t, sub), sub, campaignId);
+                }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in SearchSubredditForFlairPosts.");
+                return null;
+            }
+        }
+
+        /* Search a given sub for all (default) posts.  --Kris */
+        internal List<RedditPost> SearchSubredditForPosts(string sub, int? campaignId = null, string t = "all", bool? self = null)
+        {
+            try
+            {
+                if (self == null)
+                {
+                    List<RedditPost> res = new List<RedditPost>();
+                    res.AddRange(SearchSubredditForPosts(sub, campaignId, t, false));
+                    res.AddRange(SearchSubredditForPosts(sub, campaignId, t, true));
+
+                    return res;
+                }
+                else
+                {
+                    return ParseRedditPosts(reddit.Search.search(null, null, "self:" + (self.Value ? "yes" : "no"), true, "new", null, t, sub), sub, campaignId);
+                }
+            }
+            catch (Exception e)
+            {
+                ReportException(e, "Exception in SearchSubredditForPosts.");
+                return null;
+            }
+        }
+
+        internal List<RedditPost> ParseRedditPosts(dynamic redditObj, string sub = null, int? campaignId = null)
+        {
+            try
+            {
+                List<RedditPost> res = new List<RedditPost>();
+
+                try
+                {
+                    if (redditObj["data"]["children"] == null || redditObj["data"]["children"].Count == 0)
+                    {
+                        return res;  // No results.  --Kris
+                    }
+                }
+                catch (Exception e)
+                {
+                    ReportExceptionSilently(e, "Exception handling data children from redditObj in ParseRedditPosts.");
+                    return res;
+                }
+
+                try
+                {
+                    int i = 0;
+                    foreach (dynamic o in redditObj["data"]["children"])
+                    {
+                        i++;
+
+                        try
+                        {
+                            if (o != null
+                                && o["data"] != null
+                                && o["data"]["title"] != null
+                                && o["data"]["subreddit"] != null
+                                && o["data"]["url"] != null
+                                && o["data"]["permalink"] != null
+                                && o["data"]["score"] != null
+                                && o["data"]["created"] != null)
+                            {
+                                /* If you're seeing results from the wrong sub, make sure you're passing true for restrict_sr to the Reddit API.  --Kris */
+                                if (sub != null && !(sub.Equals(o["data"]["subreddit"].ToString())))
+                                {
+                                    try
+                                    {
+                                        Exception e = new Exception("Result from wrong subreddit returned by Reddit API!");
+
+                                        e.Data.Add("o", o);
+                                        e.Data.Add("redditObj", redditObj);
+                                        e.Data.Add("sub", sub);
+                                        e.Data.Add("campaignId", campaignId);
+
+                                        throw e;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        ReportExceptionSilently(e, "Result from wrong subreddit returned by Reddit API.");
+                                    }
+
+                                    continue;
+                                }
+
+                                try
+                                {
+                                    res.Add(new RedditPost((bool) o["data"]["is_self"], o["data"]["title"].ToString(), o["data"]["subreddit"].ToString(), o["data"]["url"].ToString(),
+                                        o["data"]["permalink"].ToString(), (int) o["data"]["score"], TimestampToDateTime((int) o["data"]["created"]), o["data"]["author"].ToString(),
+                                        (string) o["data"]["selftext"], campaignId));
+                                }
+                                catch (Exception e)
+                                {
+                                    Log("Warning:  Error parsing Reddit post : " + e.ToString());
+
+                                    ReportException(e, "Error parsing Reddit post.");
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            try
+                            {
+                                LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where o = " + JsonConvert.SerializeObject(o) + ".");
+                            }
+                            catch (Exception)
+                            {
+                                try
+                                {
+                                    LogAndReportException(e, "Exception thrown handling redditObj in ParseRedditPosts where i = " + i.ToString() + "; unable to serialize object o.");
+                                }
+                                catch (Exception)
+                                {
+                                    // Just forget it.  No point logging it without any useful information.  --Kris
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    ReportExceptionSilently(e, "Exception iterating through data children for redditObj in ParseRedditPosts.");
+                }
+
+                return res;
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Exception in ParseRedditPosts.");
+
+                return null;
+            }
+        }
+
+        internal void ReportException(Exception ex, string logMsg = null, bool silent = false)
         {
             try
             {
@@ -1182,9 +1363,14 @@ namespace FaceBERN_
             //DestroyTwitterTokens();
         }
 
-        public DateTime TimestampToDateTime(double timestamp)
+        public DateTime TimestampToDateTime(int timestamp)
         {
             return new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(timestamp);
+        }
+
+        public int DateTimeToTimestamp(DateTime datetime)
+        {
+            return (int) datetime.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
         }
 
         internal bool ValidateBirdieCredentials(string username, string password)
@@ -1326,7 +1512,7 @@ namespace FaceBERN_
             }
         }
 
-        private void LogAndReportException(Exception e, string text, bool show = true)
+        internal void LogAndReportException(Exception e, string text, bool show = true)
         {
             Log(text, show);
             ReportException(e, text);

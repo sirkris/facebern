@@ -114,6 +114,10 @@ namespace FaceBERN_
         public const int CAMPAIGN_TWEET_STILLSANDERSFORPRES = 2;
         public const int CAMPAIGN_TWEET_SANDERSFORPRESIDENT = 3;
         public const int CAMPAIGN_TWEET_POLITICALREVOLUTION = 4;
+        public const int CAMPAIGN_MANAGE_FACEBOOK_GROUPS    = 5;
+        public const int CAMPAIGN_OPERATION_LIFE_PRESERVER  = 6;
+        public const int CAMPAIGN_OLP_PHASE1                = 7;
+        public const int CAMPAIGN_OLP_PHASE2                = 8;
 
         /* Application ID.  Used for API calls.  It should be set to null here.  --Kris */
         public static string appId = null;

@@ -319,7 +319,9 @@ namespace FaceBERN_
                 if ((!(Globals.Config["EnableFacebanking"].Equals("1"))
                         && campaign.requiresFacebook == true)
                     || ((!(Globals.Config["EnableTwitter"].Equals("1"))
-                        && campaign.requiresTwitter == true)))
+                        && campaign.requiresTwitter == true))
+                    || ((!(Globals.Config["EnableReddit"].Equals("1"))
+                        && campaign.requiresReddit == true)))
                 {
                     box.Enabled = false;
                 }
@@ -335,7 +337,9 @@ namespace FaceBERN_
                 List<CheckBox> subRes = GetCampaignCheckboxes(campaign.campaignId, (indent + 1), count);
 
                 res.AddRange(subRes);
+
                 count += subRes.Count;
+                y += (yIncrement * subRes.Count);
             }
 
             return res;

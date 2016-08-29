@@ -46,7 +46,8 @@
     <Reference Include="CButtonLib">
       <HintPath>Resources\CButtonLib.dll</HintPath>
     </Reference>
-    <Reference Include="csReddit">
+    <Reference Include="csReddit, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Resources\csReddit.dll</HintPath>
     </Reference>
     <Reference Include="HtmlUnit">
@@ -196,6 +197,9 @@
       <DependentUpon>BirdieAdminRegistration.cs</DependentUpon>
     </Compile>
     <Compile Include="Campaign.cs" />
+    <Compile Include="Campaigns\Admin\Operation Life-Preserver\OLP-Phase1.cs" />
+    <Compile Include="Campaigns\Admin\Operation Life-Preserver\OLP-Phase2.cs" />
+    <Compile Include="Campaigns\Admin\Operation Life-Preserver\OperationLifePreserver.cs" />
     <Compile Include="Campaigns\Admin\ShareOnFacebook.cs" />
     <Compile Include="Campaigns\Generic.cs" />
     <Compile Include="Campaigns\RunBernieRun.cs" />
@@ -258,6 +262,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RedditPost.cs" />
     <Compile Include="States.cs" />
+    <Compile Include="SubredditComment.cs" />
+    <Compile Include="SubredditUser.cs" />
     <Compile Include="TweetsHistory.cs">
       <SubType>Form</SubType>
     </Compile>
