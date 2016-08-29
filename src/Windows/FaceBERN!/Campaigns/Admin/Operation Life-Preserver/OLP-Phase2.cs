@@ -464,7 +464,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                     {
                         p++;
 
-                        decimal percent = (decimal) (((p - 1) / posts.Count) * 100);
+                        decimal percent = (decimal) ((decimal) ((decimal) (p - 1) / (decimal) posts.Count) * (decimal) 100);
 
                         workflow.Log(logPrefix + "Beginning extraction of comments and users from post (" + p.ToString() + " / " + posts.Count.ToString() + "):  " + post.permalink);
                         workflow.Log(logPrefix + "Post parsing is " + percent.ToString() + @"% complete for " + i.ToString() + "/" + year.ToString() + ".");
