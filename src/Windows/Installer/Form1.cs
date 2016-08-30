@@ -161,7 +161,7 @@ namespace Installer
 
             if (copyToTemp)
             {
-                File.Copy(Path.Combine(Environment.CurrentDirectory, resourceName), Path.Combine(Path.GetTempPath(), resourceName));
+                File.Copy(Path.Combine(Environment.CurrentDirectory, resourceName), Path.Combine(Path.GetTempPath(), resourceName), true);
             }
         }
 
