@@ -45,6 +45,7 @@ namespace FaceBERN_
         public const int ERROR_BADCREDENTIALS = 2;
         public const int ERROR_UNEXPECTED = 3;
         public const int ERROR_NOBROWSER = 4;
+        public const int ERROR_DRIVERFAILURE = 5;
 
         private string logName = "WebDriver";
         public Log WebDriverLog;
@@ -77,156 +78,192 @@ namespace FaceBERN_
 
         private void InitLog()
         {
-            WebDriverLog = new Log();
-            WebDriverLog.Init(logName);
+            try
+            {
+                WebDriverLog = new Log();
+                WebDriverLog.Init(logName);
+            }
+            catch (Exception) { }
         }
 
         private void Log(string text, bool show = true, bool appendW = true, bool newline = true, bool timestamp = true)
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { Log(text, show, appendW, newline, timestamp); }));
-            }
-            else
-            {
-                Main.LogW(text, show, appendW, newline, timestamp, logName, WebDriverLog);
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { Log(text, show, appendW, newline, timestamp); }));
+                }
+                else
+                {
+                    Main.LogW(text, show, appendW, newline, timestamp, logName, WebDriverLog);
 
-                Main.Refresh();
+                    Main.Refresh();
+                }
             }
+            catch (Exception) { }
         }
 
         private void SetExecState(int state)
         {
-            if (Main.InvokeRequired)
+            try
             {
-                Main.BeginInvoke(
-                    new MethodInvoker(
-                        delegate() { SetExecState(state); }));
+                if (Main.InvokeRequired)
+                {
+                    Main.BeginInvoke(
+                        new MethodInvoker(
+                            delegate() { SetExecState(state); }));
+                }
+                else
+                {
+                    Main.SetExecState(state, logName, WebDriverLog);
+                }
             }
-            else
-            {
-                Main.SetExecState(state, logName, WebDriverLog);
-            }
+            catch (Exception) { }
         }
 
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
-            if (browser == 0)
+            try
             {
-                Log("No web browser selected!  WebDriver session aborted.");
+                if (browser == 0)
+                {
+                    Log("No web browser selected!  WebDriver session aborted.");
 
-                error = ERROR_NOBROWSER;
+                    error = ERROR_NOBROWSER;
 
-                return;
+                    return;
+                }
+                else if (browser > 0)
+                {
+                    Log("Opening new " + browserName + " window....");
+                }
+
+                switch (browser)
+                {
+                    case Globals.FIREFOX:
+                        _profileFirefox = new FirefoxProfile();
+                        _profileFirefox.SetPreference("toolkit.startup.max_resumed_crashes", -1);
+
+                        _driver = new FirefoxDriver(_profileFirefox);
+                        _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+
+                        ModWindow();
+                        Maximize();
+
+                        break;
+                    case Globals.IE:
+                        _driver = new InternetExplorerDriver();
+                        _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+                        break;
+                    case Globals.CHROME:
+                        _serviceChrome = ChromeDriverService.CreateDefaultService();
+                        _serviceChrome.HideCommandPromptWindow = true;
+
+                        _optionsChrome = new ChromeOptions();
+                        _optionsChrome.AddArgument(@"--start-maximized");
+
+                        _driver = new ChromeDriver(_serviceChrome, _optionsChrome);
+                        _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
+
+                        ModWindow();
+
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        Log("Opening new headless browser process....");
+
+                        webClient = new NHtmlUnit.WebClient(BrowserVersion.FIREFOX_38);
+                        webClient.Options.JavaScriptEnabled = true;
+                        webClient.Options.RedirectEnabled = true;
+                        webClient.Options.ThrowExceptionOnFailingStatusCode = false;
+                        webClient.Options.ThrowExceptionOnScriptError = false;
+                        webClient.WaitForBackgroundJavaScript(10000);
+                        webClient.AjaxController = new NicelyResynchronizingAjaxController();
+
+                        break;
+                }
             }
-            else if (browser > 0)
+            catch (Exception e)
             {
-                Log("Opening new " + browserName + " window....");
-            }
-
-            switch (browser)
-            {
-                case Globals.FIREFOX:
-                    _profileFirefox = new FirefoxProfile();
-                    _profileFirefox.SetPreference("toolkit.startup.max_resumed_crashes", -1);
-
-                    _driver = new FirefoxDriver(_profileFirefox);
-                    _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
-                    
-                    ModWindow();
-                    Maximize();
-
-                    break;
-                case Globals.IE:
-                    _driver = new InternetExplorerDriver();
-                    _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
-                    break;
-                case Globals.CHROME:
-                    _serviceChrome = ChromeDriverService.CreateDefaultService();
-                    _serviceChrome.HideCommandPromptWindow = true;
-
-                    _optionsChrome = new ChromeOptions();
-                    _optionsChrome.AddArgument(@"--start-maximized");
-
-                    _driver = new ChromeDriver(_serviceChrome, _optionsChrome);
-                    _driver.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, Globals.__TIMEOUT__));
-
-                    ModWindow();
-
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    Log("Opening new headless browser process....");
-
-                    webClient = new NHtmlUnit.WebClient(BrowserVersion.FIREFOX_38);
-                    webClient.Options.JavaScriptEnabled = true;
-                    webClient.Options.RedirectEnabled = true;
-                    webClient.Options.ThrowExceptionOnFailingStatusCode = false;
-                    webClient.Options.ThrowExceptionOnScriptError = false;
-                    webClient.WaitForBackgroundJavaScript(10000);
-                    webClient.AjaxController = new NicelyResynchronizingAjaxController();
-
-                    break;
+                LogAndReportException(e, "Exception opening browser window.");
+                error = ERROR_DRIVERFAILURE;
             }
         }
 
         [SetUp]
         public void TestSetUp(string URL)
         {
-            switch (browser)
+            try
             {
-                default:
-                    Log("Navigating " + browserName + " to:  " + URL);
+                switch (browser)
+                {
+                    default:
+                        Log("Navigating " + browserName + " to:  " + URL);
 
-                    _driver.Navigate().GoToUrl(URL);
+                        _driver.Navigate().GoToUrl(URL);
 
-                    WaitForPageLoad();
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    Log("Navigating headless browser to:  " + URL);
-                    Log("This may take a few minutes....");
+                        WaitForPageLoad();
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        Log("Navigating headless browser to:  " + URL);
+                        Log("This may take a few minutes....");
 
-                    System.Threading.Thread.Sleep(500);
+                        System.Threading.Thread.Sleep(500);
 
-                    page = webClient.GetHtmlPage(URL);
-                    
-                    break;
+                        page = webClient.GetHtmlPage(URL);
+
+                        break;
+                }
             }
+            catch (Exception e)
+            {
+                e.Data.Add("URL", URL);
 
+                LogAndReportException(e, "Exception navigating to URL.");
+                error = ERROR_DRIVERFAILURE;
+            }
         }
 
         private void ModWindow(bool unhide = false)
         {
-            if (hideBrowser)
+            try
             {
-                Log("Hiding " + browserName + " window....", false);
-
-                _driver.Manage().Window.Position = new Point(-9999, -9999);
-                //_driver.Manage().Window.Size = new Size(1, 1);
-
-                IntPtr hWnd = IntPtr.Zero;
-
-                int i = 300;
-                do
+                if (hideBrowser)
                 {
-                    hWnd = GetWindowHandle();
-                    System.Threading.Thread.Sleep(100);
-                    i--;
-                } while (!hWnd.Equals(IntPtr.Zero)
-                    && AutoIt.AutoItX.WinExists(hWnd) == 0
-                    && i > 0);
+                    Log("Hiding " + browserName + " window....", false);
 
-                if (AutoIt.AutoItX.WinExists(hWnd) == 0)
-                {
-                    hideBrowser = false;
-                    Log("WARNING:  Unable to hide browser window!  Switched to windowed mode.");
+                    _driver.Manage().Window.Position = new Point(-9999, -9999);
+                    //_driver.Manage().Window.Size = new Size(1, 1);
+
+                    IntPtr hWnd = IntPtr.Zero;
+
+                    int i = 300;
+                    do
+                    {
+                        hWnd = GetWindowHandle();
+                        System.Threading.Thread.Sleep(100);
+                        i--;
+                    } while (!hWnd.Equals(IntPtr.Zero)
+                        && AutoIt.AutoItX.WinExists(hWnd) == 0
+                        && i > 0);
+
+                    if (AutoIt.AutoItX.WinExists(hWnd) == 0)
+                    {
+                        hideBrowser = false;
+                        Log("WARNING:  Unable to hide browser window!  Switched to windowed mode.");
+                    }
+                    else
+                    {
+                        AutoIt.AutoItX.WinSetState(hWnd, (unhide ? AutoIt.AutoItX.SW_SHOW : AutoIt.AutoItX.SW_HIDE));
+                    }
                 }
-                else
-                {
-                    AutoIt.AutoItX.WinSetState(hWnd, (unhide ? AutoIt.AutoItX.SW_SHOW : AutoIt.AutoItX.SW_HIDE));
-                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Unhandled exception in WebDriver.ModWindow.");
             }
         }
 
@@ -283,49 +320,66 @@ namespace FaceBERN_
         [Test]
         public void Maximize()
         {
-            if (browser == Globals.FIREFOX_HEADLESS 
-                || hideBrowser == true)
+            try
             {
-                return;
+                if (browser == Globals.FIREFOX_HEADLESS
+                    || hideBrowser == true)
+                {
+                    return;
+                }
+
+                IntPtr hWnd = GetWindowHandle();
+
+                if (!hWnd.Equals(IntPtr.Zero))
+                {
+                    ShowWindowAsync(hWnd, 3);  // 3 = Maximize!  --Kris
+                }
             }
-
-            IntPtr hWnd = GetWindowHandle();
-
-            if (!hWnd.Equals(IntPtr.Zero))
+            catch (Exception e)
             {
-                ShowWindowAsync(hWnd, 3);  // 3 = Maximize!  --Kris
+                LogAndReportException(e, "Exception maximizing browser window.");
             }
         }
 
         private IntPtr GetWindowHandle()
         {
-            string script;
-            string name;
-
-            /* Some black magic to get the window handle for Chrome.  I created this workaround several years ago, so there may or may not be a better way now.  --Kris */
-            if (browser == Globals.CHROME)
+            try
             {
-                name = "ed47cd2a4fcb5534a49f6eeb3bfcc564 - Google Search";
+                string script;
+                string name;
 
-                _driver.Navigate().GoToUrl("http://www.google.com/search?q=ed47cd2a4fcb5534a49f6eeb3bfcc564");
+                /* Some black magic to get the window handle for Chrome.  I created this workaround several years ago, so there may or may not be a better way now.  --Kris */
+                if (browser == Globals.CHROME)
+                {
+                    name = "ed47cd2a4fcb5534a49f6eeb3bfcc564 - Google Search";
+
+                    _driver.Navigate().GoToUrl("http://www.google.com/search?q=ed47cd2a4fcb5534a49f6eeb3bfcc564");
+                }
+                else
+                {
+                    /* Just in case the black magic below doesn't work....  --Kris */
+                    script = "window.moveTo( 0, 1 ); ";
+                    script += "window.resizeTo( screen.width, screen.height );";
+
+                    ((IJavaScriptExecutor)_driver).ExecuteScript(script);
+
+                    name = "ed47cd2a4fcb5534a49f6eeb3bfcc564";
+
+                    script = "document.title='" + name + "';";
+
+                    ((IJavaScriptExecutor)_driver).ExecuteScript(script);
+                }
+
+                /* This is some real voodoo magic here!  Muaa ha ha ha!!  --Kris */
+                return FindWindow(null, name + " - " + Globals.BrowserPIDName(browser));
             }
-            else
+            catch (Exception e)
             {
-                /* Just in case the black magic below doesn't work....  --Kris */
-                script = "window.moveTo( 0, 1 ); ";
-                script += "window.resizeTo( screen.width, screen.height );";
+                LogAndReportException(e, "Exception in WebDriver.GetWindowHandle.");
+                error = ERROR_DRIVERFAILURE;
 
-                ((IJavaScriptExecutor) _driver).ExecuteScript(script);
-
-                name = "ed47cd2a4fcb5534a49f6eeb3bfcc564";
-
-                script = "document.title='" + name + "';";
-
-                ((IJavaScriptExecutor) _driver).ExecuteScript(script);
+                return IntPtr.Zero;
             }
-
-            /* This is some real voodoo magic here!  Muaa ha ha ha!!  --Kris */
-            return FindWindow(null, name + " - " + Globals.BrowserPIDName(browser));
         }
 
         [DllImport("user32.dll")]
@@ -350,101 +404,128 @@ namespace FaceBERN_
         [Test]
         public void Refresh()
         {
-            _driver.Navigate().Refresh();
+            try
+            {
+                _driver.Navigate().Refresh();
 
-            WaitForPageLoad();
+                WaitForPageLoad();
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Exception in WebDriver.Refresh.");
+            }
         }
 
         /* This exception is so common with Facebook, it makes sense to create a separate handler for retries, instead of doing it in every single function that touches elements.  --Kris */
         public dynamic StaleElementReferenceException_Handler(string callerName, object[] parameters)
         {
-            staleRetry++;
-            if (staleRetry % 3 == 0 && staleRetry > 0)
+            try
             {
-                /* Try refreshing the page to shake the element loose.  --Kris */
-                //Refresh();  // That was a bad idea.  Needs to be able to rewind and redo requisite page interactions.  May put that logic in the Workflow class....  --Kris
-            }
-            else if (staleRetry >= 10)
-            {
-                /* Let's make the error message as helpful as possible for triage purposes.  There are no security considerations since we're just dealing with identifying HTML elements.  --Kris */
-                string args = "";
-                foreach (object param in parameters)
+                staleRetry++;
+                if (staleRetry % 3 == 0 && staleRetry > 0)
                 {
-                    args += (args != "" ? @", " : "");
-
-                    try
+                    /* Try refreshing the page to shake the element loose.  --Kris */
+                    //Refresh();  // That was a bad idea.  Needs to be able to rewind and redo requisite page interactions.  May put that logic in the Workflow class....  --Kris
+                }
+                else if (staleRetry >= 10)
+                {
+                    /* Let's make the error message as helpful as possible for triage purposes.  There are no security considerations since we're just dealing with identifying HTML elements.  --Kris */
+                    string args = "";
+                    foreach (object param in parameters)
                     {
-                        dynamic j;
-                        switch (Type.GetTypeCode(param.GetType()))
+                        args += (args != "" ? @", " : "");
+
+                        try
                         {
-                            default:
-                                args += @"<" + param.GetType().ToString() + @">";
-                                break;
-                            case TypeCode.Boolean:
-                                args += ((bool) param == true ? "true" : "false");
-                                break;
-                            case TypeCode.Char:
-                                args += ((char) param).ToString();
-                                break;
-                            case TypeCode.String:
-                                args += param;
-                                break;
-                            case TypeCode.Decimal:
-                                args += ((double) param).ToString();
-                                break;
-                            case TypeCode.Double:
-                                args += ((decimal) param).ToString();
-                                break;
-                            case TypeCode.Int16:
-                                args += ((Int16) param).ToString();
-                                break;
-                            case TypeCode.Int32:
-                                args += ((Int32) param).ToString();
-                                break;
-                            case TypeCode.Int64:
-                                args += ((Int64) param).ToString();
-                                break;
-                            case TypeCode.UInt16:
-                                args += ((UInt16) param).ToString();
-                                break;
-                            case TypeCode.UInt32:
-                                args += ((UInt32) param).ToString();
-                                break;
-                            case TypeCode.UInt64:
-                                args += ((UInt64) param).ToString();
-                                break;
+                            dynamic j;
+                            switch (Type.GetTypeCode(param.GetType()))
+                            {
+                                default:
+                                    args += @"<" + param.GetType().ToString() + @">";
+                                    break;
+                                case TypeCode.Boolean:
+                                    args += ((bool)param == true ? "true" : "false");
+                                    break;
+                                case TypeCode.Char:
+                                    args += ((char)param).ToString();
+                                    break;
+                                case TypeCode.String:
+                                    args += param;
+                                    break;
+                                case TypeCode.Decimal:
+                                    args += ((double)param).ToString();
+                                    break;
+                                case TypeCode.Double:
+                                    args += ((decimal)param).ToString();
+                                    break;
+                                case TypeCode.Int16:
+                                    args += ((Int16)param).ToString();
+                                    break;
+                                case TypeCode.Int32:
+                                    args += ((Int32)param).ToString();
+                                    break;
+                                case TypeCode.Int64:
+                                    args += ((Int64)param).ToString();
+                                    break;
+                                case TypeCode.UInt16:
+                                    args += ((UInt16)param).ToString();
+                                    break;
+                                case TypeCode.UInt32:
+                                    args += ((UInt32)param).ToString();
+                                    break;
+                                case TypeCode.UInt64:
+                                    args += ((UInt64)param).ToString();
+                                    break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Log("Warning:  Error parsing parameter for message arguments list : " + e.Message);
+
+                            args += @"????";
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Log("Warning:  Error parsing parameter for message arguments list : " + e.Message);
 
-                        args += @"????";
-                    }
+                    Log("WebDriver ERROR:  Unable to handle stale element in : " + callerName + "( " + args + " ).");
+
+                    return null;
                 }
 
-                Log("WebDriver ERROR:  Unable to handle stale element in : " + callerName + "( " + args + " ).");
+                System.Threading.Thread.Sleep(100);
+
+                Type thisType = this.GetType();
+                MethodInfo staleMeth = thisType.GetMethod(callerName);
+
+                return staleMeth.Invoke(this, parameters);
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Unhandled exception in WebDriver.StaleElementReferenceException_Handler.");
+                error = ERROR_DRIVERFAILURE;
 
                 return null;
             }
-            
-            System.Threading.Thread.Sleep(100);
-
-            Type thisType = this.GetType();
-            MethodInfo staleMeth = thisType.GetMethod(callerName);
-
-            return staleMeth.Invoke(this, parameters);
         }
 
         public dynamic StaleReturn(object[] parameters, [CallerMemberName] string callerName = "")
         {
-            dynamic staleReturn = StaleElementReferenceException_Handler(callerName, parameters);
-            if (staleReturn != null)
+            try
             {
-                staleRetry = 0;
-            }
+                dynamic staleReturn = StaleElementReferenceException_Handler(callerName, parameters);
+                if (staleReturn != null)
+                {
+                    staleRetry = 0;
+                }
 
-            return staleReturn;
+                return staleReturn;
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Unhandled exception in WebDriver.StaleReturn.");
+                error = ERROR_DRIVERFAILURE;
+
+                return null;
+            }
         }
 
         private object[] GetParams(params object[] parameters)
@@ -1032,8 +1113,12 @@ namespace FaceBERN_
 
         internal void LogAndReportException(Exception e, string text, bool show = true)
         {
-            Log(text, show);
-            ReportException(e, text);
+            try
+            {
+                Log(text, show);
+                ReportException(e, text);
+            }
+            catch (Exception) { }
         }
 
         public void ScrollToBottom(ref IWebDriver driver, int scrollLimit)
@@ -1044,32 +1129,39 @@ namespace FaceBERN_
         [Test]
         public void ScrollToBottom(ref HtmlPage page, int scrollLimit = 100)
         {
-            const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
-            const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
-
-            if (scrollLimit > 0)
+            try
             {
-                bool done = false;
-                int i = scrollLimit;
-                do
+                const string scrollScript = "window.scrollTo(0,document.body.scrollHeight);";
+                const string checkScript = "return!(window.scrollY<document.body.scrollHeight-window.screen.availHeight);";
+
+                if (scrollLimit > 0)
                 {
-                    Log("Scrolling down....");
+                    bool done = false;
+                    int i = scrollLimit;
+                    do
+                    {
+                        Log("Scrolling down....");
 
+                        page.ExecuteJavaScript(scrollScript);
+                        System.Threading.Thread.Sleep(3000);
+                        ScriptResult sr = page.ExecuteJavaScript(checkScript);
+                        done = (bool)sr.JavaScriptResult;
+                        i--;
+                    } while (done == false && i > 0);
+                }
+                else
+                {
                     page.ExecuteJavaScript(scrollScript);
-                    System.Threading.Thread.Sleep(3000);
-                    ScriptResult sr = page.ExecuteJavaScript(checkScript);
-                    done = (bool) sr.JavaScriptResult;
-                    i--;
-                } while (done == false && i > 0);
+                }
+
+                System.Threading.Thread.Sleep(3000);
+
+                Log("Scrolling complete.");
             }
-            else
+            catch (Exception e)
             {
-                page.ExecuteJavaScript(scrollScript);
+                LogAndReportException(e, "Unhandled exception in WebDriver.ScrollToBottom( ref HtmlPage page, int scrollLimit = 100 ).");
             }
-
-            System.Threading.Thread.Sleep(3000);
-
-            Log("Scrolling complete.");
         }
 
         [Test]
@@ -1658,31 +1750,43 @@ namespace FaceBERN_
         [Test]
         public void SwitchToFrame(string frame, int retry = 2)
         {
-            switch (browser)
+            try
             {
-                default:
-                    try
-                    {
-                        _driver.SwitchTo().DefaultContent();
-                        _driver.SwitchTo().Frame(Int32.Parse(frame));
-                    }
-                    catch (Exception e)
-                    {
-                        retry--;
-                        if (retry > 0)
+                switch (browser)
+                {
+                    default:
+                        try
                         {
-                            System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
-                            SwitchToFrame(frame, retry);
+                            _driver.SwitchTo().DefaultContent();
+                            _driver.SwitchTo().Frame(Int32.Parse(frame));
                         }
-                        else
+                        catch (Exception e)
                         {
-                            throw e;
+                            retry--;
+                            if (retry > 0)
+                            {
+                                System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__ * 500);
+                                SwitchToFrame(frame, retry);
+                            }
+                            else
+                            {
+                                throw e;
+                            }
                         }
-                    }
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    break;
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                e.Data.Add("frame", frame);
+                e.Data.Add("retry", retry);
+                e.Data.Add("browser", browser);
+
+                LogAndReportException(e, "Unhandled exception in WebDriver.SwitchToFrame.");
+                error = ERROR_DRIVERFAILURE;
             }
         }
 
