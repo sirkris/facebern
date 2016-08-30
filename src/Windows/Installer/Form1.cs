@@ -139,7 +139,7 @@ namespace Installer
             }
         }
 
-        public void WriteResourceToFile(string resourceName)
+        public void WriteResourceToFile(string resourceName, bool copyToTemp = true)
         {
             if (File.Exists(Environment.CurrentDirectory + Path.DirectorySeparatorChar + resourceName))
             {
@@ -156,8 +156,13 @@ namespace Installer
 
             Assembly ass = Assembly.GetExecutingAssembly();
             Stream stream = ass.GetManifestResourceStream("Installer.Resources." + resourceName);
-            File.WriteAllBytes(Environment.CurrentDirectory + Path.DirectorySeparatorChar + resourceName, ReadToEnd(stream));
+            File.WriteAllBytes(Path.Combine(Environment.CurrentDirectory, resourceName), ReadToEnd(stream));
             stream.Close();
+
+            if (copyToTemp)
+            {
+                File.Copy(Path.Combine(Environment.CurrentDirectory, resourceName), Path.Combine(Path.GetTempPath(), resourceName));
+            }
         }
 
         private bool IsAdministrator()
