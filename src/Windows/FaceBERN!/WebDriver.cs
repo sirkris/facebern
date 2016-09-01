@@ -274,17 +274,27 @@ namespace FaceBERN_
         }
 
         [Test]
-        public string GetPageSource(int retry = 5)
+        public string GetPageSource(bool refreshOnFailure = false, bool relaunchOnRefreshFailure = false, int retry = 5)
         {
             string res = null;
-            switch (browser)
+            try
             {
-                default:
-                    res = _driver.PageSource;
-                    break;
-                case Globals.FIREFOX_HEADLESS:
-                    res = page.AsXml();
-                    break;
+                switch (browser)
+                {
+                    default:
+                        res = _driver.PageSource;
+                        break;
+                    case Globals.FIREFOX_HEADLESS:
+                        res = page.AsXml();
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                if (retry == 0)
+                {
+                    LogAndReportException(e, "Unable to get page source after retries in WebDriver.GetPageSource.");
+                }
             }
 
             if (res != null)
@@ -299,9 +309,14 @@ namespace FaceBERN_
                     return null;
                 }
 
+                if (refreshOnFailure)
+                {
+                    Refresh(relaunchOnRefreshFailure);
+                }
+
                 System.Threading.Thread.Sleep(Globals.__BROWSE_DELAY__);
 
-                return GetPageSource(retry);
+                return GetPageSource(refreshOnFailure, relaunchOnRefreshFailure, retry);
             }
         }
 
@@ -391,18 +406,26 @@ namespace FaceBERN_
         [Test]
         public string GetURL()
         {
-            switch (browser)
+            try
             {
-                default:
-                    return _driver.Url;
-                case Globals.FIREFOX_HEADLESS:
-                    // TODO
-                    return null;
+                switch (browser)
+                {
+                    default:
+                        return _driver.Url;
+                    case Globals.FIREFOX_HEADLESS:
+                        // TODO
+                        return null;
+                }
+            }
+            catch (Exception e)
+            {
+                LogAndReportException(e, "Exception in WebDriver.GetURL.");
+                return null;
             }
         }
 
         [Test]
-        public void Refresh()
+        public void Refresh(bool relaunchOnFailure = false)
         {
             try
             {
@@ -413,6 +436,22 @@ namespace FaceBERN_
             catch (Exception e)
             {
                 LogAndReportException(e, "Exception in WebDriver.Refresh.");
+
+                if (relaunchOnFailure)
+                {
+                    string url = GetURL();
+                    if (url != null)
+                    {
+                        Log("Relaunching web browser....");
+
+                        FixtureTearDown();
+
+                        System.Threading.Thread.Sleep(3000);
+
+                        FixtureSetup();
+                        TestSetUp(url);
+                    }
+                }
             }
         }
 

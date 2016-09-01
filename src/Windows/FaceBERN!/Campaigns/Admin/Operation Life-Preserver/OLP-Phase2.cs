@@ -181,7 +181,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                     e.Data.Add("users", "Error:  " + ex.ToString());
                 }
                 e.Data.Add("retry", retry);
-
+                
                 workflow.LogAndReportException(e, "Exception parsing comments JSON in OLP-Phase2.ExecuteAPIWorkflow.  Skipped reporting for comments.");
 
                 success = false;
@@ -397,9 +397,9 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
 
         private void ExecuteThreadWorkflow(int threadNum, int threadCount, int year)
         {
+            string logPrefix = "OLP-Phase2 thread #" + threadNum.ToString() + ":  ";
             try
             {
-                string logPrefix = "OLP-Phase2 thread #" + threadNum.ToString() + ":  ";
 
                 workflow.Log(logPrefix + "Executing....");
 
@@ -412,11 +412,11 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
 
                     /* Split the workload.  It's just me so no need for anything too fancy.  --Kris */
                     Dictionary<string, List<int>> delegatedMonths = new Dictionary<string, List<int>>();
-                    delegatedMonths["facebern_EbGjF3rVq1ewD6wqjWpw"] = new List<int>  // Windows 10 test VM.  --Kris
+                    delegatedMonths["facebern_xwnmVJIeKwteD4x1BGOy"] = new List<int>  // Windows 7 Birdie appliance VM on primary dev machine.  --Kris
                     {
                         1, 2, 3
                     };
-                    delegatedMonths["facebern_gwhxmggHQPF9vzBKmdEI"] = new List<int>  // Primary dev environment.  --Kris
+                    delegatedMonths["???"] = new List<int>  // Windows 7 Birdie appliance VM on secondary machine.  --Kris
                     {
                         4, 5, 6, 7
                     };
@@ -445,7 +445,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                         }
                         catch (Exception e)
                         {
-                            workflow.ReportException(e, "Birdie API returned non-200 response in OLP-Phase2.ExecuteThreadWorkflow.");
+                            workflow.ReportException(e, logPrefix + "Birdie API returned non-200 response in OLP-Phase2.ExecuteThreadWorkflow.");
 
                             System.Threading.Thread.Sleep(10000);
 
@@ -497,361 +497,386 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
                         */
                         
                         /* Scrape Reddit using the webdriver.  --Kris */
-                        webDriver.TestSetUp("https://www.reddit.com" + post.permalink + @"?limit=500");
-
-                        webDriver.ScrollToBottom(3000);
-
-                        workflow.Log(logPrefix + "Expanding comments....");
-
-                        //List<IWebElement> eles = webDriver.GetElementsByTagNameAndAttribute("a", "onclick", "return morechildren(this,", 0, true);
-                        List<IWebElement> eles = null;
-                        int limit = 50000;
+                        int retry = 5;
+                        bool ok;
                         do
                         {
-                            int retries = 3;
-                            do
-                            {
-                                eles = webDriver.GetElementsByLinkText("load more comments", true);
-
-                                if (eles == null || eles.Count == 0)
-                                {
-                                    System.Threading.Thread.Sleep(1000);
-                                }
-
-                                retries--;
-                            } while ((eles == null || eles.Count == 0) && retries > 0);
-
-                            if (eles != null && eles.Count > 0)
-                            {
-                                foreach (IWebElement ele in eles)
-                                {
-                                    try
-                                    {
-                                        webDriver.ClickElement(ele, false, false, false, false);
-
-                                        System.Threading.Thread.Sleep(2100 * threadCount);
-                                    }
-                                    catch (Exception)
-                                    {
-                                        continue;
-                                    }
-                                }
-                            }
-
-                            System.Threading.Thread.Sleep(3000 * threadCount);
-
-                            limit--;
-                        } while (eles != null && eles.Count > 0 && limit > 0);
-
-                        workflow.Log(logPrefix + "Finished expanding comments.");
-
-                        /* Once all the comments are loaded, parse them from the HTML.  --Kris */
-                        string src = webDriver.GetPageSource();
-                        
-                        string[] entries = src.Split(new string[] { "class=\"midcol unvoted\"" }, StringSplitOptions.RemoveEmptyEntries);
-                        workflow.Log(logPrefix + "Parsing " + (entries.Length - 2).ToString() + " comment entries....");
-                        for (int ii = 2; ii < entries.Length; ii++)
-                        {
-                            string entry = null;
+                            ok = true;
                             try
                             {
-                                entry = entries[ii];
-                                if (entry == null || !(entry.Contains("tagline")))
+                                webDriver.TestSetUp("https://www.reddit.com" + post.permalink + @"?limit=500");
+
+                                webDriver.ScrollToBottom(3000);
+
+                                workflow.Log(logPrefix + "Expanding comments....");
+
+                                //List<IWebElement> eles = webDriver.GetElementsByTagNameAndAttribute("a", "onclick", "return morechildren(this,", 0, true);
+                                List<IWebElement> eles = null;
+                                int limit = 50000;
+                                do
                                 {
-                                    continue;
-                                }
-
-                                string tag = "<p class=\"tagline\">";
-                                string tagline = entry.Substring(entry.IndexOf(tag) + tag.Length);
-
-                                tag = "<a href=\"https://www.reddit.com/user/";
-                                string user = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
-                                user = user.Substring(0, user.IndexOf("\""));
-
-                                if (user == null 
-                                    || user.Trim().Equals("expand") 
-                                    || user.Trim().Equals(""))
-                                {
-                                    continue;
-                                }
-
-                                bool distinguished = tagline.Contains("moderator");
-                                bool isModerator = distinguished;
-
-                                bool stickied = tagline.Contains("stickied");
-
-                                tag = "datetime=\"";
-                                string created = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
-                                created = created.Substring(0, created.IndexOf("\""));
-
-                                if (created == null
-                                    || created.Trim().Equals(""))
-                                {
-                                    continue;
-                                }
-
-                                tag = "<span class=\"score likes\">";
-                                if (tagline.Contains(tag) == false)
-                                {
-                                    tag = "<span class=\"score dislikes\">";
-                                    if (tagline.Contains(tag) == false)
+                                    int retries = 3;
+                                    do
                                     {
-                                        continue;
-                                    }
-                                }
+                                        eles = webDriver.GetElementsByLinkText("load more comments", true);
 
-                                string scoreStr = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
-                                try
-                                {
-                                    scoreStr = (scoreStr.Contains(" points") ? scoreStr.Substring(0, scoreStr.IndexOf(" points")) : scoreStr);
-                                    scoreStr = (scoreStr.Contains(" point") ? scoreStr.Substring(0, scoreStr.IndexOf(" point")) : scoreStr);
-                                }
-                                catch (Exception)
-                                {
-                                    string salt = "1234567890-";
-                                    string newScoreStr = "";
-                                    for (int iii = 0; iii < scoreStr.Length; iii++)
-                                    {
-                                        if (salt.Contains(scoreStr.Substring(iii, 1)))
+                                        if (eles == null || eles.Count == 0)
                                         {
-                                            newScoreStr += scoreStr.Substring(iii, 1);
-                                            break;
+                                            System.Threading.Thread.Sleep(1000);
+                                        }
+
+                                        retries--;
+                                    } while ((eles == null || eles.Count == 0) && retries > 0);
+
+                                    if (eles != null && eles.Count > 0)
+                                    {
+                                        foreach (IWebElement ele in eles)
+                                        {
+                                            try
+                                            {
+                                                webDriver.ClickElement(ele, false, false, false, false);
+
+                                                System.Threading.Thread.Sleep(2100 * threadCount);
+                                            }
+                                            catch (Exception)
+                                            {
+                                                continue;
+                                            }
                                         }
                                     }
 
-                                    scoreStr = newScoreStr;
-                                }
+                                    System.Threading.Thread.Sleep(3000 * threadCount);
 
-                                int score = 0;
-                                try
-                                {
-                                    score = int.Parse(scoreStr, NumberStyles.Any);
-                                }
-                                catch (Exception e)
-                                {
-                                    string salt = "1234567890-";
-                                    string newScore = "";
-                                    for (int iii = 0; iii < scoreStr.Length; iii++)
-                                    {
-                                        if (salt.IndexOf(scoreStr.Substring(iii, 1)) != -1)
-                                        {
-                                            newScore += scoreStr.Substring(iii, 1);
-                                        }
-                                    }
+                                    limit--;
+                                } while (eles != null && eles.Count > 0 && limit > 0);
 
+                                workflow.Log(logPrefix + "Finished expanding comments.");
+
+                                /* Once all the comments are loaded, parse them from the HTML.  --Kris */
+                                string src = webDriver.GetPageSource();
+
+                                string[] entries = src.Split(new string[] { "class=\"midcol unvoted\"" }, StringSplitOptions.RemoveEmptyEntries);
+                                workflow.Log(logPrefix + "Parsing " + (entries.Length - 2).ToString() + " comment entries....");
+                                for (int ii = 2; ii < entries.Length; ii++)
+                                {
+                                    string entry = null;
                                     try
                                     {
-                                        score = int.Parse(newScore);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        e.Data.Add("scoreStr", scoreStr);
-                                        e.Data.Add("newScore", newScore);
-                                        e.Data.Add("fullResult", entry);
-                                        e.Data.Add("retryException", ex);
-
-                                        workflow.LogAndReportException(e, "Unable to parse score value in OLP-Phase2.");
-                                    }
-                                }
-
-                                scoreStr = score.ToString();
-
-                                string id36 = null;
-                                if (tagline.Contains(post.permalink))
-                                {
-                                    id36 = tagline.Substring(tagline.IndexOf(post.permalink) + post.permalink.Length);
-                                    id36 = id36.Substring(0, id36.IndexOf("\""));
-                                }
-
-                                if (id36 == null
-                                    || id36.Trim().Equals(""))
-                                {
-                                    continue;
-                                }
-
-                                tag = "<span class=\"flair";
-                                string flair = null;
-                                try
-                                {
-                                    if (tagline.Contains(tag))
-                                    {
-                                        flair = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
-                                        flair = flair.Substring(flair.IndexOf(">") + 1);
-                                        flair = flair.Substring(0, flair.IndexOf("</span"));
-                                    }
-                                }
-                                catch (Exception)
-                                { }
-
-                                string stateAbbr = null;
-                                string rankFlair = null;
-                                foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
-                                {
-                                    if (state.Key.Equals("DA"))
-                                    {
-                                        continue;
-                                    }
-
-                                    if (flair != null
-                                        && (flair.Contains(state.Key) || flair.Contains(state.Value.name)))
-                                    {
-                                        stateAbbr = state.Key;
-                                        break;
-                                    }
-                                }
-
-                                List<string> ranks = new List<string>
-                                {
-                                    "Cadet", 
-                                    "Private", 
-                                    "Private First Class", 
-                                    "Lance Corporal", 
-                                    "Corporal", 
-                                    "Sergeant", 
-                                    "Staff Sergeant", 
-                                    "Gunnery Sergeant", 
-                                    "Master Sergeant", 
-                                    "First Sergeant", 
-                                    "Master Gunnery Sergeant", 
-                                    "Sergeant Major", 
-                                    "Second Lieutenant", 
-                                    "First Lieutenant", 
-                                    "Captain", 
-                                    "Major", 
-                                    "Lieutenant Colonel", 
-                                    "Colonel", 
-                                    "Brigadier General", 
-                                    "Major General", 
-                                    "Lieutenant General", 
-                                    "General", 
-                                    "Field Marshal", 
-                                    "Marshal", 
-                                    "General of the Force" 
-                                };
-
-                                // Iterate longer strings first to eliminate false-positives (i.e. "Sergeant" firing when it should be "Master Sergeant").  --Kris
-                                System.Linq.IOrderedEnumerable<string> ranksSorted = from element in ranks 
-                                        orderby element.Length descending 
-                                        select element;
-
-                                foreach (string rank in ranksSorted)
-                                {
-                                    if (flair != null && flair.Contains(rank))
-                                    {
-                                        rankFlair = rank;
-                                        break;
-                                    }
-                                }
-
-                                comments.Add(new SubredditComment(id36, post.permalink, "SandersForPresident", user, score, distinguished, stickied, DateTime.Parse(created)));
-
-                                int selfPostScore = 0;
-                                int linkPostScore = 0;
-                                int selfPosts = 0;
-                                int linkPosts = 0;
-                                if (post.GetAuthor().Equals(user))
-                                {
-                                    if (post.GetSelf() == true)
-                                    {
-                                        selfPostScore = post.GetScore();
-                                        selfPosts++;
-                                    }
-                                    else
-                                    {
-                                        linkPostScore = post.GetScore();
-                                        linkPosts++;
-                                    }
-                                }
-
-                                bool userFound = false;
-                                for (int iii = 0; iii < users.Count; iii++)
-                                {
-                                    if (users[iii].username.Equals(user))
-                                    {
-                                        users[iii].totalLinkPostScore += linkPostScore;
-                                        users[iii].totalSelfPostScore += selfPostScore;
-                                        users[iii].totalCommentScore += score;
-
-                                        if (users[iii].firstComment == null
-                                            || DateTime.Parse(created) < users[iii].firstComment.Value)
+                                        entry = entries[ii];
+                                        if (entry == null || !(entry.Contains("tagline")))
                                         {
-                                            users[iii].firstComment = DateTime.Parse(created);
+                                            continue;
                                         }
 
-                                        if (users[iii].lastComment == null
-                                            || DateTime.Parse(created) > users[iii].lastComment.Value)
+                                        string tag = "<p class=\"tagline\">";
+                                        string tagline = entry.Substring(entry.IndexOf(tag) + tag.Length);
+
+                                        tag = "<a href=\"https://www.reddit.com/user/";
+                                        string user = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
+                                        user = user.Substring(0, user.IndexOf("\""));
+
+                                        if (user == null
+                                            || user.Trim().Equals("expand")
+                                            || user.Trim().Equals(""))
                                         {
-                                            users[iii].lastComment = DateTime.Parse(created);
+                                            continue;
                                         }
 
+                                        bool distinguished = tagline.Contains("moderator");
+                                        bool isModerator = distinguished;
+
+                                        bool stickied = tagline.Contains("stickied");
+
+                                        tag = "datetime=\"";
+                                        string created = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
+                                        created = created.Substring(0, created.IndexOf("\""));
+
+                                        if (created == null
+                                            || created.Trim().Equals(""))
+                                        {
+                                            continue;
+                                        }
+
+                                        tag = "<span class=\"score likes\">";
+                                        if (tagline.Contains(tag) == false)
+                                        {
+                                            tag = "<span class=\"score dislikes\">";
+                                            if (tagline.Contains(tag) == false)
+                                            {
+                                                continue;
+                                            }
+                                        }
+
+                                        string scoreStr = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
+                                        try
+                                        {
+                                            scoreStr = (scoreStr.Contains(" points") ? scoreStr.Substring(0, scoreStr.IndexOf(" points")) : scoreStr);
+                                            scoreStr = (scoreStr.Contains(" point") ? scoreStr.Substring(0, scoreStr.IndexOf(" point")) : scoreStr);
+                                        }
+                                        catch (Exception)
+                                        {
+                                            string salt = "1234567890-";
+                                            string newScoreStr = "";
+                                            for (int iii = 0; iii < scoreStr.Length; iii++)
+                                            {
+                                                if (salt.Contains(scoreStr.Substring(iii, 1)))
+                                                {
+                                                    newScoreStr += scoreStr.Substring(iii, 1);
+                                                    break;
+                                                }
+                                            }
+
+                                            scoreStr = newScoreStr;
+                                        }
+
+                                        int score = 0;
+                                        try
+                                        {
+                                            score = int.Parse(scoreStr, NumberStyles.Any);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            string salt = "1234567890-";
+                                            string newScore = "";
+                                            for (int iii = 0; iii < scoreStr.Length; iii++)
+                                            {
+                                                if (salt.IndexOf(scoreStr.Substring(iii, 1)) != -1)
+                                                {
+                                                    newScore += scoreStr.Substring(iii, 1);
+                                                }
+                                            }
+
+                                            try
+                                            {
+                                                score = int.Parse(newScore);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                e.Data.Add("scoreStr", scoreStr);
+                                                e.Data.Add("newScore", newScore);
+                                                e.Data.Add("fullResult", entry);
+                                                e.Data.Add("retryException", ex);
+
+                                                workflow.LogAndReportException(e, logPrefix + "Unable to parse score value in OLP-Phase2.");
+                                            }
+                                        }
+
+                                        scoreStr = score.ToString();
+
+                                        string id36 = null;
+                                        if (tagline.Contains(post.permalink))
+                                        {
+                                            id36 = tagline.Substring(tagline.IndexOf(post.permalink) + post.permalink.Length);
+                                            id36 = id36.Substring(0, id36.IndexOf("\""));
+                                        }
+
+                                        if (id36 == null
+                                            || id36.Trim().Equals(""))
+                                        {
+                                            continue;
+                                        }
+
+                                        tag = "<span class=\"flair";
+                                        string flair = null;
+                                        try
+                                        {
+                                            if (tagline.Contains(tag))
+                                            {
+                                                flair = tagline.Substring(tagline.IndexOf(tag) + tag.Length);
+                                                flair = flair.Substring(flair.IndexOf(">") + 1);
+                                                flair = flair.Substring(0, flair.IndexOf("</span"));
+                                            }
+                                        }
+                                        catch (Exception)
+                                        { }
+
+                                        string stateAbbr = null;
+                                        string rankFlair = null;
+                                        foreach (KeyValuePair<string, States> state in Globals.StateConfigs)
+                                        {
+                                            if (state.Key.Equals("DA"))
+                                            {
+                                                continue;
+                                            }
+
+                                            if (flair != null
+                                                && (flair.Contains(state.Key) || flair.Contains(state.Value.name)))
+                                            {
+                                                stateAbbr = state.Key;
+                                                break;
+                                            }
+                                        }
+
+                                        List<string> ranks = new List<string>
+                                        {
+                                            "Cadet", 
+                                            "Private", 
+                                            "Private First Class", 
+                                            "Lance Corporal", 
+                                            "Corporal", 
+                                            "Sergeant", 
+                                            "Staff Sergeant", 
+                                            "Gunnery Sergeant", 
+                                            "Master Sergeant", 
+                                            "First Sergeant", 
+                                            "Master Gunnery Sergeant", 
+                                            "Sergeant Major", 
+                                            "Second Lieutenant", 
+                                            "First Lieutenant", 
+                                            "Captain", 
+                                            "Major", 
+                                            "Lieutenant Colonel", 
+                                            "Colonel", 
+                                            "Brigadier General", 
+                                            "Major General", 
+                                            "Lieutenant General", 
+                                            "General", 
+                                            "Field Marshal", 
+                                            "Marshal", 
+                                            "General of the Force" 
+                                        };
+
+                                        // Iterate longer strings first to eliminate false-positives (i.e. "Sergeant" firing when it should be "Master Sergeant").  --Kris
+                                        System.Linq.IOrderedEnumerable<string> ranksSorted = from element in ranks
+                                                                                             orderby element.Length descending
+                                                                                             select element;
+
+                                        foreach (string rank in ranksSorted)
+                                        {
+                                            if (flair != null && flair.Contains(rank))
+                                            {
+                                                rankFlair = rank;
+                                                break;
+                                            }
+                                        }
+
+                                        comments.Add(new SubredditComment(id36, post.permalink, "SandersForPresident", user, score, distinguished, stickied, DateTime.Parse(created)));
+
+                                        int selfPostScore = 0;
+                                        int linkPostScore = 0;
+                                        int selfPosts = 0;
+                                        int linkPosts = 0;
                                         if (post.GetAuthor().Equals(user))
                                         {
-                                            if (users[iii].firstPost == null
-                                                || post.GetCreated() < users[iii].firstPost.Value)
+                                            if (post.GetSelf() == true)
                                             {
-                                                users[iii].firstPost = post.GetCreated();
-                                            }
-
-                                            if (users[iii].lastPost == null
-                                                || post.GetCreated() > users[iii].lastPost.Value)
-                                            {
-                                                users[iii].lastPost = post.GetCreated();
-                                            }
-
-                                            if (post.self)
-                                            {
-                                                users[iii].selfPosts++;
+                                                selfPostScore = post.GetScore();
+                                                selfPosts++;
                                             }
                                             else
                                             {
-                                                users[iii].linkPosts++;
+                                                linkPostScore = post.GetScore();
+                                                linkPosts++;
                                             }
                                         }
 
-                                        users[iii].comments++;
+                                        bool userFound = false;
+                                        for (int iii = 0; iii < users.Count; iii++)
+                                        {
+                                            if (users[iii].username.Equals(user))
+                                            {
+                                                users[iii].totalLinkPostScore += linkPostScore;
+                                                users[iii].totalSelfPostScore += selfPostScore;
+                                                users[iii].totalCommentScore += score;
 
-                                        userFound = true;
-                                        break;
+                                                if (users[iii].firstComment == null
+                                                    || DateTime.Parse(created) < users[iii].firstComment.Value)
+                                                {
+                                                    users[iii].firstComment = DateTime.Parse(created);
+                                                }
+
+                                                if (users[iii].lastComment == null
+                                                    || DateTime.Parse(created) > users[iii].lastComment.Value)
+                                                {
+                                                    users[iii].lastComment = DateTime.Parse(created);
+                                                }
+
+                                                if (post.GetAuthor().Equals(user))
+                                                {
+                                                    if (users[iii].firstPost == null
+                                                        || post.GetCreated() < users[iii].firstPost.Value)
+                                                    {
+                                                        users[iii].firstPost = post.GetCreated();
+                                                    }
+
+                                                    if (users[iii].lastPost == null
+                                                        || post.GetCreated() > users[iii].lastPost.Value)
+                                                    {
+                                                        users[iii].lastPost = post.GetCreated();
+                                                    }
+
+                                                    if (post.self)
+                                                    {
+                                                        users[iii].selfPosts++;
+                                                    }
+                                                    else
+                                                    {
+                                                        users[iii].linkPosts++;
+                                                    }
+                                                }
+
+                                                users[iii].comments++;
+
+                                                userFound = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (userFound == false)
+                                        {
+                                            users.Add(new SubredditUser("SandersForPresident", user, isModerator, selfPosts, linkPosts, 1, selfPostScore, linkPostScore, score,
+                                                                        (post.GetAuthor().Equals(user) ? (DateTime?)DateTime.Parse(created) : null), DateTime.Parse(created),
+                                                                        (post.GetAuthor().Equals(user) ? (DateTime?)DateTime.Parse(created) : null), DateTime.Parse(created),
+                                                                        null, null, null, null, null, flair, stateAbbr, rankFlair));
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        e.Data.Add("entry", entry);
+                                        e.Data.Add("post", "");
+                                        e.Data.Add("p", p);
+                                        e.Data.Add("threadNum", threadNum);
+                                        e.Data.Add("threadCount", threadCount);
+                                        e.Data.Add("i", i);
+                                        e.Data.Add("year", year);
+
+                                        workflow.LogAndReportException(e, logPrefix + "Exception parsing post comments in OLP-Phase2.");
+
+                                        continue;
                                     }
                                 }
 
-                                if (userFound == false)
+                                workflow.Log(logPrefix + "Comments parsing complete!");
+
+                                if (users.Count > 0
+                                    || comments.Count > 0)
                                 {
-                                    users.Add(new SubredditUser("SandersForPresident", user, isModerator, selfPosts, linkPosts, 1, selfPostScore, linkPostScore, score,
-                                                                (post.GetAuthor().Equals(user) ? (DateTime?) DateTime.Parse(created) : null), DateTime.Parse(created),
-                                                                (post.GetAuthor().Equals(user) ? (DateTime?) DateTime.Parse(created) : null), DateTime.Parse(created),
-                                                                null, null, null, null, null, flair, stateAbbr, rankFlair));
+                                    if (ExecuteAPIThread(post, comments, users))
+                                    {
+                                        comments = new List<SubredditComment>();
+                                        users = new List<SubredditUser>();
+                                    }
                                 }
                             }
                             catch (Exception e)
                             {
-                                e.Data.Add("entry", entry);
-                                e.Data.Add("post", "");
-                                e.Data.Add("p", p);
-                                e.Data.Add("threadNum", threadNum);
-                                e.Data.Add("threadCount", threadCount);
-                                e.Data.Add("i", i);
-                                e.Data.Add("year", year);
+                                e.Data.Add("post", post);
 
-                                workflow.LogAndReportException(e, "Exception parsing post comments in OLP-Phase2.");
+                                workflow.LogAndReportException(e, logPrefix + "Exception parsing comments in OLP-Phase2 workflow.");
 
-                                continue;
+                                retry--;
+                                if (retry > 0)
+                                {
+                                    webDriver.FixtureTearDown();
+
+                                    System.Threading.Thread.Sleep(3000);
+
+                                    workflow.Log(logPrefix + "Restarting parsing operation for post....");
+                                }
                             }
-                        }
-
-                        workflow.Log(logPrefix + "Comments parsing complete!");
-
-                        if (users.Count > 0
-                            || comments.Count > 0)
-                        {
-                            if (ExecuteAPIThread(post, comments, users))
-                            {
-                                comments = new List<SubredditComment>();
-                                users = new List<SubredditUser>();
-                            }
-                        }
+                        } while (true);
                     }
-
+                     
                     webDriver.FixtureTearDown();
 
                     if (users.Count > 0
@@ -876,7 +901,7 @@ namespace FaceBERN_.Campaigns.Admin.Operation_Life_Preserver
             }
             catch (Exception e)
             {
-                workflow.LogAndReportException(e, "Unhandled exception in OLP-Phase2 workflow.");
+                workflow.LogAndReportException(e, logPrefix + "Unhandled exception in OLP-Phase2 workflow.");
             }
         }
 
