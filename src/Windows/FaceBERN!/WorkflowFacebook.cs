@@ -1378,7 +1378,7 @@ namespace FaceBERN_
 
             /* Scrape the results from the page source.  Seems to average just under a second for processing each result set.  --Kris */
             string[] resRaw = new string[999999];
-            resRaw = webDriver.GetPageSource(browser).Split(new string[] { "<div class=\"_glj\">" }, StringSplitOptions.RemoveEmptyEntries);
+            resRaw = webDriver.GetPageSource().Split(new string[] { "<div class=\"_glj\">" }, StringSplitOptions.RemoveEmptyEntries);
 
             Log("Parsing search results....  This will probably take awhile....");
 
@@ -1556,7 +1556,7 @@ namespace FaceBERN_
 
             /* Scrape the results from the page source.  --Kris */
             string[] resRaw = new string[32767];
-            resRaw = webDriver.GetPageSource(browser).Split(new string[] { "<div class=\"_gll\">" }, StringSplitOptions.RemoveEmptyEntries);
+            resRaw = webDriver.GetPageSource().Split(new string[] { "<div class=\"_gll\">" }, StringSplitOptions.RemoveEmptyEntries);
 
             for (int i = 1; i < resRaw.Length; i++)
             {
@@ -1701,7 +1701,7 @@ namespace FaceBERN_
 
             SetExecState(lastState);
 
-            return (webDriver.GetPageSource(browser).IndexOf("Sorry, this page isn't available") == -1);
+            return (webDriver.GetPageSource().IndexOf("Sorry, this page isn't available") == -1);
         }
 
         /* Load feelthebern.events in a separate browser session and attempt to get invited to the state events.  Note that it can take over an hour for the request to be processed.  --Kris */
